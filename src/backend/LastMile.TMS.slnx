@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LastMile.TMS.Api/LastMile.TMS.Api.csproj" />
+    <Project Path="src/LastMile.TMS.Application/LastMile.TMS.Application.csproj" />
+    <Project Path="src/LastMile.TMS.Domain/LastMile.TMS.Domain.csproj" />
+    <Project Path="src/LastMile.TMS.Infrastructure/LastMile.TMS.Infrastructure.csproj" />
+    <Project Path="src/LastMile.TMS.Persistence/LastMile.TMS.Persistence.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/LastMile.TMS.Api.Tests/LastMile.TMS.Api.Tests.csproj" />
+    <Project Path="tests/LastMile.TMS.Application.Tests/LastMile.TMS.Application.Tests.csproj" />
+    <Project Path="tests/LastMile.TMS.Architecture.Tests/LastMile.TMS.Architecture.Tests.csproj" />
+    <Project Path="tests/LastMile.TMS.Domain.Tests/LastMile.TMS.Domain.Tests.csproj" />
+  </Folder>
+</Solution>

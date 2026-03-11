@@ -1,0 +1,54 @@
+# ===== .NET =====
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+*.nupkg
+**/Properties/launchSettings.json
+
+# ===== Node =====
+node_modules/
+.next/
+out/
+.turbo/
+.vercel
+.expo/
+dist/
+*.tsbuildinfo
+
+# ===== Environment =====
+.env
+.env.local
+.env.*.local
+
+# ===== IDE =====
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== Build & Logs =====
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===== Testing =====
+coverage/
+TestResults/
+
+# ===== Docker =====
+docker-compose.override.yml
+
+# ===== Misc =====
+*.bak
+*.tmp
+.worktrees/
