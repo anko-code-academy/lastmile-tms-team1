@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LastMile.TMS.Application\LastMile.TMS.Application.csproj" />
+    <ProjectReference Include="..\LastMile.TMS.Domain\LastMile.TMS.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
