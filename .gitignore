@@ -52,3 +52,7 @@ docker-compose.override.yml
 *.bak
 *.tmp
 .worktrees/
+
+# ===== Claude Code =====
+.claude/settings.json
+.claude/settings.local.json
