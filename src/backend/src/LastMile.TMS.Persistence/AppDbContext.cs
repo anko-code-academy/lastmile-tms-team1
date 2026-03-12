@@ -9,6 +9,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
 {
     public DbSet<Address> Addresses => Set<Address>();
     public DbSet<Depot> Depots => Set<Depot>();
+    public DbSet<Driver> Drivers => Set<Driver>();
     public DbSet<Zone> Zones => Set<Zone>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

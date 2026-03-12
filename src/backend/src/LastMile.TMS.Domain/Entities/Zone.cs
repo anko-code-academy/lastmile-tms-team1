@@ -21,6 +21,7 @@ public class Zone : BaseAuditableEntity
 
     // Navigation properties
     public Depot Depot { get; set; } = null!;
+    public ICollection<Driver> Drivers { get; set; } = [];
 
     public void SetBoundaryFromGeoJson(string geoJson)
     {
