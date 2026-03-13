@@ -2,7 +2,14 @@ using Hangfire;
 using Hangfire.PostgreSql;
 using LastMile.TMS.Application;
 using LastMile.TMS.Infrastructure;
+using LastMile.TMS.Infrastructure.Options;
+using LastMile.TMS.Infrastructure.Seeding;
 using LastMile.TMS.Persistence;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using OpenIddict.Core;
+using OpenIddict.EntityFrameworkCore;
+using OpenIddict.Server;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -34,7 +41,64 @@ try
             options.UseNpgsqlConnection(builder.Configuration.GetConnectionString("HangfireConnection"))));
     builder.Services.AddHangfireServer();
 
+    // Add ASP.NET Core Identity
+    builder.Services.AddIdentity<IdentityUser<Guid>, IdentityRole<Guid>>(options =>
+        {
+            options.Password.RequiredLength = 6;
+            options.Password.RequireDigit = true;
+            options.Password.RequireLowercase = true;
+            options.Password.RequireUppercase = true;
+            options.Password.RequireNonAlphanumeric = false;
+        })
+        .AddEntityFrameworkStores<AppDbContext>()
+        .AddDefaultTokenProviders();
+
+    // Configure OpenIddict
+    var authOptions = builder.Configuration.GetSection(AuthOptions.SectionName).Get<AuthOptions>() ?? new AuthOptions();
+    builder.Services.AddOpenIddict()
+        .AddCore(options =>
+        {
+            options.UseEntityFrameworkCore()
+                .UseDbContext<AppDbContext>();
+        })
+        .AddServer(options =>
+        {
+            options.UseAspNetCore()
+                .EnableTokenEndpointPassthrough();
+
+            var accessTokenLifetime = TimeSpan.Parse(authOptions.AccessTokenLifetime);
+            var refreshTokenLifetime = TimeSpan.Parse(authOptions.RefreshTokenLifetime);
+
+            options.SetAccessTokenLifetime(accessTokenLifetime);
+            options.SetRefreshTokenLifetime(refreshTokenLifetime);
+
+            options.RegisterScopes("api", "offline_access");
+
+            options.AddDevelopmentEncryptionCertificate();
+            options.AddDevelopmentSigningCertificate();
+
+            options.RegisterAudiences(authOptions.Audience);
+
+            options.SetTokenEndpointUris("/connect/token");
+
+            options.AllowPasswordFlow();
+            options.AllowRefreshTokenFlow();
+
+            // Accept client_id-less requests for password flow
+            options.AcceptAnonymousClients();
+        })
+        .AddValidation(options =>
+        {
+            options.UseLocalServer();
+        });
+
     var app = builder.Build();
+
+    // Seed identity data
+    using (var scope = app.Services.CreateScope())
+    {
+        await IdentitySeedData.SeedAsync(scope.ServiceProvider);
+    }
 
     if (app.Environment.IsDevelopment())
     {
