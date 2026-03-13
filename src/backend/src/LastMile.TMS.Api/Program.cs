@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using OpenIddict.Core;
 using OpenIddict.EntityFrameworkCore;
 using OpenIddict.Server;
+using OpenIddict.Server.AspNetCore;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -63,6 +64,7 @@ try
         })
         .AddServer(options =>
         {
+            // Enable passthrough - AuthController handles token generation
             options.UseAspNetCore()
                 .EnableTokenEndpointPassthrough();
 

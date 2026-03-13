@@ -4,12 +4,16 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using LastMile.TMS.Application.Features.Auth;
 using LastMile.TMS.Infrastructure.Options;
 using Microsoft.Extensions.Options;
 
 namespace LastMile.TMS.Api.Controllers;
 
+/// <summary>
+/// Token endpoint - handles password and refresh token flows.
+/// Uses OpenIddict for endpoint handling, but credentials validation
+/// and token generation are done here using ASP.NET Core Identity.
+/// </summary>
 [ApiController]
 [Route("connect")]
 public class AuthController(
@@ -18,7 +22,7 @@ public class AuthController(
     IOptions<AuthOptions> authOptions) : ControllerBase
 {
     /// <summary>
-    /// Token endpoint - handles password and refresh token flows
+    /// Token endpoint - handles password flow
     /// </summary>
     [HttpPost("token")]
     public async Task<IActionResult> Token(
@@ -95,11 +99,11 @@ public class AuthController(
         }
 
         var authCfg = authOptions.Value;
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("your-256-bit-secret-key-for-development-only!!"));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authCfg.SigningKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            issuer: "https://localhost:20981",
+            issuer: authCfg.Issuer,
             audience: authCfg.Audience,
             claims: claims,
             expires: DateTime.UtcNow.Add(TimeSpan.Parse(authCfg.AccessTokenLifetime)),
@@ -126,7 +130,6 @@ public class AuthController(
         CancellationToken cancellationToken)
     {
         // TODO: Implement refresh token validation and token regeneration
-        // For now, return a simple response
         return Task.FromResult<IActionResult>(Unauthorized(new
         {
             error = "invalid_grant",
