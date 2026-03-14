@@ -39,7 +39,7 @@ public class Parcel : BaseAuditableEntity
 
     // Zone (auto-assigned via geocoding)
     public Guid? ZoneId { get; set; }
-    // public Zone? Zone { get; set; }
+    public Zone? Zone { get; set; }
 
     // Navigation properties
     public DeliveryConfirmation? DeliveryConfirmation { get; set; }
