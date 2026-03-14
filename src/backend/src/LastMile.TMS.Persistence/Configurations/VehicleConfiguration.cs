@@ -24,5 +24,11 @@ public class VehicleConfiguration : IEntityTypeConfiguration<Vehicle>
 
         // Indexes
         builder.HasIndex(v => v.Status);
+
+        // Relationships
+        builder.HasOne(v => v.Depot)
+            .WithMany()
+            .HasForeignKey(v => v.DepotId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

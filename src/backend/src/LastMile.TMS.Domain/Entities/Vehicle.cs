@@ -11,8 +11,9 @@ public class Vehicle : BaseAuditableEntity
     public decimal WeightCapacity { get; set; }
     public VehicleStatus Status { get; set; }
 
-    // Depot assignment (FK - will add navigation property once Depot entity exists)
+    // Depot assignment
     public Guid? DepotId { get; set; }
+    public Depot? Depot { get; set; }
 
     // Factory method
     public static Vehicle Create(
