@@ -1,4 +1,5 @@
 using LastMile.TMS.Application.Common.Interfaces;
+using LastMile.TMS.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace LastMile.TMS.Persistence;
@@ -6,6 +7,10 @@ namespace LastMile.TMS.Persistence;
 public class AppDbContext(DbContextOptions<AppDbContext> options)
     : DbContext(options), IAppDbContext
 {
+    public DbSet<Address> Addresses => Set<Address>();
+    public DbSet<Depot> Depots => Set<Depot>();
+    public DbSet<Zone> Zones => Set<Zone>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasPostgresExtension("postgis");
