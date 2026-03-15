@@ -15,7 +15,7 @@ namespace LastMile.TMS.Api.Controllers;
 /// and token generation are done here using ASP.NET Core Identity.
 /// </summary>
 [ApiController]
-[Route("connect")]
+[Route("api/connect")]
 public class AuthController(
     UserManager<IdentityUser<Guid>> userManager,
     SignInManager<IdentityUser<Guid>> signInManager,
@@ -66,6 +66,11 @@ public class AuthController(
         }
 
         var user = await userManager.FindByNameAsync(username);
+        // If not found by username, try finding by email
+        if (user == null)
+        {
+            user = await userManager.FindByEmailAsync(username);
+        }
         if (user == null)
         {
             return Unauthorized(new
