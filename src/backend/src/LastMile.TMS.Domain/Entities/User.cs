@@ -11,7 +11,6 @@ public class User : BaseAuditableEntity
     public string? Phone { get; private set; }
     public string? PasswordHash { get; private set; }
     public UserStatus Status { get; private set; }
-    public bool IsActive { get; private set; }
 
     // Zone assignment (for drivers/dispatchers)
     public Guid? ZoneId { get; private set; }
@@ -50,8 +49,7 @@ public class User : BaseAuditableEntity
             LastName = lastName.Trim(),
             Email = email.ToLowerInvariant().Trim(),
             Phone = phone?.Trim(),
-            Status = UserStatus.Active,
-            IsActive = true
+            Status = UserStatus.Active
         };
     }
 
@@ -72,19 +70,16 @@ public class User : BaseAuditableEntity
     public void Activate()
     {
         Status = UserStatus.Active;
-        IsActive = true;
     }
 
     public void Deactivate()
     {
         Status = UserStatus.Inactive;
-        IsActive = false;
     }
 
     public void Suspend()
     {
         Status = UserStatus.Suspended;
-        IsActive = false;
     }
 
     public void AssignToZone(Guid zoneId)

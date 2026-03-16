@@ -39,12 +39,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasMaxLength(20)
             .IsRequired();
 
-        // IsActive
-        builder.Property(u => u.IsActive)
-            .IsRequired();
-
         // Indexes
-        builder.HasIndex(u => u.IsActive);
+        builder.HasIndex(u => u.Status);
 
         // Relationships
         builder.HasOne(u => u.Zone)

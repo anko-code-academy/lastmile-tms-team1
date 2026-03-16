@@ -18,7 +18,6 @@ public class UserTests
         user.Email.Should().Be("john.doe@lastmile.com");
         user.Phone.Should().Be("+1234567890");
         user.Status.Should().Be(UserStatus.Active);
-        user.IsActive.Should().BeTrue();
     }
 
     [Fact]
@@ -46,7 +45,6 @@ public class UserTests
 
         // Assert
         user.Status.Should().Be(UserStatus.Active);
-        user.IsActive.Should().BeTrue();
     }
 
     [Fact]
@@ -61,7 +59,6 @@ public class UserTests
 
         // Assert
         user.Status.Should().Be(UserStatus.Active);
-        user.IsActive.Should().BeTrue();
     }
 
     [Fact]
@@ -75,7 +72,6 @@ public class UserTests
 
         // Exception
         user.Status.Should().Be(UserStatus.Inactive);
-        user.IsActive.Should().BeFalse();
     }
 
     [Fact]
