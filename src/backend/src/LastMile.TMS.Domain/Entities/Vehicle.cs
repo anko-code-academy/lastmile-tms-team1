@@ -24,7 +24,6 @@ public class Vehicle : BaseAuditableEntity
     {
         return new Vehicle
         {
-            Id = Guid.NewGuid(),
             RegistrationPlate = registrationPlate.ToUpperInvariant(),
             Type = type,
             ParcelCapacity = parcelCapacity,

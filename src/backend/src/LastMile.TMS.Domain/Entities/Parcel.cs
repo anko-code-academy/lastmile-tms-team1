@@ -61,7 +61,6 @@ public class Parcel : BaseAuditableEntity
     {
         return new Parcel
         {
-            Id = Guid.NewGuid(),
             TrackingNumber = GenerateTrackingNumber(),
             Description = description,
             ServiceType = serviceType,

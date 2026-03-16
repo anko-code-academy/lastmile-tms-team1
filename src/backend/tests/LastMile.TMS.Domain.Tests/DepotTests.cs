@@ -47,8 +47,8 @@ public class DepotTests
     public void Depot_ShouldAllowAddingZones()
     {
         // Arrange
-        Depot depot = new() { Id = Guid.NewGuid() };
-        Zone zone = new() { Id = Guid.NewGuid(), DepotId = depot.Id };
+        Depot depot = new();
+        Zone zone = new() { DepotId = depot.Id };
 
         // Act
         depot.Zones.Add(zone);
