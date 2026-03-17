@@ -6,6 +6,9 @@ namespace LastMile.TMS.Domain.Entities;
 
 public class User : IdentityUser<Guid>, IBaseAuditableEntity
 {
+    // Override to get UUIDv7 auto-generation (like BaseEntity does)
+    public override Guid Id { get; set; } = Guid.CreateVersion7();
+
     public string FirstName { get; private set; } = string.Empty;
     public string LastName { get; private set; } = string.Empty;
 
@@ -60,7 +63,6 @@ public class User : IdentityUser<Guid>, IBaseAuditableEntity
 
         var user = new User
         {
-            Id = Guid.CreateVersion7(),
             FirstName = firstName.Trim(),
             LastName = lastName.Trim(),
             Email = email.ToLowerInvariant().Trim(),
