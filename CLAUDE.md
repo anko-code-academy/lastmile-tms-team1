@@ -82,7 +82,8 @@ All features and bug fixes must follow the TDD cycle:
 
 ## Code Style
 
-- C#: 4-space indent, nullable references enabled, implicit usings
+- C#: 4-space indent, nullable references enabled, implicit usings, file-scoped namespaces, C# 12+ features (primary constructors, collection expressions),
 - TypeScript: 2-space indent
 - Line endings: LF (`.editorconfig` at root)
 - TFM: `net10.0` (preview SDK)
+- SQL table names: plural form of the entity class name (`DayOff` → `DaysOff`), matching EF Core `DbSet<T>` convention; applies to explicit `builder.ToTable(...)` calls too
