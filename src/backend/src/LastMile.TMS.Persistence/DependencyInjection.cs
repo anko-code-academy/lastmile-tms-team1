@@ -16,7 +16,8 @@ public static class DependencyInjection
                 {
                     npgsql.UseNetTopologySuite();
                     npgsql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName);
-                }));
+                })
+            .UseOpenIddict());
 
         services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
 

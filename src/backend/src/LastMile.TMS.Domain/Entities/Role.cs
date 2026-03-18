@@ -1,11 +1,20 @@
 using LastMile.TMS.Domain.Common;
+using Microsoft.AspNetCore.Identity;
 
 namespace LastMile.TMS.Domain.Entities;
 
-public class Role : BaseAuditableEntity
+public class Role : IdentityRole<Guid>, IBaseAuditableEntity
 {
-    public string Name { get; private set; } = string.Empty;
+    // Override to get UUIDv7 auto-generation (like BaseEntity does)
+    public override Guid Id { get; set; } = Guid.CreateVersion7();
+
     public string? Description { get; private set; }
+
+    // IBaseAuditableEntity
+    public DateTimeOffset CreatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public DateTimeOffset? LastModifiedAt { get; set; }
+    public string? LastModifiedBy { get; set; }
 
     // Navigation: Users with this role
     public ICollection<User> Users { get; private set; } = new List<User>();
@@ -32,6 +41,7 @@ public class Role : BaseAuditableEntity
         return new Role
         {
             Name = name.Trim(),
+            NormalizedName = name.Trim().ToUpperInvariant(),
             Description = description?.Trim()
         };
     }

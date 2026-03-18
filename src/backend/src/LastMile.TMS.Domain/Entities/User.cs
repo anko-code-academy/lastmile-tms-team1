@@ -47,6 +47,7 @@ public class User : IdentityUser<Guid>, IBaseAuditableEntity
         string firstName,
         string lastName,
         string email,
+        string? userName = null,
         string? phone = null)
     {
         if (string.IsNullOrWhiteSpace(firstName))
@@ -66,9 +67,9 @@ public class User : IdentityUser<Guid>, IBaseAuditableEntity
             FirstName = firstName.Trim(),
             LastName = lastName.Trim(),
             Email = email.ToLowerInvariant().Trim(),
+            UserName = userName?.Trim() ?? email.ToLowerInvariant().Trim(),
             PhoneNumber = phone?.Trim(),
-            Status = UserStatus.Active,
-            UserName = email.ToLowerInvariant().Trim() // Identity requires UserName
+            Status = UserStatus.Active
         };
 
         return user;

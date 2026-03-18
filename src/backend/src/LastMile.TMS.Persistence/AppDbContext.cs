@@ -1,20 +1,19 @@
 using LastMile.TMS.Application.Common.Interfaces;
 using LastMile.TMS.Domain.Entities;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace LastMile.TMS.Persistence;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options)
-    : DbContext(options), IAppDbContext
+    : IdentityDbContext<User, Role, Guid>(options), IAppDbContext
 {
     public DbSet<Address> Addresses => Set<Address>();
     public DbSet<Depot> Depots => Set<Depot>();
     public DbSet<Driver> Drivers => Set<Driver>();
     public DbSet<Zone> Zones => Set<Zone>();
 
-    // User & Role Management
-    public DbSet<User> Users => Set<User>();
-    public DbSet<Role> Roles => Set<Role>();
+    // Custom entities (Users and Roles are inherited from IdentityDbContext)
     public DbSet<Permission> Permissions => Set<Permission>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
 
