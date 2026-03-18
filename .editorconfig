@@ -11,6 +11,11 @@ insert_final_newline = true
 [*.{cs,csx}]
 indent_size = 4
 
+dotnet_style_collection_initializer = true:suggestion
+dotnet_style_prefer_collection_expression = when_types_loosely_match:suggestion
+csharp_style_namespace_declarations = file_scoped:suggestion
+csharp_style_prefer_primary_constructors = true:suggestion
+
 [*.{csproj,props,targets,sln}]
 indent_size = 2
 
