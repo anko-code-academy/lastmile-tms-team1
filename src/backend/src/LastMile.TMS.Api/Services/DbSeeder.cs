@@ -69,9 +69,12 @@ public class DbSeeder : IDbSeeder
 
     private async Task SeedAdminUserAsync()
     {
-        var adminEmail = _configuration["AdminCredentials:Email"] ?? "admin@lastmile.com";
-        var adminUsername = _configuration["AdminCredentials:Username"] ?? "admin";
-        var adminPassword = _configuration["AdminCredentials:Password"] ?? "Admin@123";
+        var adminEmail = _configuration["AdminCredentials:Email"]
+            ?? throw new InvalidOperationException("AdminCredentials:Email is not configured");
+        var adminUsername = _configuration["AdminCredentials:Username"]
+            ?? throw new InvalidOperationException("AdminCredentials:Username is not configured");
+        var adminPassword = _configuration["AdminCredentials:Password"]
+            ?? throw new InvalidOperationException("AdminCredentials:Password is not configured");
 
         Log.Information("Seeding admin user: {Username}, {Email}", adminUsername, adminEmail);
 
