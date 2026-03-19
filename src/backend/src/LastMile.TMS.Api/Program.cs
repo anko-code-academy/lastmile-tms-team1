@@ -5,6 +5,7 @@ using LastMile.TMS.Domain.Entities;
 using LastMile.TMS.Infrastructure;
 using LastMile.TMS.Persistence;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
 using OpenIddict.Validation.AspNetCore;
 using Serilog;
