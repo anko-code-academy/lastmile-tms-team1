@@ -20,10 +20,10 @@ public class IntegrationTestWebApplicationFactory : WebApplicationFactory<Progra
     {
         await _postgreSqlFixture.InitializeAsync();
 
-        // Ensure database is created (creates schema without migrations)
+        // Apply migrations from Persistence assembly
         await using var scope = Services.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await dbContext.Database.EnsureCreatedAsync();
+        await dbContext.Database.MigrateAsync();
     }
 
     public new async Task DisposeAsync()
@@ -45,6 +45,7 @@ public class IntegrationTestWebApplicationFactory : WebApplicationFactory<Progra
             {
                 options
                     .UseNpgsql(_postgreSqlFixture.ConnectionString)
+                    .MigrationsAssembly("LastMile.TMS.Persistence")
                     .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
             });
         });
