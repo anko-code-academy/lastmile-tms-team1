@@ -20,9 +20,13 @@ public class IntegrationTestWebApplicationFactory : WebApplicationFactory<Progra
     {
         await _postgreSqlFixture.InitializeAsync();
 
-        // Apply migrations from Persistence assembly
-        await using var scope = Services.CreateAsyncScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        // Apply migrations using the test database
+        var connectionString = _postgreSqlFixture.ConnectionString;
+        var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>()
+            .UseNpgsql(connectionString)
+            .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
+
+        await using var dbContext = new AppDbContext(optionsBuilder.Options);
         await dbContext.Database.MigrateAsync();
     }
 
@@ -45,7 +49,6 @@ public class IntegrationTestWebApplicationFactory : WebApplicationFactory<Progra
             {
                 options
                     .UseNpgsql(_postgreSqlFixture.ConnectionString)
-                    .MigrationsAssembly("LastMile.TMS.Persistence")
                     .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
             });
         });
