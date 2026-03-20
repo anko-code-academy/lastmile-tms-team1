@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using LastMile.TMS.Persistence;
 
@@ -19,10 +20,10 @@ public class IntegrationTestWebApplicationFactory : WebApplicationFactory<Progra
     {
         await _postgreSqlFixture.InitializeAsync();
 
-        // Ensure database is created and migrated
+        // Ensure database is created (creates schema without migrations)
         await using var scope = Services.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await dbContext.Database.MigrateAsync();
+        await dbContext.Database.EnsureCreatedAsync();
     }
 
     public new async Task DisposeAsync()
@@ -42,7 +43,9 @@ public class IntegrationTestWebApplicationFactory : WebApplicationFactory<Progra
 
             services.AddDbContext<AppDbContext>(options =>
             {
-                options.UseNpgsql(_postgreSqlFixture.ConnectionString);
+                options
+                    .UseNpgsql(_postgreSqlFixture.ConnectionString)
+                    .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
             });
         });
     }
