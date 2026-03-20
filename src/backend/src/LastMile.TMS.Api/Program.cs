@@ -11,6 +11,7 @@ using OpenIddict.Validation.AspNetCore;
 using Serilog;
 using DbSeeder = LastMile.TMS.Api.Services.DbSeeder;
 using LastMile.TMS.Api.GraphQL;
+using HotChocolate.AspNetCore;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -132,7 +133,13 @@ try
     app.UseHttpsRedirection();
     app.UseAuthentication();
     app.UseAuthorization();
-    app.MapGraphQL();
+    app.MapGraphQL("/api/graphql").WithOptions(new GraphQLServerOptions
+    {
+      Tool =
+      {
+        Enable = app.Environment.IsDevelopment()
+      },
+    });
     app.MapControllers();
     app.UseHangfireDashboard("/hangfire");
 
