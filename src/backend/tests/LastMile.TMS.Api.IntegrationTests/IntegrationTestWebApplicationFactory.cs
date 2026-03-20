@@ -18,6 +18,11 @@ public class IntegrationTestWebApplicationFactory : WebApplicationFactory<Progra
     public async Task InitializeAsync()
     {
         await _postgreSqlFixture.InitializeAsync();
+
+        // Ensure database is created and migrated
+        await using var scope = Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await dbContext.Database.MigrateAsync();
     }
 
     public new async Task DisposeAsync()
