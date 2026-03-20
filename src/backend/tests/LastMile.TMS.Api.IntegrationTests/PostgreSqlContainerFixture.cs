@@ -1,3 +1,4 @@
+using Npgsql;
 using Testcontainers.PostgreSql;
 
 namespace LastMile.TMS.Api.IntegrationTests;
@@ -16,6 +17,12 @@ public class PostgreSqlContainerFixture : IAsyncLifetime
     public async Task InitializeAsync()
     {
         await _postgreSqlContainer.StartAsync();
+
+        // Enable PostGIS extension
+        await using var connection = new NpgsqlConnection(ConnectionString);
+        await connection.OpenAsync();
+        await using var command = new NpgsqlCommand("CREATE EXTENSION IF NOT EXISTS postgis;", connection);
+        await command.ExecuteNonQueryAsync();
     }
 
     public async Task DisposeAsync()
