@@ -109,6 +109,7 @@ try
     // GraphQL
     builder.Services
         .AddGraphQLServer()
+        .AddAuthorization()
         .AddSpatialTypes()
         .AddQueryType<Query>()
         .AddMutationType<Mutation>();
