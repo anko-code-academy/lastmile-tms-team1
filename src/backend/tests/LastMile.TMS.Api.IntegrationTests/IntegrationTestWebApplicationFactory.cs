@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using LastMile.TMS.Persistence;
+using NetTopologySuite;
 
 namespace LastMile.TMS.Api.IntegrationTests;
 
@@ -23,7 +24,7 @@ public class IntegrationTestWebApplicationFactory : WebApplicationFactory<Progra
         // Apply migrations using the test database
         var connectionString = _postgreSqlFixture.ConnectionString;
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>()
-            .UseNpgsql(connectionString)
+            .UseNpgsql(connectionString, o => o.UseNetTopologySuite())
             .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
 
         await using var dbContext = new AppDbContext(optionsBuilder.Options);
@@ -48,7 +49,7 @@ public class IntegrationTestWebApplicationFactory : WebApplicationFactory<Progra
             services.AddDbContext<AppDbContext>(options =>
             {
                 options
-                    .UseNpgsql(_postgreSqlFixture.ConnectionString)
+                    .UseNpgsql(_postgreSqlFixture.ConnectionString, o => o.UseNetTopologySuite())
                     .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
             });
         });
