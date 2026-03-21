@@ -114,6 +114,29 @@ npm run dev
 
 > **Note**: When running `npm run dev` locally, set `API_INTERNAL_URL=http://localhost:8080` in `.env.local` so NextAuth can reach the API directly (bypassing Caddy).
 
+### pgadmin
+
+pgadmin is available at http://localhost:5050 for now it should be used only for development.
+
+initial setup:
+1. right click on `Servers`
+2. choose `Register`
+3. choose `Server`
+4. fill out `Name`
+5. select `Connection` tab
+6. fill host name/address `postgres` and password `postgres` (default values from .env.example)
+
+done, now you can
+1. go to `Servers`
+2. select your server name
+3. select `Databases`
+4. select `lastmile_tms`
+5. select `Schemas`
+6. select `public`
+7. select `Tables`
+
+or just click `Tools`, `PSQL tool` and write `\dt` to list all tables.
+
 ## Architecture
 
 See [CLAUDE.md](./CLAUDE.md) for detailed architecture documentation.
