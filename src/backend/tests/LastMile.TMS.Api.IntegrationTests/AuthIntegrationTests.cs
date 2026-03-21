@@ -14,6 +14,9 @@ public class AuthIntegrationTests : IAsyncLifetime
     private readonly IntegrationTestWebApplicationFactory _factory;
     private HttpClient _client = null!;
 
+    private static string AdminUsername => Environment.GetEnvironmentVariable("ADMIN_USERNAME") ?? "admin";
+    private static string AdminPassword => Environment.GetEnvironmentVariable("ADMIN_PASSWORD") ?? "Admin@123";
+
     public AuthIntegrationTests(PostgreSqlContainerFixture postgreSqlFixture)
     {
         _factory = new IntegrationTestWebApplicationFactory(postgreSqlFixture);
@@ -74,8 +77,8 @@ public class AuthIntegrationTests : IAsyncLifetime
         var formData = new Dictionary<string, string>
         {
             { "grant_type", "password" },
-            { "username", "admin" },
-            { "password", "Admin@123" }
+            { "username", AdminUsername },
+            { "password", AdminPassword }
         };
         var content = new FormUrlEncodedContent(formData);
 
@@ -100,8 +103,8 @@ public class AuthIntegrationTests : IAsyncLifetime
         var formData = new Dictionary<string, string>
         {
             { "grant_type", "password" },
-            { "username", "admin" },
-            { "password", "Admin@123" },
+            { "username", AdminUsername },
+            { "password", AdminPassword },
             { "scope", "offline_access" }
         };
         var content = new FormUrlEncodedContent(formData);
@@ -123,8 +126,8 @@ public class AuthIntegrationTests : IAsyncLifetime
         var formData = new Dictionary<string, string>
         {
             { "grant_type", "password" },
-            { "username", "admin" },
-            { "password", "Admin@123" },
+            { "username", AdminUsername },
+            { "password", AdminPassword },
             { "scope", "offline_access" }
         };
         var content = new FormUrlEncodedContent(formData);

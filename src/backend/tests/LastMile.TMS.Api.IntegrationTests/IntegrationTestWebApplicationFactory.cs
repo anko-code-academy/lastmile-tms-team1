@@ -31,9 +31,10 @@ public class IntegrationTestWebApplicationFactory : WebApplicationFactory<Progra
         await dbContext.Database.MigrateAsync();
     }
 
-    public new async Task DisposeAsync()
+    public new Task DisposeAsync()
     {
-        await _postgreSqlFixture.DisposeAsync();
+        // Don't dispose the fixture here - it's managed by ICollectionFixture
+        return Task.CompletedTask;
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -53,5 +54,9 @@ public class IntegrationTestWebApplicationFactory : WebApplicationFactory<Progra
                     .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
             });
         });
+
+        builder.UseSetting("AdminCredentials:Username", Environment.GetEnvironmentVariable("ADMIN_USERNAME") ?? "admin");
+        builder.UseSetting("AdminCredentials:Email", Environment.GetEnvironmentVariable("ADMIN_EMAIL") ?? "admin@lastmile.com");
+        builder.UseSetting("AdminCredentials:Password", Environment.GetEnvironmentVariable("ADMIN_PASSWORD") ?? "Admin@123");
     }
 }
