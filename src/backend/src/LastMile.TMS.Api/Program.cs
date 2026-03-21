@@ -5,6 +5,7 @@ using LastMile.TMS.Domain.Entities;
 using LastMile.TMS.Infrastructure;
 using LastMile.TMS.Persistence;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
 using OpenIddict.Validation.AspNetCore;
 using Serilog;
@@ -126,8 +127,10 @@ try
     app.MapControllers();
     app.UseHangfireDashboard("/hangfire");
 
-    // Seed database
+    // Apply migrations then seed database
     using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    context.Database.Migrate();
     var seeder = scope.ServiceProvider.GetRequiredService<LastMile.TMS.Application.Common.Interfaces.IDbSeeder>();
     await seeder.SeedAsync();
 

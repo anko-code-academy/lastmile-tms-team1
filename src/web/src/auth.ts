@@ -1,7 +1,9 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+// Browser uses NEXT_PUBLIC_API_URL (reaches Caddy at localhost)
+// Server-side (NextAuth) uses API_INTERNAL_URL (reaches API directly in Docker, or localhost in dev)
+const API_BASE_URL = process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
