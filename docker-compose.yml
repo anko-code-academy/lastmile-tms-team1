@@ -16,7 +16,7 @@ services:
       context: src/backend
       dockerfile: Dockerfile
     env_file:
-      - .env.example
+      - .env
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: ${DB_CONNECTION_STRING}
@@ -38,11 +38,13 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        AUTH_SECRET: ${AUTH_SECRET}
     env_file:
-      - .env.example
+      - .env
     environment:
       NEXTAUTH_URL: ${NEXTAUTH_URL}
       AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_TRUST_HOST: "true"
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
       API_INTERNAL_URL: ${API_INTERNAL_URL}
     depends_on:
@@ -82,8 +84,11 @@ services:
 
   seq:
     image: datalust/seq:latest
+    env_file:
+      - .env
     environment:
       ACCEPT_EULA: "Y"
+      SEQ_FIRSTRUN_ADMINPASSWORD: ${SEQ_PASSWORD}
     volumes:
       - seqdata:/data
 

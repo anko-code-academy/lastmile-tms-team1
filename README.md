@@ -32,11 +32,14 @@ All services will be available at:
 
 ## Environment Configuration
 
-All environment variables are defined in `.env.example`. This file is the **single source of truth** for all env vars used by Docker Compose.
+All environment variables are defined in `.env.example`. This file is a **template** — copy it to `.env` and fill in actual values.
 
 ### How it works
 
-Docker Compose reads `.env.example` via `env_file` in `docker-compose.yml`. All containers inherit these variables at runtime.
+1. `.env.example` is the template (committed to git, contains placeholder values)
+2. `.env` is your private config (NOT committed, contains real values)
+3. Docker Compose automatically reads `.env` for `${VAR}` interpolation
+4. The web service `env_file: .env` passes runtime vars to the container
 
 ### Important: `NEXT_PUBLIC_*` variables
 
@@ -60,7 +63,7 @@ In Docker, the web container cannot use `localhost` to reach the API (it reaches
 
 ### Updating environment variables
 
-If you modify `.env.example`, rebuild to apply changes that affect the web app:
+Modify `.env` (not `.env.example`). Rebuild to apply changes that affect the web app:
 
 ```bash
 docker compose up --build

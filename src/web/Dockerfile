@@ -9,7 +9,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ARG NEXT_PUBLIC_API_URL
+ARG AUTH_SECRET
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV AUTH_SECRET=${AUTH_SECRET}
 RUN npm run build
 
 FROM node:20-alpine AS runtime
