@@ -38,7 +38,6 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-        AUTH_SECRET: ${AUTH_SECRET}
     env_file:
       - .env
     environment:
