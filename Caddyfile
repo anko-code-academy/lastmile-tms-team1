@@ -3,8 +3,14 @@
 }
 
 :80 {
+	# NextAuth API routes (must be before /api/* to reach Next.js, not .NET API)
+	handle /api/auth/* {
+		reverse_proxy web:3000
+	}
+
 	# API backend
 	handle /api/* {
+		uri strip_prefix /api
 		reverse_proxy api:8080
 	}
 

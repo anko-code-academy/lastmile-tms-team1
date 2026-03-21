@@ -21,6 +21,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     {
         modelBuilder.HasPostgresExtension("postgis");
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+
+        // Register OpenIddict entities for EF Core migrations
+        modelBuilder.UseOpenIddict();
+
         base.OnModelCreating(modelBuilder);
     }
 }

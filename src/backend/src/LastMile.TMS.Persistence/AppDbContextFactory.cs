@@ -8,14 +8,15 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 {
     public AppDbContext CreateDbContext(string[] args)
     {
-        var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-            .Build();
+        // Priority: explicit args > environment variable > localhost default
+        var connectionString = args.Length > 0
+            ? args[0]
+            : Environment.GetEnvironmentVariable("DB_CONNECTION_STRING")
+            ?? "Host=localhost;Port=5432;Database=lastmile_tms;Username=postgres;Password=postgres";
 
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
         optionsBuilder.UseNpgsql(
-            configuration.GetConnectionString("DefaultConnection"),
+            connectionString,
             npgsql =>
             {
                 npgsql.UseNetTopologySuite();
