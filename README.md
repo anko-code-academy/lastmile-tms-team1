@@ -117,6 +117,7 @@ npm run dev
 ### pgadmin
 
 pgadmin is available at http://localhost:5050 for now it should be used only for development.
+pgadmin container is enabled by compose profile `dev`, set by `COMPOSE_PROFILES=dev` in `.env` file. Remove or unset this env to disable pgadmin in production (container won't be created).
 
 initial setup:
 1. right click on `Servers`
