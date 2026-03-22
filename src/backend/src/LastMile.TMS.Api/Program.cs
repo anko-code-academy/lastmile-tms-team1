@@ -134,7 +134,7 @@ try
     app.UseHttpsRedirection();
     app.UseAuthentication();
     app.UseAuthorization();
-    app.MapGraphQL("/api/graphql").WithOptions(new GraphQLServerOptions
+    app.MapGraphQL().WithOptions(new GraphQLServerOptions
     {
       Tool =
       {
