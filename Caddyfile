@@ -14,6 +14,11 @@
 		reverse_proxy api:8080
 	}
 
+        handle /graphql* {
+                reverse_proxy api:8080
+        }
+
+
 	# OpenIddict token endpoint
 	handle /connect/* {
 		reverse_proxy api:8080
