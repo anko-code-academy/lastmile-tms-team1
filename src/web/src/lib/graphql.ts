@@ -13,10 +13,13 @@ export async function graphqlFetch<T>(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
+  const body = { query, variables };
+  console.log("GraphQL Request:", JSON.stringify(body, null, 2));
+
   const res = await fetch(`${API_BASE_URL}/api/graphql`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ query, variables }),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {
