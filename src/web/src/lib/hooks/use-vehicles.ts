@@ -111,7 +111,7 @@ export function useCreateVehicle() {
           registrationPlate: input.registrationPlate,
           type: input.type,
           parcelCapacity: input.parcelCapacity,
-          weightCapacityKg: String(input.weightCapacityKg),
+          weightCapacityKg: input.weightCapacityKg,
           depotId: input.depotId || null,
         },
         session?.user?.accessToken
@@ -143,7 +143,7 @@ export function useUpdateVehicle() {
           registrationPlate: input.registrationPlate,
           type: input.type,
           parcelCapacity: input.parcelCapacity,
-          weightCapacityKg: String(input.weightCapacityKg),
+          weightCapacityKg: input.weightCapacityKg,
           depotId: input.depotId || null,
         },
         session?.user?.accessToken

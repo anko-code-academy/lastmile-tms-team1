@@ -23,12 +23,16 @@ export async function graphqlFetch<T>(
   });
 
   if (!res.ok) {
+    const text = await res.text();
+    console.error("GraphQL HTTP Error:", res.status, text);
     throw new Error(`GraphQL error: ${res.status}`);
   }
 
   const json = await res.json();
+  console.log("GraphQL Response:", JSON.stringify(json, null, 2));
 
   if (json.errors && json.errors.length > 0) {
+    console.error("GraphQL Errors:", json.errors);
     throw new Error(json.errors[0].message);
   }
 
