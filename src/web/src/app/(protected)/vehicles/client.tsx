@@ -6,13 +6,6 @@ import { toast } from "sonner";
 import { VehicleStatus } from "@/types/vehicle";
 import { VehicleTable } from "@/components/vehicles/vehicle-table";
 import { useVehicles, useDeleteVehicle } from "@/lib/hooks/use-vehicles";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 export function VehicleListClient() {
   const router = useRouter();
@@ -54,21 +47,17 @@ export function VehicleListClient() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
-        <Select
+        <select
+          className="flex w-[200px] items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           value={statusParam ?? "all"}
-          onValueChange={handleStatusFilter}
+          onChange={(e) => handleStatusFilter(e.target.value)}
         >
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value={VehicleStatus.AVAILABLE}>Available</SelectItem>
-            <SelectItem value={VehicleStatus.IN_USE}>In Use</SelectItem>
-            <SelectItem value={VehicleStatus.MAINTENANCE}>Maintenance</SelectItem>
-            <SelectItem value={VehicleStatus.RETIRED}>Retired</SelectItem>
-          </SelectContent>
-        </Select>
+          <option value="all">All Statuses</option>
+          <option value={VehicleStatus.AVAILABLE}>Available</option>
+          <option value={VehicleStatus.IN_USE}>In Use</option>
+          <option value={VehicleStatus.MAINTENANCE}>Maintenance</option>
+          <option value={VehicleStatus.RETIRED}>Retired</option>
+        </select>
       </div>
 
       <VehicleTable data={vehicles} onDelete={handleDelete} isDeleting={isDeleting} />
