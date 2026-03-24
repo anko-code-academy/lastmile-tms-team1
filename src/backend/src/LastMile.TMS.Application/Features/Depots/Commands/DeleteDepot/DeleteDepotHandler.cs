@@ -12,7 +12,8 @@ public class DeleteDepotHandler(IAppDbContext dbContext) : IRequestHandler<Delet
             .FirstOrDefaultAsync(d => d.Id == request.Id, cancellationToken)
             ?? throw new InvalidOperationException($"Depot with ID {request.Id} not found.");
 
-        dbContext.Depots.Remove(depot);
+        depot.IsDeleted = true;
+        depot.DeletedAt = DateTimeOffset.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return true;
