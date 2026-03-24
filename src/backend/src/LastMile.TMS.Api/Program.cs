@@ -69,6 +69,13 @@ try
             // Register scopes
             options.RegisterScopes(OpenIddictConstants.Scopes.OfflineAccess);
 
+            // Configure explicit issuer if available (fixes Docker internal networking issuer mismatch)
+            var issuerStr = builder.Configuration["NEXT_PUBLIC_API_URL"];
+            if (!string.IsNullOrEmpty(issuerStr))
+            {
+                options.SetIssuer(new Uri(issuerStr));
+            }
+
             // Token lifetimes
             options.SetAccessTokenLifetime(TimeSpan.FromMinutes(accessTokenMinutes));
             options.SetRefreshTokenLifetime(TimeSpan.FromDays(refreshTokenDays));
