@@ -3,7 +3,7 @@
 Monorepo containing three applications:
 
 - **API** (`src/backend`) — .NET 10 backend with Clean Architecture
-- **Web** (`src/web`) — Next.js 15 dispatcher UI with NextAuth v5
+- **Web** (`src/web`) — Next.js 16 dispatcher UI with NextAuth v5
 - **Mobile** (`src/mobile`) — Expo driver app
 
 ## Quick Start
