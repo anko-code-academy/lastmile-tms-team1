@@ -1,4 +1,6 @@
 using HotChocolate.Authorization;
+using LastMile.TMS.Application.Features.Routes;
+using LastMile.TMS.Application.Features.Routes.Commands;
 using LastMile.TMS.Application.Features.Vehicles;
 using LastMile.TMS.Application.Features.Vehicles.Commands;
 using LastMile.TMS.Domain.Entities;
@@ -57,5 +59,45 @@ public class Mutation
         CancellationToken cancellationToken = default)
     {
         return await mediator.Send(new ChangeVehicleStatusCommand(id, newStatus), cancellationToken);
+    }
+
+    [Authorize(Roles = [Role.RoleNames.Admin, Role.RoleNames.OperationsManager])]
+    public async Task<RouteDto> CreateRoute(
+        [Service] IMediator mediator,
+        string name,
+        DateTime plannedStartTime,
+        decimal totalDistanceKm,
+        int totalParcelCount,
+        Guid? vehicleId = null,
+        CancellationToken cancellationToken = default)
+    {
+        return await mediator.Send(
+            new CreateRouteCommand(name, plannedStartTime, totalDistanceKm, totalParcelCount, vehicleId),
+            cancellationToken);
+    }
+
+    [Authorize(Roles = [Role.RoleNames.Admin, Role.RoleNames.OperationsManager])]
+    public async Task<RouteDto> UpdateRoute(
+        [Service] IMediator mediator,
+        Guid id,
+        string name,
+        DateTime plannedStartTime,
+        decimal totalDistanceKm,
+        int totalParcelCount,
+        Guid? vehicleId = null,
+        CancellationToken cancellationToken = default)
+    {
+        return await mediator.Send(
+            new UpdateRouteCommand(id, name, plannedStartTime, totalDistanceKm, totalParcelCount, vehicleId),
+            cancellationToken);
+    }
+
+    [Authorize(Roles = [Role.RoleNames.Admin, Role.RoleNames.OperationsManager])]
+    public async Task<bool> DeleteRoute(
+        [Service] IMediator mediator,
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        return await mediator.Send(new DeleteRouteCommand(id), cancellationToken);
     }
 }
