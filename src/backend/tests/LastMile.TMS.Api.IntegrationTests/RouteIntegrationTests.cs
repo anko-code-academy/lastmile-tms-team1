@@ -581,6 +581,93 @@ public class RouteIntegrationTests : IAsyncLifetime
         routes.Should().Contain(r => r.GetProperty("routeId").GetString() == routeId);
     }
 
+    [Fact]
+    public async Task ChangeRouteStatus_ToCancelled_ReleasesVehicle()
+    {
+        // Arrange - Create a route with vehicle
+        var createMutation = $@"
+            mutation {{
+                createRoute(
+                    name: ""Cancel With Vehicle"",
+                    plannedStartTime: ""2026-04-20T10:00:00Z"",
+                    totalDistanceKm: 45.0,
+                    totalParcelCount: 20,
+                    vehicleId: ""{_vehicleId}""
+                ) {{ id }}
+            }}";
+        var createResponse = await ExecuteGraphQLAsync(createMutation);
+        var createJson = await ReadJsonAsync(createResponse);
+        var routeId = createJson.RootElement.GetProperty("data").GetProperty("createRoute").GetProperty("id").GetString();
+
+        // Act - Cancel the route
+        var cancelMutation = $@"
+            mutation {{
+                changeRouteStatus(id: ""{routeId}"", newStatus: CANCELLED) {{
+                    id
+                    status
+                    vehiclePlate
+                }}
+            }}";
+        var cancelResponse = await ExecuteGraphQLAsync(cancelMutation);
+
+        // Assert
+        cancelResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var cancelJson = await ReadJsonAsync(cancelResponse);
+        cancelJson.RootElement.TryGetProperty("errors", out _).Should().BeFalse();
+        var data = cancelJson.RootElement.GetProperty("data").GetProperty("changeRouteStatus");
+        data.GetProperty("status").GetString().Should().Be("CANCELLED");
+        // Vehicle should be released (plate still returned but vehicle status updated to Available)
+    }
+
+    [Fact]
+    public async Task CreateRoute_WithRetiredVehicle_ReturnsError()
+    {
+        // Arrange - Create a retired vehicle first
+        var uniquePlate = $"RET-VEH-{Guid.NewGuid():N}".Substring(0, 12).ToUpperInvariant();
+        var createVehicleMutation = $@"
+            mutation {{
+                createVehicle(
+                    registrationPlate: ""{uniquePlate}"",
+                    type: VAN,
+                    parcelCapacity: 50,
+                    weightCapacityKg: 300.0
+                ) {{ id }}
+            }}";
+        var vehicleResponse = await ExecuteGraphQLAsync(createVehicleMutation);
+        var vehicleJson = await ReadJsonAsync(vehicleResponse);
+        var vehicleId = vehicleJson.RootElement.GetProperty("data").GetProperty("createVehicle").GetProperty("id").GetString();
+
+        // Retire the vehicle
+        var retireMutation = $@"
+            mutation {{
+                changeVehicleStatus(id: ""{vehicleId}"", newStatus: RETIRED) {{
+                    id
+                    status
+                }}
+            }}";
+        await ExecuteGraphQLAsync(retireMutation);
+
+        // Act - Try to create a route with the retired vehicle
+        var createRouteMutation = $@"
+            mutation {{
+                createRoute(
+                    name: ""Route With Retired Vehicle"",
+                    plannedStartTime: ""2026-04-25T10:00:00Z"",
+                    totalDistanceKm: 30.0,
+                    totalParcelCount: 15,
+                    vehicleId: ""{vehicleId}""
+                ) {{ id }}
+            }}";
+        var routeResponse = await ExecuteGraphQLAsync(createRouteMutation);
+
+        // Assert
+        routeResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var routeJson = await ReadJsonAsync(routeResponse);
+        routeJson.RootElement.TryGetProperty("errors", out var errors).Should().BeTrue();
+        errors.GetArrayLength().Should().BeGreaterThan(0);
+        errors[0].GetProperty("message").GetString().Should().Contain("retired");
+    }
+
     private async Task<HttpResponseMessage> ExecuteGraphQLAsync(string query)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "/graphql");

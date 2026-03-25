@@ -17,6 +17,7 @@ import {
 import Link from "next/link";
 import { RouteStatus } from "@/types/route";
 import { useVehicles } from "@/lib/hooks/use-vehicles";
+import { VehicleStatus } from "@/types/vehicle";
 
 const routeSchema = z.object({
   name: z.string().min(1, "Route name is required").max(100),
@@ -54,8 +55,10 @@ export function RouteForm({
     },
   });
 
-  // Show all vehicles that exist (filter in UI is for display purposes)
-  const availableVehicles = vehicles;
+  // Filter out retired vehicles - they cannot be assigned to routes
+  const availableVehicles = vehicles.filter(
+    (v) => v.status !== VehicleStatus.RETIRED
+  );
 
   return (
     <Form {...form}>

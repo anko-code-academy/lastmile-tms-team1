@@ -47,6 +47,10 @@ public class UpdateRouteCommandHandler(IAppDbContext context) : IRequestHandler<
             var newVehicle = await context.Vehicles.FirstOrDefaultAsync(v => v.Id == request.VehicleId.Value, cancellationToken);
             if (newVehicle != null)
             {
+                if (newVehicle.Status == Domain.Enums.VehicleStatus.Retired)
+                {
+                    throw new InvalidOperationException("Cannot assign a retired vehicle to a route");
+                }
                 newVehicle.Status = Domain.Enums.VehicleStatus.InUse;
             }
         }

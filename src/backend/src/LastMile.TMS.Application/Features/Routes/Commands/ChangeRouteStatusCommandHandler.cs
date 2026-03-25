@@ -41,15 +41,15 @@ public class ChangeRouteStatusCommandHandler(IAppDbContext context) : IRequestHa
                 }
 
                 // Release vehicle when route is completed
-                var vehicle = await context.Vehicles.FirstOrDefaultAsync(v => v.Id == oldVehicleId.Value, cancellationToken);
-                if (vehicle != null && vehicle.Status == Domain.Enums.VehicleStatus.InUse)
-                {
-                    var stillInUse = await context.Routes.AnyAsync(r => r.VehicleId == oldVehicleId.Value && r.Id != request.Id, cancellationToken);
-                    if (!stillInUse)
-                    {
-                        vehicle.Status = Domain.Enums.VehicleStatus.Available;
-                    }
-                }
+                await ReleaseVehicleIfNotUsedAsync(oldVehicleId.Value, request.Id, cancellationToken);
+            }
+        }
+        else if (request.NewStatus == RouteStatus.Cancelled)
+        {
+            // Release vehicle when route is cancelled
+            if (oldVehicleId.HasValue)
+            {
+                await ReleaseVehicleIfNotUsedAsync(oldVehicleId.Value, request.Id, cancellationToken);
             }
         }
         else if (request.NewStatus == RouteStatus.InProgress)
@@ -101,5 +101,18 @@ public class ChangeRouteStatusCommandHandler(IAppDbContext context) : IRequestHa
             VehiclePlate = route.Vehicle?.RegistrationPlate,
             CreatedAt = route.CreatedAt
         };
+    }
+
+    private async Task ReleaseVehicleIfNotUsedAsync(Guid vehicleId, Guid excludeRouteId, CancellationToken cancellationToken)
+    {
+        var vehicle = await context.Vehicles.FirstOrDefaultAsync(v => v.Id == vehicleId, cancellationToken);
+        if (vehicle != null && vehicle.Status == Domain.Enums.VehicleStatus.InUse)
+        {
+            var stillInUse = await context.Routes.AnyAsync(r => r.VehicleId == vehicleId && r.Id != excludeRouteId, cancellationToken);
+            if (!stillInUse)
+            {
+                vehicle.Status = Domain.Enums.VehicleStatus.Available;
+            }
+        }
     }
 }

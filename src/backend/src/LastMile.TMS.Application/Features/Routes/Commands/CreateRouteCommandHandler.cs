@@ -28,6 +28,10 @@ public class CreateRouteCommandHandler(IAppDbContext context) : IRequestHandler<
             var vehicle = await context.Vehicles.FirstOrDefaultAsync(v => v.Id == request.VehicleId.Value, cancellationToken);
             if (vehicle != null)
             {
+                if (vehicle.Status == Domain.Enums.VehicleStatus.Retired)
+                {
+                    throw new InvalidOperationException("Cannot assign a retired vehicle to a route");
+                }
                 vehicle.Status = Domain.Enums.VehicleStatus.InUse;
             }
         }

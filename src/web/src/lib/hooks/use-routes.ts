@@ -167,10 +167,14 @@ export function useChangeRouteStatus() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["routes"] });
       queryClient.invalidateQueries({ queryKey: ["route", variables.id] });
+      // Vehicle status may change when route completes
+      queryClient.invalidateQueries({ queryKey: ["vehicles"] });
+      queryClient.invalidateQueries({ queryKey: ["vehicle"] });
     },
     onSettled: () => {
-      // Ensure routes list is always refetched
+      // Ensure routes and vehicles are always refetched
       queryClient.invalidateQueries({ queryKey: ["routes"] });
+      queryClient.invalidateQueries({ queryKey: ["vehicles"] });
     },
   });
 }
