@@ -79,5 +79,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.IsDeleted).HasDefaultValue(false);
         builder.Property(u => u.DeletedAt);
         builder.Property(u => u.DeletedBy).HasMaxLength(256);
+
+        // System admin flag
+        builder.Property(u => u.IsSystemAdmin).HasDefaultValue(false);
     }
 }

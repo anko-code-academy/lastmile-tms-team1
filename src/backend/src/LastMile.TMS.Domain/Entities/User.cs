@@ -24,6 +24,11 @@ public class User : IdentityUser<Guid>, IBaseAuditableEntity
     // Backwards compatibility alias for PhoneNumber
     public string? Phone => PhoneNumber;
 
+    // System admin flag (cannot be deactivated or modified by other admins)
+    public bool IsSystemAdmin { get; private set; }
+
+    public void MarkAsSystemAdmin() => IsSystemAdmin = true;
+
     // IBaseAuditableEntity
     public DateTimeOffset CreatedAt { get; set; }
     public string? CreatedBy { get; set; }
@@ -127,6 +132,29 @@ public class User : IdentityUser<Guid>, IBaseAuditableEntity
     public void RemoveRole()
     {
         RoleId = null;
+    }
+
+    public void UpdateName(string firstName, string lastName)
+    {
+        if (string.IsNullOrWhiteSpace(firstName))
+            throw new ArgumentException("First name is required", nameof(firstName));
+
+        if (string.IsNullOrWhiteSpace(lastName))
+            throw new ArgumentException("Last name is required", nameof(lastName));
+
+        FirstName = firstName.Trim();
+        LastName = lastName.Trim();
+    }
+
+    public void UpdatePhone(string? phone)
+    {
+        PhoneNumber = phone?.Trim();
+    }
+
+    public void ClearZoneAndDepot()
+    {
+        ZoneId = null;
+        DepotId = null;
     }
 
     // Set password hash (PasswordHash is inherited from IdentityUser but with protected setter)

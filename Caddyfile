@@ -34,6 +34,11 @@
 		reverse_proxy api:8080
 	}
 
+	# GraphQL endpoint
+	handle /graphql* {
+		reverse_proxy api:8080
+	}
+
 	# Seq log viewer
 	handle /seq/* {
 		uri strip_prefix /seq

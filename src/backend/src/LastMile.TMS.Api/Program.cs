@@ -11,6 +11,8 @@ using OpenIddict.Validation.AspNetCore;
 using Serilog;
 using DbSeeder = LastMile.TMS.Api.Services.DbSeeder;
 using LastMile.TMS.Api.GraphQL;
+using LastMile.TMS.Api.GraphQL.Queries;
+using LastMile.TMS.Api.GraphQL.Mutations;
 using HotChocolate.AspNetCore;
 
 Log.Logger = new LoggerConfiguration()
@@ -69,6 +71,13 @@ try
             // Register scopes
             options.RegisterScopes(OpenIddictConstants.Scopes.OfflineAccess);
 
+            // Configure explicit issuer if available (fixes Docker internal networking issuer mismatch)
+            var issuerStr = builder.Configuration["NEXT_PUBLIC_API_URL"];
+            if (!string.IsNullOrEmpty(issuerStr))
+            {
+                options.SetIssuer(new Uri(issuerStr));
+            }
+
             // Token lifetimes
             options.SetAccessTokenLifetime(TimeSpan.FromMinutes(accessTokenMinutes));
             options.SetRefreshTokenLifetime(TimeSpan.FromDays(refreshTokenDays));
@@ -110,9 +119,15 @@ try
     builder.Services
         .AddGraphQLServer()
         .AddAuthorization()
+        .AddProjections()
+        .AddFiltering()
+        .AddSorting()
         .AddSpatialTypes()
         .AddQueryType<Query>()
-        .AddMutationType<Mutation>();
+        .AddMutationType<Mutation>()
+        .AddType<UserManagementQuery>()
+        .AddType<UserManagementMutation>()
+        .AddErrorFilter<GraphQLErrorFilter>();
 
     builder.Services.AddHangfire(config =>
         config.UsePostgreSqlStorage(options =>

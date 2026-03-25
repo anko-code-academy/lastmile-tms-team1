@@ -32,6 +32,9 @@ public class DbSeeder : IDbSeeder
         // Seed admin user
         await SeedAdminUserAsync();
 
+        // Seed test users for each role (no zone/depot - assign manually via CRUD)
+        await SeedTestUsersAsync();
+
         Log.Information("Database seeding completed.");
     }
 
@@ -100,6 +103,14 @@ public class DbSeeder : IDbSeeder
                 await _userManager.AddToRoleAsync(existingAdmin, "Admin");
                 Log.Information("Added Admin role to existing user.");
             }
+
+            // Ensure admin is marked as system admin
+            if (!existingAdmin.IsSystemAdmin)
+            {
+                existingAdmin.MarkAsSystemAdmin();
+                await _userManager.UpdateAsync(existingAdmin);
+                Log.Information("Marked existing user as system admin.");
+            }
             return;
         }
 
@@ -127,6 +138,14 @@ public class DbSeeder : IDbSeeder
                 await _userManager.AddToRoleAsync(existingByEmail, "Admin");
                 Log.Information("Added Admin role to existing user.");
             }
+
+            // Ensure admin is marked as system admin
+            if (!existingByEmail.IsSystemAdmin)
+            {
+                existingByEmail.MarkAsSystemAdmin();
+                await _userManager.UpdateAsync(existingByEmail);
+                Log.Information("Marked existing user as system admin.");
+            }
             return;
         }
 
@@ -143,7 +162,9 @@ public class DbSeeder : IDbSeeder
             if (result.Succeeded)
             {
                 await _userManager.AddToRoleAsync(admin, "Admin");
-                Log.Information("Admin user created successfully with Admin role.");
+                admin.MarkAsSystemAdmin();
+                await _userManager.UpdateAsync(admin);
+                Log.Information("Admin user created successfully with Admin role and marked as system admin.");
             }
             else
             {
@@ -153,6 +174,48 @@ public class DbSeeder : IDbSeeder
         catch (Exception ex)
         {
             Log.Error(ex, "Exception while creating admin user");
+        }
+    }
+
+    private async Task SeedTestUsersAsync()
+    {
+        // Test users - one per role (password: Test@1234)
+        var testUsers = new[]
+        {
+            ("Operations Manager", "ops@lastmile.com", "Opmgr", "Test@1234", "Operations Manager"),
+            ("Dispatcher", "dispatcher@lastmile.com", "Dispatchr", "Test@1234", "Dispatcher"),
+            ("Warehouse Operator", "warehouse@lastmile.com", "Warehouseop", "Test@1234", "Warehouse Operator"),
+            ("Driver", "driver@lastmile.com", "Drivr", "Test@1234", "Driver"),
+        };
+
+        foreach (var (firstName, email, userName, password, roleName) in testUsers)
+        {
+            var existing = await _userManager.FindByEmailAsync(email);
+            if (existing != null)
+            {
+                Log.Debug("Test user already exists: {Email}", email);
+                continue;
+            }
+
+            try
+            {
+                var user = User.Create(firstName, lastName: $"{roleName} User", email, userName);
+                var result = await _userManager.CreateAsync(user, password);
+
+                if (result.Succeeded)
+                {
+                    await _userManager.AddToRoleAsync(user, roleName);
+                    Log.Information("Created test user: {Email} with role {Role}", email, roleName);
+                }
+                else
+                {
+                    Log.Warning("Failed to create test user {Email}: {Errors}", email, string.Join(", ", result.Errors.Select(e => e.Description)));
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Exception while creating test user {Email}", email);
+            }
         }
     }
 }

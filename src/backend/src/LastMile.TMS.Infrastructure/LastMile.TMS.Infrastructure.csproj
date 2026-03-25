@@ -6,8 +6,8 @@
 
   <ItemGroup>
     <PackageReference Include="Hangfire.Core" Version="1.8.23" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.4" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.5" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.5" />
     <PackageReference Include="OpenIddict.AspNetCore" Version="7.3.0" />
     <PackageReference Include="OpenIddict.EntityFrameworkCore" Version="7.3.0" />
     <PackageReference Include="QuestPDF" Version="2026.2.3" />
