@@ -168,5 +168,9 @@ export function useChangeRouteStatus() {
       queryClient.invalidateQueries({ queryKey: ["routes"] });
       queryClient.invalidateQueries({ queryKey: ["route", variables.id] });
     },
+    onSettled: () => {
+      // Ensure routes list is always refetched
+      queryClient.invalidateQueries({ queryKey: ["routes"] });
+    },
   });
 }

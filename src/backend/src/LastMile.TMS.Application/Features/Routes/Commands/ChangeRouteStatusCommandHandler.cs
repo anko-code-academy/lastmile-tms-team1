@@ -36,8 +36,8 @@ public class ChangeRouteStatusCommandHandler(IAppDbContext context) : IRequestHa
                 if (journey != null)
                 {
                     journey.EndTime = DateTime.UtcNow;
-                    // For now, EndMileageKm is not available - it would come from driver app or telematics
-                    // journey.EndMileageKm = ...;
+                    // Use route distance as placeholder until telematics provides actual mileage
+                    journey.EndMileageKm = journey.StartMileageKm + route.TotalDistanceKm;
                 }
 
                 // Release vehicle when route is completed
