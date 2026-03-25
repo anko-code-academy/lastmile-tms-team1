@@ -19,12 +19,21 @@ public class ShiftScheduleConfiguration : IEntityTypeConfiguration<ShiftSchedule
         builder.Property(s => s.CloseTime)
             .IsRequired();
 
-        builder.HasIndex(s => new { s.DriverId, s.DayOfWeek })
-            .IsUnique();
+        // Both FKs are nullable — XOR enforced at DB via check constraint
+        builder.Property(s => s.DriverId)
+            .IsRequired(false);
+
+        builder.Property(s => s.DepotId)
+            .IsRequired(false);
 
         builder.HasOne(s => s.Driver)
             .WithMany(d => d.ShiftSchedules)
             .HasForeignKey(s => s.DriverId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(s => s.Depot)
+            .WithMany(d => d.ShiftSchedules)
+            .HasForeignKey(s => s.DepotId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // Soft delete

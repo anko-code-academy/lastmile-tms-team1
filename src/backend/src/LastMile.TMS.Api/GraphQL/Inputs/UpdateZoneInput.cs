@@ -7,7 +7,7 @@ public class UpdateZoneInput : InputObjectType<UpdateZoneCommand>
 {
     protected override void Configure(IInputObjectTypeDescriptor<UpdateZoneCommand> descriptor)
     {
-        descriptor.Name("UpdateZoneInput");
+        descriptor.Name("UpdateZoneCommandInput");
 
         descriptor.Field(z => z.Id).Type<NonNullType<UuidType>>();
         descriptor.Field(z => z.Name).Type<NonNullType<StringType>>();

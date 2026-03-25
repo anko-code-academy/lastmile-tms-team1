@@ -11,6 +11,7 @@ public class GetDepotHandler(IAppDbContext dbContext) : IRequestHandler<GetDepot
         var depot = await dbContext.Depots
             .Include(d => d.Address)
             .Include(d => d.Zones)
+            .Include(d => d.ShiftSchedules)
             .AsNoTracking()
             .FirstOrDefaultAsync(d => d.Id == request.Id, cancellationToken);
 
@@ -31,7 +32,7 @@ public class GetDepotHandler(IAppDbContext dbContext) : IRequestHandler<GetDepot
                 depot.Address.CompanyName,
                 depot.Address.Phone,
                 depot.Address.Email) : null,
-            depot.OperatingHours.Schedule.Select(h => new DailyOperatingHoursDto(h.DayOfWeek, h.OpenTime, h.CloseTime)).ToList(),
+            depot.ShiftSchedules.Select(h => new DailyOperatingHoursDto(h.DayOfWeek, h.OpenTime, h.CloseTime)).ToList(),
             depot.IsActive,
             depot.CreatedAt,
             depot.LastModifiedAt,

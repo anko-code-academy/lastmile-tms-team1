@@ -2,6 +2,7 @@ using Hangfire;
 using Hangfire.PostgreSql;
 using HotChocolate.AspNetCore;
 using LastMile.TMS.Api.GraphQL;
+using LastMile.TMS.Api.GraphQL.Inputs;
 using LastMile.TMS.Application;
 using LastMile.TMS.Domain.Entities;
 using LastMile.TMS.Infrastructure;
@@ -119,7 +120,13 @@ try
         .AddAuthorization()
         .AddSpatialTypes()
         .AddQueryType<Query>()
-        .AddMutationType<Mutation>();
+        .AddMutationType<Mutation>()
+        .AddType<CreateDepotInput>()
+        .AddType<UpdateDepotInput>()
+        .AddType<UpdateAddressInputType>()
+        .AddType<DailyOperatingHoursInputType>()
+        .AddType<CreateZoneInput>()
+        .AddType<UpdateZoneInput>();
 
     builder.Services.AddHangfire(config =>
         config.UsePostgreSqlStorage(options =>

@@ -7,9 +7,10 @@ public class CreateDepotInput : InputObjectType<CreateDepotCommand>
 {
     protected override void Configure(IInputObjectTypeDescriptor<CreateDepotCommand> descriptor)
     {
-        descriptor.Name("CreateDepotInput");
+        descriptor.Name("CreateDepotCommandInput");
 
         descriptor.Field(d => d.Name).Type<NonNullType<StringType>>();
         descriptor.Field(d => d.IsActive).DefaultValue(true);
+        descriptor.Field(d => d.OperatingHours).Type<ListType<DailyOperatingHoursInputType>>();
     }
 }

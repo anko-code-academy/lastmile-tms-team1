@@ -1,5 +1,4 @@
 using LastMile.TMS.Application.Common.Interfaces;
-using LastMile.TMS.Domain.Common;
 using LastMile.TMS.Domain.Entities;
 using MediatR;
 
@@ -12,12 +11,7 @@ public class CreateDepotHandler(IAppDbContext dbContext) : IRequestHandler<Creat
         var depot = new Depot
         {
             Name = request.Name,
-            IsActive = request.IsActive,
-            OperatingHours = request.OperatingHours != null
-                ? OperatingHours.Create(
-                    request.OperatingHours.Select(h =>
-                        new DailyOperatingHours(h.DayOfWeek, h.OpenTime, h.CloseTime)).ToArray())
-                : OperatingHours.CreateWeekdays(new TimeOnly(9, 0), new TimeOnly(17, 0))
+            IsActive = request.IsActive
         };
 
         if (request.Address != null)
@@ -38,9 +32,40 @@ public class CreateDepotHandler(IAppDbContext dbContext) : IRequestHandler<Creat
             };
         }
 
+        // Use provided operating hours or default to Mon-Fri 9:00-17:00
+        var scheduleEntries = request.OperatingHours is { Count: > 0 }
+            ? request.OperatingHours
+                .Where(h => h.OpenTime != null && h.CloseTime != null)
+                .Select(h => new ShiftSchedule
+                {
+                    DayOfWeek = h.DayOfWeek,
+                    OpenTime = h.OpenTime!.Value,
+                    CloseTime = h.CloseTime!.Value
+                }).ToList()
+            : CreateDefaultWeekdaySchedule();
+
+        foreach (var schedule in scheduleEntries)
+        {
+            depot.ShiftSchedules.Add(schedule);
+        }
+
         dbContext.Depots.Add(depot);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return new DepotResult(depot.Id, depot.Name, depot.IsActive, depot.CreatedAt);
+    }
+
+    private static List<ShiftSchedule> CreateDefaultWeekdaySchedule()
+    {
+        var open = new TimeOnly(9, 0);
+        var close = new TimeOnly(17, 0);
+        return
+        [
+            new ShiftSchedule { DayOfWeek = DayOfWeek.Monday, OpenTime = open, CloseTime = close },
+            new ShiftSchedule { DayOfWeek = DayOfWeek.Tuesday, OpenTime = open, CloseTime = close },
+            new ShiftSchedule { DayOfWeek = DayOfWeek.Wednesday, OpenTime = open, CloseTime = close },
+            new ShiftSchedule { DayOfWeek = DayOfWeek.Thursday, OpenTime = open, CloseTime = close },
+            new ShiftSchedule { DayOfWeek = DayOfWeek.Friday, OpenTime = open, CloseTime = close }
+        ];
     }
 }

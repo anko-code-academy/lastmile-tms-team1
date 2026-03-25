@@ -3,7 +3,7 @@ using MediatR;
 
 namespace LastMile.TMS.Application.Features.Depots.Commands.CreateDepot;
 
-public record DailyOperatingHoursInput(DayOfWeek DayOfWeek, TimeOnly OpenTime, TimeOnly CloseTime);
+public record DailyOperatingHoursInput(DayOfWeek DayOfWeek, TimeOnly? OpenTime, TimeOnly? CloseTime);
 
 public record CreateDepotCommand(
     string Name,

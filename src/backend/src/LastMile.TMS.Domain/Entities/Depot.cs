@@ -9,11 +9,10 @@ public class Depot : BaseAuditableEntity
     public Address? Address { get; set; }
     public Guid? AddressId { get; set; }
 
-    public OperatingHours OperatingHours { get; set; } = null!;
-
     public bool IsActive { get; set; } = true;
 
     // Navigation properties
     public ICollection<Zone> Zones { get; set; } = [];
     public ICollection<Driver> Drivers { get; set; } = [];
+    public ICollection<ShiftSchedule> ShiftSchedules { get; set; } = new List<ShiftSchedule>();
 }

@@ -1,6 +1,5 @@
 using LastMile.TMS.Application.Common.Interfaces;
 using LastMile.TMS.Application.Features.Depots.Commands.CreateDepot;
-using LastMile.TMS.Domain.Common;
 using LastMile.TMS.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -21,9 +20,36 @@ public class UpdateDepotHandler(IAppDbContext dbContext) : IRequestHandler<Updat
 
         if (request.OperatingHours != null)
         {
-            depot.OperatingHours = OperatingHours.Create(
-                request.OperatingHours.Select(h =>
-                    new DailyOperatingHours(h.DayOfWeek, h.OpenTime, h.CloseTime)).ToArray());
+            foreach (var h in request.OperatingHours)
+            {
+                var existing = await dbContext.ShiftSchedules
+                    .FirstOrDefaultAsync(s => s.DepotId == depot.Id && s.DayOfWeek == h.DayOfWeek, cancellationToken);
+
+                if (existing != null)
+                {
+                    if (h.OpenTime == null || h.CloseTime == null)
+                    {
+                        // Empty times → remove this day's schedule
+                        dbContext.ShiftSchedules.Remove(existing);
+                    }
+                    else
+                    {
+                        // Update existing schedule
+                        existing.OpenTime = h.OpenTime!.Value;
+                        existing.CloseTime = h.CloseTime!.Value;
+                    }
+                }
+                else if (h.OpenTime != null && h.CloseTime != null)
+                {
+                    // Insert new schedule (only if times are provided)
+                    depot.ShiftSchedules.Add(new ShiftSchedule
+                    {
+                        DayOfWeek = h.DayOfWeek,
+                        OpenTime = h.OpenTime!.Value,
+                        CloseTime = h.CloseTime!.Value
+                    });
+                }
+            }
         }
 
         if (request.Address != null)
@@ -31,6 +57,7 @@ public class UpdateDepotHandler(IAppDbContext dbContext) : IRequestHandler<Updat
             if (depot.Address == null)
             {
                 depot.Address = new Address();
+                dbContext.Addresses.Add(depot.Address);
             }
 
             depot.Address.Street1 = request.Address.Street1;
