@@ -7,13 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useVehicle, useVehicleHistory, useChangeVehicleStatus } from "@/lib/hooks/use-vehicles";
 import { VehicleStatus } from "@/types/vehicle";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
@@ -129,20 +122,20 @@ export default function VehicleDetailPage() {
                 Change Status
               </p>
               <form onSubmit={handleStatusChange} className="flex gap-2">
-                <Select value={newStatus} onValueChange={setNewStatus}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select new status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.values(VehicleStatus)
-                      .filter((s) => s !== vehicle.status)
-                      .map((status) => (
-                        <SelectItem key={status} value={status}>
-                          {status}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+                <select
+                  className="flex w-[180px] items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  value={newStatus}
+                  onChange={(e) => setNewStatus(e.target.value)}
+                >
+                  <option value="">Select new status</option>
+                  {Object.values(VehicleStatus)
+                    .filter((s) => s !== vehicle.status)
+                    .map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                </select>
                 <button
                   type="submit"
                   className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium disabled:opacity-50"
