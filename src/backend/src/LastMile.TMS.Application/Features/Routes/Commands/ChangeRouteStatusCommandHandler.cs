@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using LastMile.TMS.Application.Common.Interfaces;
 using LastMile.TMS.Application.Features.Routes;
+using LastMile.TMS.Domain.Entities;
 using LastMile.TMS.Domain.Enums;
 
 namespace LastMile.TMS.Application.Features.Routes.Commands;
@@ -25,9 +26,21 @@ public class ChangeRouteStatusCommandHandler(IAppDbContext context) : IRequestHa
         if (request.NewStatus == RouteStatus.Completed)
         {
             route.ActualEndTime = DateTime.UtcNow;
-            // Release vehicle when route is completed
+
+            // Create/update VehicleJourney for history tracking
             if (oldVehicleId.HasValue)
             {
+                var journey = await context.VehicleJourneys
+                    .FirstOrDefaultAsync(j => j.RouteId == route.Id && j.VehicleId == oldVehicleId.Value, cancellationToken);
+
+                if (journey != null)
+                {
+                    journey.EndTime = DateTime.UtcNow;
+                    // For now, EndMileageKm is not available - it would come from driver app or telematics
+                    // journey.EndMileageKm = ...;
+                }
+
+                // Release vehicle when route is completed
                 var vehicle = await context.Vehicles.FirstOrDefaultAsync(v => v.Id == oldVehicleId.Value, cancellationToken);
                 if (vehicle != null && vehicle.Status == Domain.Enums.VehicleStatus.InUse)
                 {
@@ -39,12 +52,29 @@ public class ChangeRouteStatusCommandHandler(IAppDbContext context) : IRequestHa
                 }
             }
         }
-        else if (request.NewStatus == RouteStatus.InProgress && !route.ActualStartTime.HasValue)
+        else if (request.NewStatus == RouteStatus.InProgress)
         {
             route.ActualStartTime = DateTime.UtcNow;
-            // Assign vehicle if not already assigned
+
+            // Create VehicleJourney for history tracking
             if (oldVehicleId.HasValue)
             {
+                var existingJourney = await context.VehicleJourneys
+                    .FirstOrDefaultAsync(j => j.RouteId == route.Id && j.VehicleId == oldVehicleId.Value, cancellationToken);
+
+                if (existingJourney == null)
+                {
+                    var journey = new VehicleJourney
+                    {
+                        RouteId = route.Id,
+                        VehicleId = oldVehicleId.Value,
+                        StartTime = DateTime.UtcNow,
+                        StartMileageKm = 0 // Would come from vehicle telematics or driver check-in
+                    };
+                    context.VehicleJourneys.Add(journey);
+                }
+
+                // Assign vehicle if not already assigned
                 var vehicle = await context.Vehicles.FirstOrDefaultAsync(v => v.Id == oldVehicleId.Value, cancellationToken);
                 if (vehicle != null && vehicle.Status == Domain.Enums.VehicleStatus.Available)
                 {

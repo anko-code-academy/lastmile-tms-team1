@@ -520,6 +520,67 @@ public class RouteIntegrationTests : IAsyncLifetime
         data.GetProperty("vehiclePlate").GetString().Should().NotBeNullOrEmpty();
     }
 
+    [Fact]
+    public async Task ChangeRouteStatus_ToCompleted_UpdatesVehicleHistory()
+    {
+        // Arrange - Create a route with vehicle
+        var createMutation = $@"
+            mutation {{
+                createRoute(
+                    name: ""History Test Route"",
+                    plannedStartTime: ""2026-04-15T08:00:00Z"",
+                    totalDistanceKm: 60.0,
+                    totalParcelCount: 30,
+                    vehicleId: ""{_vehicleId}""
+                ) {{ id }}
+            }}";
+        var createResponse = await ExecuteGraphQLAsync(createMutation);
+        var createJson = await ReadJsonAsync(createResponse);
+        var routeId = createJson.RootElement.GetProperty("data").GetProperty("createRoute").GetProperty("id").GetString();
+
+        // Act - Start the route
+        var startMutation = $@"
+            mutation {{
+                changeRouteStatus(id: ""{routeId}"", newStatus: IN_PROGRESS) {{
+                    id
+                    status
+                }}
+            }}";
+        await ExecuteGraphQLAsync(startMutation);
+
+        // Complete the route
+        var completeMutation = $@"
+            mutation {{
+                changeRouteStatus(id: ""{routeId}"", newStatus: COMPLETED) {{
+                    id
+                    status
+                }}
+            }}";
+        await ExecuteGraphQLAsync(completeMutation);
+
+        // Assert - Check vehicle history
+        var historyQuery = $@"
+            query {{
+                vehicleHistory(id: ""{_vehicleId}"") {{
+                    id
+                    totalMileageKm
+                    totalRoutesCompleted
+                    routes {{
+                        routeId
+                        routeName
+                    }}
+                }}
+            }}";
+        var historyResponse = await ExecuteGraphQLAsync(historyQuery);
+        var historyJson = await ReadJsonAsync(historyResponse);
+        historyJson.RootElement.TryGetProperty("errors", out _).Should().BeFalse();
+
+        var historyData = historyJson.RootElement.GetProperty("data").GetProperty("vehicleHistory");
+        historyData.GetProperty("totalRoutesCompleted").GetInt32().Should().BeGreaterThan(0);
+        var routes = historyData.GetProperty("routes").EnumerateArray().ToList();
+        routes.Should().Contain(r => r.GetProperty("routeId").GetString() == routeId);
+    }
+
     private async Task<HttpResponseMessage> ExecuteGraphQLAsync(string query)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "/graphql");
