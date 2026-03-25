@@ -402,7 +402,12 @@ public class RouteIntegrationTests : IAsyncLifetime
             }}";
         var getResponse = await ExecuteGraphQLAsync(getQuery);
         var getJson = await ReadJsonAsync(getResponse);
-        getJson.RootElement.GetProperty("data").GetProperty("route").GetProperty("id").GetString().Should().BeNull();
+        var routeData = getJson.RootElement.GetProperty("data").GetProperty("route");
+        // After soft-delete, route may be null or have null id
+        if (routeData.ValueKind != JsonValueKind.Null)
+        {
+            routeData.GetProperty("id").GetString().Should().BeNull();
+        }
     }
 
     [Fact]
