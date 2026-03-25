@@ -6,6 +6,7 @@ import {
   Truck,
   LayoutDashboard,
   LogOut,
+  Route,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,7 @@ import { Button } from "@/components/ui/button";
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/vehicles", label: "Vehicles", icon: Truck },
+  { href: "/routes", label: "Routes", icon: Route },
 ];
 
 export default function ProtectedLayout({

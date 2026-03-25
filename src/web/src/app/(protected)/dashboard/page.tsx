@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import Link from "next/link";
-import { Truck } from "lucide-react";
+import { Truck, Route } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -30,6 +30,20 @@ export default async function DashboardPage() {
             </Button>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Routes</CardTitle>
+            <Route className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">-</div>
+            <p className="text-xs text-muted-foreground">Delivery routes</p>
+            <Button variant="link" className="p-0 h-auto mt-2" asChild>
+              <Link href="/routes">View routes</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
@@ -46,6 +60,12 @@ export default async function DashboardPage() {
                 Manage Vehicles
               </Link>{" "}
               - Add, edit, or remove vehicles from your fleet
+            </li>
+            <li>
+              <Link href="/routes" className="text-primary hover:underline">
+                Manage Routes
+              </Link>{" "}
+              - Create and manage delivery routes
             </li>
           </ul>
         </CardContent>
