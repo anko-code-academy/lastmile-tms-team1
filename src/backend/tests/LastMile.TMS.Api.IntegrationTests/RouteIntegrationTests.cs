@@ -34,19 +34,38 @@ public class RouteIntegrationTests : IAsyncLifetime
 
         _accessToken = await GetAccessTokenAsync();
 
-        // Create a vehicle first for route assignment tests
-        var vehicleMutation = @"
-            mutation {
+        // Create a vehicle with unique registration plate for route assignment tests
+        var uniquePlate = $"ROUTE-VEH-{Guid.NewGuid():N}".Substring(0, 15).ToUpperInvariant();
+        var vehicleMutation = $@"
+            mutation {{
                 createVehicle(
-                    registrationPlate: ""ROUTE-VEH-001"",
+                    registrationPlate: ""{uniquePlate}"",
                     type: VAN,
                     parcelCapacity: 100,
                     weightCapacityKg: 500.0
-                ) { id }
-            }";
+                ) {{ id }}
+            }}";
         var vehicleResponse = await ExecuteGraphQLAsync(vehicleMutation);
         var vehicleJson = await ReadJsonAsync(vehicleResponse);
-        _vehicleId = Guid.Parse(vehicleJson.RootElement.GetProperty("data").GetProperty("createVehicle").GetProperty("id").GetString()!);
+
+        // Check if there are errors
+        if (vehicleJson.RootElement.TryGetProperty("errors", out var errors) && errors.GetArrayLength() > 0)
+        {
+            var errorMessage = errors[0].GetProperty("message").GetString();
+            throw new InvalidOperationException($"Failed to create vehicle in InitializeAsync: {errorMessage}");
+        }
+
+        if (!vehicleJson.RootElement.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Object)
+        {
+            throw new InvalidOperationException("Invalid response from createVehicle mutation");
+        }
+
+        if (!data.TryGetProperty("createVehicle", out var createVehicle) || createVehicle.ValueKind == JsonValueKind.Null)
+        {
+            throw new InvalidOperationException("createVehicle returned null");
+        }
+
+        _vehicleId = Guid.Parse(createVehicle.GetProperty("id").GetString()!);
     }
 
     public async Task DisposeAsync()
