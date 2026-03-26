@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 
 namespace LastMile.TMS.Api.IntegrationTests;
 
@@ -21,6 +22,10 @@ public class DepotZoneIntegrationTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         await _factory.InitializeAsync();
+
+        // Clean up data from previous test runs BEFORE seeding (to ensure fresh state)
+        await CleanupTestDataAsync(_factory.GetConnectionString());
+
         _client = _factory.CreateClient();
 
         using var scope = _factory.Services.CreateScope();
@@ -40,6 +45,12 @@ public class DepotZoneIntegrationTests : IAsyncLifetime
 
         var tokenContent = await tokenResponse.Content.ReadAsStringAsync();
         var tokenJson = JsonSerializer.Deserialize<JsonElement>(tokenContent);
+
+        if (!tokenResponse.IsSuccessStatusCode || !tokenJson.TryGetProperty("access_token", out _))
+        {
+            throw new Exception($"Token request failed: {tokenContent}");
+        }
+
         _accessToken = tokenJson.GetProperty("access_token").GetString()!;
     }
 
@@ -436,5 +447,21 @@ public class DepotZoneIntegrationTests : IAsyncLifetime
         var depotIds = depots.EnumerateArray().Select(d => d.GetProperty("id").GetString()).ToList();
 
         depotIds.Should().Contain(depotId, $"Created depot with ID {depotId} should be queryable after creation. Found IDs: {string.Join(", ", depotIds)}");
+    }
+
+    private static async Task CleanupTestDataAsync(string connectionString)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        // Delete test data - order matters due to FK constraints (zones reference depots)
+        await using (var cmd = new NpgsqlCommand("DELETE FROM \"Zones\";", connection))
+        {
+            await cmd.ExecuteNonQueryAsync();
+        }
+        await using (var cmd = new NpgsqlCommand("DELETE FROM \"Depots\";", connection))
+        {
+            await cmd.ExecuteNonQueryAsync();
+        }
     }
 }

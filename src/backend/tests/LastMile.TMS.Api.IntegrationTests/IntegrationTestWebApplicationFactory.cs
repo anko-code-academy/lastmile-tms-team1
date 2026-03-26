@@ -18,6 +18,8 @@ public class IntegrationTestWebApplicationFactory : WebApplicationFactory<Progra
         _postgreSqlFixture = postgreSqlFixture;
     }
 
+    public string GetConnectionString() => _postgreSqlFixture.ConnectionString;
+
     public async Task InitializeAsync()
     {
         await _postgreSqlFixture.InitializeAsync();
