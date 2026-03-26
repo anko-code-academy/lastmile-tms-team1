@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using LastMile.TMS.Persistence;
 using NetTopologySuite;
 
@@ -56,6 +57,13 @@ public class IntegrationTestWebApplicationFactory : WebApplicationFactory<Progra
                     .UseNpgsql(_postgreSqlFixture.ConnectionString, o => o.UseNetTopologySuite())
                     .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
             });
+
+            // Remove Hangfire and Redis hosted services that cause TaskCanceledException during test teardown
+            var hostedServices = services.Where(d => d.ServiceType.IsAssignableTo(typeof(IHostedService))).ToList();
+            foreach (var svc in hostedServices)
+            {
+                services.Remove(svc);
+            }
         });
 
         builder.UseSetting("AdminCredentials:Username", Environment.GetEnvironmentVariable("ADMIN_USERNAME") ?? "admin");
