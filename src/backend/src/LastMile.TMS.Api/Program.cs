@@ -151,12 +151,9 @@ try
     app.UseHttpsRedirection();
     app.UseAuthentication();
     app.UseAuthorization();
-    app.MapGraphQL().WithOptions(new GraphQLServerOptions
+    app.MapGraphQL().WithOptions(options =>
     {
-      Tool =
-      {
-        Enable = app.Environment.IsDevelopment()
-      },
+        options.Tool.Enable = app.Environment.IsDevelopment();
     });
     app.MapControllers();
     app.UseHangfireDashboard("/hangfire");
