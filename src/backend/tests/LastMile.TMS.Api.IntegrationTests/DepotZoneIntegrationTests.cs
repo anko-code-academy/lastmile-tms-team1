@@ -328,6 +328,12 @@ public class DepotZoneIntegrationTests : IAsyncLifetime
 
         var queryJson = await GraphQLRequestAsync(query);
 
+        // Debug: print response if errors
+        if (queryJson.TryGetProperty("errors", out _))
+        {
+            throw new Exception($"GraphQL errors: {queryJson.GetProperty("errors").GetRawText()}");
+        }
+
         // Assert
         queryJson.GetProperty("data").GetProperty("depot").GetProperty("name").GetString().Should().Be("Query Test Depot");
         queryJson.GetProperty("data").GetProperty("depot").GetProperty("isActive").GetBoolean().Should().BeTrue();
@@ -362,17 +368,25 @@ public class DepotZoneIntegrationTests : IAsyncLifetime
         // Act - Query all zones
         var query = @"query {
             zones {
-                id
-                name
-                depotId
-                isActive
+                nodes {
+                    id
+                    name
+                    depotId
+                    isActive
+                }
             }
         }";
 
         var queryJson = await GraphQLRequestAsync(query);
 
+        // Debug: print response if errors
+        if (queryJson.TryGetProperty("errors", out _))
+        {
+            throw new Exception($"GraphQL errors: {queryJson.GetProperty("errors").GetRawText()}");
+        }
+
         // Assert
-        var zones = queryJson.GetProperty("data").GetProperty("zones");
+        var zones = queryJson.GetProperty("data").GetProperty("zones").GetProperty("nodes");
         zones.GetArrayLength().Should().BeGreaterThan(0);
     }
 }

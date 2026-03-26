@@ -119,6 +119,9 @@ try
         .AddGraphQLServer()
         .AddAuthorization()
         .AddSpatialTypes()
+        .AddFiltering()
+        .AddSorting()
+        .AddProjections()
         .AddQueryType<Query>()
         .AddMutationType<Mutation>()
         .AddType<CreateDepotInput>()
@@ -126,7 +129,8 @@ try
         .AddType<UpdateAddressInputType>()
         .AddType<DailyOperatingHoursInputType>()
         .AddType<CreateZoneInput>()
-        .AddType<UpdateZoneInput>();
+        .AddType<UpdateZoneInput>()
+        .AddErrorFilter<DetailedErrorFilter>();
 
     builder.Services.AddHangfire(config =>
         config.UsePostgreSqlStorage(options =>
@@ -158,7 +162,7 @@ try
     // Apply migrations then seed database
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    context.Database.Migrate();
+    await context.Database.MigrateAsync();
     var seeder = scope.ServiceProvider.GetRequiredService<LastMile.TMS.Application.Common.Interfaces.IDbSeeder>();
     await seeder.SeedAsync();
 
@@ -177,4 +181,16 @@ finally
 namespace LastMile.TMS.Api
 {
     public partial class Program;
+}
+
+public class DetailedErrorFilter : HotChocolate.Execution.IErrorFilter
+{
+    public HotChocolate.IError OnError(HotChocolate.IError error)
+    {
+        if (error.Exception is not null)
+        {
+            return error.WithMessage(error.Exception.Message);
+        }
+        return error;
+    }
 }
