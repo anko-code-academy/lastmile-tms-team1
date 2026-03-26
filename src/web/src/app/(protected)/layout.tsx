@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Session } from "next-auth";
 
 async function Navbar({ session }: { session: Session | null }) {
-  const isAdmin = session?.user?.name === "admin";
+  const isAdmin = session?.user?.roles?.includes("Admin") ?? false;
 
   return (
     <nav className="border-b bg-background">
@@ -33,7 +33,7 @@ async function Navbar({ session }: { session: Session | null }) {
         </div>
         <div className="ml-auto flex items-center gap-4">
           <span className="text-sm text-muted-foreground">
-            {session?.user?.name}
+            {session?.user?.email}
           </span>
           <form
             action={async () => {

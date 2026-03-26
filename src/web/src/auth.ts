@@ -67,6 +67,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.accessToken = user.accessToken;
         token.refreshToken = user.refreshToken;
+        // Decode JWT to get exp, email and roles (payload[1] is base64url)
+        const payload = (user.accessToken as string).split('.')[1];
+        const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+        token.accessTokenExp = decoded.exp as number;
+        token.email = decoded.email as string;
+        token.roles = decoded.role as string[] | undefined;
       }
       return token;
     },
@@ -74,6 +80,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user) {
         session.user.accessToken = token.accessToken as string;
         session.user.refreshToken = token.refreshToken as string;
+        session.user.accessTokenExp = token.accessTokenExp as number;
+        session.user.email = token.email as string;
+        session.user.roles = (token.roles as string[] | undefined) ?? [];
       }
       return session;
     },

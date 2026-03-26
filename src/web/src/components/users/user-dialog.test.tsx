@@ -10,7 +10,7 @@ const mockUser: UserDto = {
   lastName: 'Doe',
   email: 'john@example.com',
   phoneNumber: '1234567890',
-  status: 'Active',
+  status: 'ACTIVE',
   roleName: 'Admin',
   roleId: 'role-1',
   zoneId: null,
@@ -37,6 +37,8 @@ describe('UserDialog', () => {
         open={true}
         onOpenChange={vi.fn()}
         roles={mockRoles}
+        zones={[]}
+        depots={[]}
         onSubmit={mockOnSubmit}
       />
     );
@@ -51,6 +53,8 @@ describe('UserDialog', () => {
         open={true}
         onOpenChange={vi.fn()}
         roles={mockRoles}
+        zones={[]}
+        depots={[]}
         onSubmit={mockOnSubmit}
       />
     );
@@ -65,6 +69,8 @@ describe('UserDialog', () => {
         open={true}
         onOpenChange={vi.fn()}
         roles={mockRoles}
+        zones={[]}
+        depots={[]}
         onSubmit={mockOnSubmit}
         user={mockUser}
       />
@@ -79,6 +85,8 @@ describe('UserDialog', () => {
         open={true}
         onOpenChange={vi.fn()}
         roles={mockRoles}
+        zones={[]}
+        depots={[]}
         onSubmit={mockOnSubmit}
       />
     );
@@ -94,6 +102,8 @@ describe('UserDialog', () => {
         open={true}
         onOpenChange={onOpenChange}
         roles={mockRoles}
+        zones={[]}
+        depots={[]}
         onSubmit={mockOnSubmit}
       />
     );

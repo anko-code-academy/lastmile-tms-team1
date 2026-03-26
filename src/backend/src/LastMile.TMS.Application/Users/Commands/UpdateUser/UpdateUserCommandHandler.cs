@@ -28,6 +28,7 @@ public class UpdateUserCommandHandler(
 
         // Update basic properties using domain method
         user.UpdateName(request.FirstName, request.LastName);
+        user.UpdateEmail(request.Email);
         user.UpdatePhone(request.Phone);
 
         // Update role if provided

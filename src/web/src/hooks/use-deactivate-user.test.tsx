@@ -14,7 +14,7 @@ const mockDeactivatedUser: UserDto = {
   lastName: 'Doe',
   email: 'john@example.com',
   phoneNumber: '1234567890',
-  status: 'Inactive',
+  status: 'INACTIVE',
   roleName: 'Admin',
   roleId: 'role-1',
   zoneId: null,

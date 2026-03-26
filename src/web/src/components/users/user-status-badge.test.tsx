@@ -4,7 +4,7 @@ import { UserStatusBadge } from './user-status-badge';
 
 describe('UserStatusBadge', () => {
   it('renders Active status with green styling', () => {
-    render(<UserStatusBadge status="Active" />);
+    render(<UserStatusBadge status="ACTIVE" />);
 
     const badge = screen.getByText('Active');
     expect(badge).toBeInTheDocument();
@@ -13,7 +13,7 @@ describe('UserStatusBadge', () => {
   });
 
   it('renders Inactive status with gray styling', () => {
-    render(<UserStatusBadge status="Inactive" />);
+    render(<UserStatusBadge status="INACTIVE" />);
 
     const badge = screen.getByText('Inactive');
     expect(badge).toBeInTheDocument();
@@ -22,7 +22,7 @@ describe('UserStatusBadge', () => {
   });
 
   it('renders Suspended status with red styling', () => {
-    render(<UserStatusBadge status="Suspended" />);
+    render(<UserStatusBadge status="SUSPENDED" />);
 
     const badge = screen.getByText('Suspended');
     expect(badge).toBeInTheDocument();

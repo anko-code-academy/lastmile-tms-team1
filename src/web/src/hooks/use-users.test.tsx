@@ -14,7 +14,7 @@ const mockUsers: UserDto[] = [
     lastName: 'Doe',
     email: 'john@example.com',
     phoneNumber: '1234567890',
-    status: 'Active',
+    status: 'ACTIVE',
     roleName: 'Admin',
     roleId: 'role-1',
     zoneId: null,
@@ -27,7 +27,7 @@ const mockUsers: UserDto[] = [
     lastName: 'Smith',
     email: 'jane@example.com',
     phoneNumber: '0987654321',
-    status: 'Inactive',
+    status: 'INACTIVE',
     roleName: 'Dispatcher',
     roleId: 'role-2',
     zoneId: null,
@@ -94,7 +94,7 @@ describe('useUsers', () => {
   it('applies filters when provided', async () => {
     vi.mocked(queries.fetchUsers).mockResolvedValue({ users: mockUsers });
     const filters = {
-      where: { search: 'John', status: 'Active' as const },
+      where: { search: 'John', status: 'ACTIVE' as const },
       order: { field: 'firstName', direction: 'ASC' as const },
     };
 

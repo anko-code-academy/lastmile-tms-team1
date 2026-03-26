@@ -38,7 +38,9 @@ public class AuthController(
 
     private async Task<IActionResult> HandlePasswordGrantAsync(OpenIddictRequest request)
     {
-        var user = await userManager.FindByNameAsync(request.Username!);
+        // Try username first, then fall back to email lookup
+        var user = await userManager.FindByNameAsync(request.Username!)
+            ?? await userManager.FindByEmailAsync(request.Username!);
         if (user is null)
             return ForbidWithInvalidGrant("The username/password couple is invalid.");
 
@@ -84,6 +86,8 @@ public class AuthController(
         identity.AddClaim(new Claim(OpenIddictConstants.Claims.Subject, user.Id.ToString())
             .SetDestinations(OpenIddictConstants.Destinations.AccessToken));
         identity.AddClaim(new Claim(OpenIddictConstants.Claims.Name, user.UserName!)
+            .SetDestinations(OpenIddictConstants.Destinations.AccessToken));
+        identity.AddClaim(new Claim(OpenIddictConstants.Claims.Email, user.Email!)
             .SetDestinations(OpenIddictConstants.Destinations.AccessToken));
 
         var roles = await userManager.GetRolesAsync(user);

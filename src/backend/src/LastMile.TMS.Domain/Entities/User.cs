@@ -151,6 +151,18 @@ public class User : IdentityUser<Guid>, IBaseAuditableEntity
         PhoneNumber = phone?.Trim();
     }
 
+    public void UpdateEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            throw new ArgumentException("Email is required", nameof(email));
+
+        if (!IsValidEmail(email))
+            throw new ArgumentException("Invalid email format", nameof(email));
+
+        Email = email.ToLowerInvariant().Trim();
+        UserName = email.ToLowerInvariant().Trim();
+    }
+
     public void ClearZoneAndDepot()
     {
         ZoneId = null;

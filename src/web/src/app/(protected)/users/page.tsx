@@ -29,6 +29,8 @@ export default function UsersPage() {
   const isLoading = isLoadingUsers || isLoadingLookups;
 
   const roles = lookups?.roles ?? [];
+  const zones = lookups?.zones ?? [];
+  const depots = lookups?.depots ?? [];
 
   const handleOpenCreate = () => {
     setSelectedUser(undefined);
@@ -83,6 +85,8 @@ export default function UsersPage() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         roles={roles}
+        zones={zones}
+        depots={depots}
         onSubmit={handleSubmit}
         user={selectedUser}
         isLoading={createUser.isPending || updateUser.isPending}

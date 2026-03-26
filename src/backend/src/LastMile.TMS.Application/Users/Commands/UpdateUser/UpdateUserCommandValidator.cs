@@ -17,6 +17,10 @@ public class UpdateUserCommandValidator : AbstractValidator<UpdateUserCommand>
             .NotEmpty().WithMessage("Last name is required")
             .MaximumLength(100).WithMessage("Last name must not exceed 100 characters");
 
+        RuleFor(x => x.Email)
+            .NotEmpty().WithMessage("Email is required")
+            .EmailAddress().WithMessage("Invalid email format");
+
         RuleFor(x => x)
             .Must(x => x.ZoneId == null || x.DepotId == null)
             .WithMessage("User cannot be assigned to both a zone and a depot");

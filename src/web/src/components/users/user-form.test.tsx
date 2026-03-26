@@ -10,13 +10,23 @@ const mockUser: UserDto = {
   lastName: 'Doe',
   email: 'john@example.com',
   phoneNumber: '1234567890',
-  status: 'Active',
+  status: 'ACTIVE',
   roleName: 'Admin',
   roleId: 'role-1',
   zoneId: null,
   depotId: null,
   createdAt: '2024-01-01T00:00:00Z',
 };
+
+const mockZones = [
+  { id: 'zone-1', name: 'Zone A', depotId: 'depot-1' },
+  { id: 'zone-2', name: 'Zone B', depotId: 'depot-1' },
+];
+
+const mockDepots = [
+  { id: 'depot-1', name: 'Depot Alpha' },
+  { id: 'depot-2', name: 'Depot Beta' },
+];
 
 const mockRoles = [
   { id: 'role-1', name: 'Admin' },
@@ -34,7 +44,7 @@ describe('UserForm', () => {
   describe('create mode', () => {
     it('renders all required fields', () => {
       render(
-        <UserForm roles={mockRoles} onSubmit={mockOnSubmit} />
+        <UserForm roles={mockRoles} zones={mockZones} depots={mockDepots} onSubmit={mockOnSubmit} />
       );
 
       expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
@@ -47,7 +57,7 @@ describe('UserForm', () => {
 
     it('validates firstName is required', async () => {
       render(
-        <UserForm roles={mockRoles} onSubmit={mockOnSubmit} />
+        <UserForm roles={mockRoles} zones={mockZones} depots={mockDepots} onSubmit={mockOnSubmit} />
       );
 
       await userEvent.click(screen.getByRole('button', { name: /create user/i }));
@@ -57,7 +67,7 @@ describe('UserForm', () => {
 
     it('validates lastName is required', async () => {
       render(
-        <UserForm roles={mockRoles} onSubmit={mockOnSubmit} />
+        <UserForm roles={mockRoles} zones={mockZones} depots={mockDepots} onSubmit={mockOnSubmit} />
       );
 
       await userEvent.click(screen.getByRole('button', { name: /create user/i }));
@@ -67,7 +77,7 @@ describe('UserForm', () => {
 
     it('submits form with valid data', async () => {
       render(
-        <UserForm roles={mockRoles} onSubmit={mockOnSubmit} />
+        <UserForm roles={mockRoles} zones={mockZones} depots={mockDepots} onSubmit={mockOnSubmit} />
       );
 
       await userEvent.type(screen.getByLabelText(/first name/i), 'John');
@@ -93,7 +103,7 @@ describe('UserForm', () => {
   describe('edit mode', () => {
     it('hides password field in edit mode', () => {
       render(
-        <UserForm roles={mockRoles} onSubmit={mockOnSubmit} user={mockUser} />
+        <UserForm roles={mockRoles} zones={mockZones} depots={mockDepots} onSubmit={mockOnSubmit} user={mockUser} />
       );
 
       expect(screen.queryByLabelText(/^password$/i)).not.toBeInTheDocument();
@@ -101,7 +111,7 @@ describe('UserForm', () => {
 
     it('pre-fills form with user data', () => {
       render(
-        <UserForm roles={mockRoles} onSubmit={mockOnSubmit} user={mockUser} />
+        <UserForm roles={mockRoles} zones={mockZones} depots={mockDepots} onSubmit={mockOnSubmit} user={mockUser} />
       );
 
       expect(screen.getByLabelText(/first name/i)).toHaveValue('John');
@@ -112,7 +122,7 @@ describe('UserForm', () => {
 
     it('submits updated user data', async () => {
       render(
-        <UserForm roles={mockRoles} onSubmit={mockOnSubmit} user={mockUser} />
+        <UserForm roles={mockRoles} zones={mockZones} depots={mockDepots} onSubmit={mockOnSubmit} user={mockUser} />
       );
 
       await userEvent.clear(screen.getByLabelText(/first name/i));

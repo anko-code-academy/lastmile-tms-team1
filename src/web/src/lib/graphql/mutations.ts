@@ -49,6 +49,7 @@ const UPDATE_USER_MUTATION = `
     $userId: UUID!
     $firstName: String!
     $lastName: String!
+    $email: String!
     $phone: String
     $roleId: UUID
     $zoneId: UUID
@@ -58,6 +59,7 @@ const UPDATE_USER_MUTATION = `
       userId: $userId
       firstName: $firstName
       lastName: $lastName
+      email: $email
       phone: $phone
       roleId: $roleId
       zoneId: $zoneId
@@ -139,6 +141,7 @@ export async function updateUser(
         userId,
         firstName: input.firstName,
         lastName: input.lastName,
+        email: input.email,
         phone: input.phone,
         roleId: input.roleId,
         zoneId: input.zoneId,

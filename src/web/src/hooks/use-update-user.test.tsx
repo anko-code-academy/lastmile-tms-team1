@@ -14,7 +14,7 @@ const mockUpdatedUser: UserDto = {
   lastName: 'Doe Updated',
   email: 'john@example.com',
   phoneNumber: '1234567890',
-  status: 'Active',
+  status: 'ACTIVE',
   roleName: 'Admin',
   roleId: 'role-1',
   zoneId: null,

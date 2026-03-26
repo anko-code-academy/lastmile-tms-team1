@@ -11,6 +11,17 @@ export default auth((req) => {
     nextUrl.pathname.startsWith("/_next") ||
     nextUrl.pathname.startsWith("/favicon");
 
+  // Check if access token has expired
+  if (session?.user?.accessTokenExp) {
+    const now = Math.floor(Date.now() / 1000);
+    if (session.user.accessTokenExp < now) {
+      const callbackUrl = nextUrl.pathname;
+      return NextResponse.redirect(
+        new URL(`/login?callbackUrl=${callbackUrl}`, nextUrl.origin)
+      );
+    }
+  }
+
   if (!isLoggedIn && !isPublicPath) {
     const callbackUrl = nextUrl.pathname;
     return NextResponse.redirect(
