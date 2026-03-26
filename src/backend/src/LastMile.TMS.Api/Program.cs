@@ -124,11 +124,11 @@ try
         .AddAuthorization()
         .AddSpatialTypes()
         .AddQueryType<Query>()
-        .AddQueryType<VehicleQuery>()
-        .AddQueryType<RouteQuery>()
+        .AddType<VehicleQuery>()
+        .AddType<RouteQuery>()
         .AddMutationType<Mutation>()
-        .AddMutationType<VehicleMutation>()
-        .AddMutationType<RouteMutation>()
+        .AddType<VehicleMutation>()
+        .AddType<RouteMutation>()
         .AddErrorFilter<ErrorFilter>();
 
     builder.Services.AddHangfire(config =>
