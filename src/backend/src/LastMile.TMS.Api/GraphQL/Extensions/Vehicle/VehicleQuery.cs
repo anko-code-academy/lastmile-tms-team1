@@ -1,4 +1,5 @@
 using HotChocolate.Authorization;
+using HotChocolate.Data;
 using LastMile.TMS.Application.Features.Vehicles;
 using LastMile.TMS.Domain.Entities;
 using LastMile.TMS.Domain.Enums;
@@ -11,19 +12,12 @@ namespace LastMile.TMS.Api.GraphQL.Extensions.Vehicle;
 public class VehicleQuery
 {
     [Authorize(Roles = [Role.RoleNames.Admin, Role.RoleNames.OperationsManager])]
-    public async Task<IReadOnlyList<VehicleSummaryDto>> GetVehicles(
-        AppDbContext context,
-        VehicleStatus? status = null,
-        CancellationToken cancellationToken = default)
+    [UseProjection]
+    [UseFiltering]
+    [UseSorting]
+    public IQueryable<VehicleSummaryDto> GetVehicles(AppDbContext context)
     {
-        var query = context.Vehicles.AsQueryable();
-
-        if (status.HasValue)
-        {
-            query = query.Where(v => v.Status == status.Value);
-        }
-
-        return await query
+        return context.Vehicles
             .OrderBy(v => v.RegistrationPlate)
             .Select(v => new VehicleSummaryDto
             {
@@ -32,32 +26,27 @@ public class VehicleQuery
                 Type = v.Type,
                 Status = v.Status,
                 DepotId = v.DepotId
-            })
-            .ToListAsync(cancellationToken);
+            });
     }
 
     [Authorize(Roles = [Role.RoleNames.Admin, Role.RoleNames.OperationsManager])]
-    public async Task<VehicleDto?> GetVehicle(
-        AppDbContext context,
-        Guid id,
-        CancellationToken cancellationToken = default)
+    [UseProjection]
+    [UseFirstOrDefault]
+    public IQueryable<VehicleDto> GetVehicle(AppDbContext context, Guid id)
     {
-        var vehicle = await context.Vehicles.FirstOrDefaultAsync(v => v.Id == id, cancellationToken);
-
-        if (vehicle is null)
-            return null;
-
-        return new VehicleDto
-        {
-            Id = vehicle.Id,
-            RegistrationPlate = vehicle.RegistrationPlate,
-            Type = vehicle.Type,
-            ParcelCapacity = vehicle.ParcelCapacity,
-            WeightCapacityKg = vehicle.WeightCapacityKg,
-            Status = vehicle.Status,
-            DepotId = vehicle.DepotId,
-            CreatedAt = vehicle.CreatedAt
-        };
+        return context.Vehicles
+            .Where(v => v.Id == id)
+            .Select(v => new VehicleDto
+            {
+                Id = v.Id,
+                RegistrationPlate = v.RegistrationPlate,
+                Type = v.Type,
+                ParcelCapacity = v.ParcelCapacity,
+                WeightCapacityKg = v.WeightCapacityKg,
+                Status = v.Status,
+                DepotId = v.DepotId,
+                CreatedAt = v.CreatedAt
+            });
     }
 
     [Authorize(Roles = [Role.RoleNames.Admin, Role.RoleNames.OperationsManager])]
@@ -66,9 +55,8 @@ public class VehicleQuery
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        var vehicle = await context.Vehicles.FirstOrDefaultAsync(v => v.Id == id, cancellationToken);
-
-        if (vehicle is null)
+        var vehicleExists = await context.Vehicles.AnyAsync(v => v.Id == id, cancellationToken);
+        if (!vehicleExists)
             return null;
 
         var journeys = await context.VehicleJourneys
@@ -96,9 +84,19 @@ public class VehicleQuery
             })
             .ToList();
 
+        var vehicle = await context.Vehicles
+            .Where(v => v.Id == id)
+            .Select(v => new
+            {
+                v.Id,
+                v.RegistrationPlate,
+                v.Type
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
         return new VehicleHistoryDto
         {
-            Id = vehicle.Id,
+            Id = vehicle!.Id,
             RegistrationPlate = vehicle.RegistrationPlate,
             Type = vehicle.Type,
             TotalMileageKm = totalMileageKm,

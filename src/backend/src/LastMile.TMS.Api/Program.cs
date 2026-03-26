@@ -116,6 +116,7 @@ try
     // GraphQL
     builder.Services
         .AddGraphQLServer()
+        .AddProjections()
         .AddAuthorization()
         .AddSpatialTypes()
         .AddQueryType<Query>()
