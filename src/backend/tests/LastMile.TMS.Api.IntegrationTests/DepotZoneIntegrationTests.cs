@@ -389,4 +389,52 @@ public class DepotZoneIntegrationTests : IAsyncLifetime
         var zones = queryJson.GetProperty("data").GetProperty("zones").GetProperty("nodes");
         zones.GetArrayLength().Should().BeGreaterThan(0);
     }
+
+    [Fact]
+    public async Task CreateDepot_CanBeQueriedById_AfterCreation()
+    {
+        // Arrange - Create a depot
+        var createMutation = @"mutation {
+            createDepot(input: {
+                name: ""Persist Test Depot"",
+                isActive: true
+            }) {
+                id
+                name
+            }
+        }";
+
+        var createJson = await GraphQLRequestAsync(createMutation);
+
+        if (createJson.TryGetProperty("errors", out var createErrors))
+        {
+            throw new Exception($"Create depot failed: {createErrors.GetRawText()}");
+        }
+
+        var depotId = createJson.GetProperty("data").GetProperty("createDepot").GetProperty("id").GetString();
+        depotId.Should().NotBeNullOrEmpty("depot should be created with an ID");
+
+        // Act - Query all depots and verify the created depot exists
+        var query = @"query {
+            depots {
+                nodes {
+                    id
+                    name
+                }
+            }
+        }";
+
+        var queryJson = await GraphQLRequestAsync(query);
+
+        if (queryJson.TryGetProperty("errors", out var queryErrors))
+        {
+            throw new Exception($"Query depots failed: {queryErrors.GetRawText()}");
+        }
+
+        // Assert - Find the created depot in the query results
+        var depots = queryJson.GetProperty("data").GetProperty("depots").GetProperty("nodes");
+        var depotIds = depots.EnumerateArray().Select(d => d.GetProperty("id").GetString()).ToList();
+
+        depotIds.Should().Contain(depotId, $"Created depot with ID {depotId} should be queryable after creation. Found IDs: {string.Join(", ", depotIds)}");
+    }
 }

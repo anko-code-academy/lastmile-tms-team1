@@ -25,7 +25,9 @@ import type { DepotSummaryDto } from "@/lib/graphql/types";
 import { toast } from "sonner";
 
 interface DepotsResponse {
-  depots: DepotSummaryDto[];
+  depots: {
+    nodes: DepotSummaryDto[];
+  };
 }
 
 export function DepotList() {
@@ -72,7 +74,7 @@ export function DepotList() {
     );
   }
 
-  const depots = data?.depots ?? [];
+  const depots = data?.depots?.nodes ?? [];
 
   return (
     <Card>
@@ -109,7 +111,9 @@ export function DepotList() {
                 <TableRow key={depot.id}>
                   <TableCell className="font-medium">{depot.name}</TableCell>
                   <TableCell className="text-muted-foreground">
-                    {depot.addressSummary ?? "-"}
+                    {depot.address
+                      ? `${depot.address.city}, ${depot.address.state} ${depot.address.postalCode}`
+                      : "-"}
                   </TableCell>
                   <TableCell>
                     <span

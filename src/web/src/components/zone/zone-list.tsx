@@ -25,7 +25,9 @@ import type { ZoneSummaryDto } from "@/lib/graphql/types";
 import { toast } from "sonner";
 
 interface ZonesResponse {
-  zones: ZoneSummaryDto[];
+  zones: {
+    nodes: ZoneSummaryDto[];
+  };
 }
 
 export function ZoneList() {
@@ -72,11 +74,11 @@ export function ZoneList() {
     );
   }
 
-  const zones = data?.zones ?? [];
+  const zones = data?.zones?.nodes ?? [];
 
   const zonesByDepot = zones.reduce(
     (acc, zone) => {
-      const depotName = zone.depotName ?? "Unassigned";
+      const depotName = zone.depot?.name ?? "Unassigned";
       if (!acc[depotName]) {
         acc[depotName] = [];
       }

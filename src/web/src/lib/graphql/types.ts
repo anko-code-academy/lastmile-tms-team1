@@ -42,9 +42,15 @@ export interface DepotDto {
 export interface DepotSummaryDto {
   id: string;
   name: string;
-  addressSummary?: string;
+  address?: AddressDto;
   isActive: boolean;
   createdAt: string;
+}
+
+export interface DepotsResponse {
+  depots: {
+    nodes: DepotSummaryDto[];
+  };
 }
 
 export interface DepotResult {
@@ -68,10 +74,17 @@ export interface ZoneDto {
 export interface ZoneSummaryDto {
   id: string;
   name: string;
+  boundaryGeometry: string;
   depotId: string;
-  depotName?: string;
+  depot: { name: string };
   isActive: boolean;
   createdAt: string;
+}
+
+export interface ZonesResponse {
+  zones: {
+    nodes: ZoneSummaryDto[];
+  };
 }
 
 export interface ZoneResult {

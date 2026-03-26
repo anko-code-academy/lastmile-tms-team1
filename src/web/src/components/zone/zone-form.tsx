@@ -44,7 +44,9 @@ interface ZoneResponse {
 }
 
 interface DepotsResponse {
-  depots: DepotSummaryDto[];
+  depots: {
+    nodes: DepotSummaryDto[];
+  };
 }
 
 const zoneFormSchema = z.object({
@@ -110,6 +112,7 @@ export function ZoneForm({ zoneId }: ZoneFormProps) {
   }, [zoneData, form]);
 
   async function onSubmit(values: ZoneFormValues) {
+    console.log("Submitting with depotId:", values.depotId);
     if (!geoJson && !isEditing) {
       toast.error("Please draw a zone boundary on the map");
       return;
@@ -155,7 +158,9 @@ export function ZoneForm({ zoneId }: ZoneFormProps) {
     );
   }
 
-  const depots = depotsData?.depots ?? [];
+  const depots = depotsData?.depots?.nodes ?? [];
+  // Add this temporarily
+  console.log("Depots from API:", depots.map(d => ({ id: d.id, name: d.name })));
 
   return (
     <Card>

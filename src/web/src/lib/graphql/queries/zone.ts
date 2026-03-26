@@ -3,9 +3,11 @@ export const GET_ZONE_QUERY = /* GraphQL */ `
     zone(id: $id) {
       id
       name
-      geoJson
+      boundaryGeometry
       depotId
-      depotName
+      depot {
+        name
+      }
       isActive
       createdAt
       lastModifiedAt
@@ -16,12 +18,17 @@ export const GET_ZONE_QUERY = /* GraphQL */ `
 export const GET_ZONES_QUERY = /* GraphQL */ `
   query GetZones {
     zones {
-      id
-      name
-      depotId
-      depotName
-      isActive
-      createdAt
+      nodes {
+        id
+        name
+        boundaryGeometry
+        depotId
+        depot {
+          name
+        }
+        isActive
+        createdAt
+      }
     }
   }
 `;
