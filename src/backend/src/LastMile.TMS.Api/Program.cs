@@ -129,8 +129,7 @@ try
         .AddType<UpdateAddressInputType>()
         .AddType<DailyOperatingHoursInputType>()
         .AddType<CreateZoneInput>()
-        .AddType<UpdateZoneInput>()
-        .AddErrorFilter<DetailedErrorFilter>();
+        .AddType<UpdateZoneInput>();
 
     builder.Services.AddHangfire(config =>
         config.UsePostgreSqlStorage(options =>
@@ -181,16 +180,4 @@ finally
 namespace LastMile.TMS.Api
 {
     public partial class Program;
-}
-
-public class DetailedErrorFilter : HotChocolate.Execution.IErrorFilter
-{
-    public HotChocolate.IError OnError(HotChocolate.IError error)
-    {
-        if (error.Exception is not null)
-        {
-            return error.WithMessage(error.Exception.Message);
-        }
-        return error;
-    }
 }

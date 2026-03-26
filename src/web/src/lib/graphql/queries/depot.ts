@@ -16,13 +16,15 @@ export const GET_DEPOT_QUERY = /* GraphQL */ `
         phone
         email
       }
-      operatingHours {
+      shiftSchedules {
         dayOfWeek
         openTime
         closeTime
       }
       isActive
-      zoneIds
+      zones {
+        id
+      }
     }
   }
 `;

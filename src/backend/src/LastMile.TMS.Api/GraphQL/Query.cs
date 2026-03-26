@@ -62,7 +62,7 @@ public class Query
     [UseProjection]
     [UseSingleOrDefault]
     public IQueryable<Depot> GetDepot(Guid id, [Service] AppDbContext context)
-        => context.Depots.AsNoTracking().Where(d => d.Id == id);
+        => context.Depots.Include(d => d.Address).Include(d => d.ShiftSchedules).AsNoTracking().Where(d => d.Id == id);
 
     [Authorize(Roles = new[] { Role.RoleNames.Admin, Role.RoleNames.OperationsManager })]
     [UsePaging(IncludeTotalCount = true)]
@@ -74,7 +74,7 @@ public class Query
 
     [Authorize(Roles = new[] { Role.RoleNames.Admin, Role.RoleNames.OperationsManager })]
     [UseProjection]
-    [UseSingleOrDefault]
+    [UseFirstOrDefault]
     public IQueryable<Zone> GetZone(Guid id, [Service] AppDbContext context)
-        => context.Zones.AsNoTracking().Where(z => z.Id == id);
+        => context.Zones.Include(z => z.Depot).AsNoTracking().Where(z => z.Id == id);
 }

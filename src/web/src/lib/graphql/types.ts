@@ -32,11 +32,11 @@ export interface DepotDto {
   id: string;
   name: string;
   address?: AddressDto;
-  operatingHours: DailyOperatingHoursDto[];
+  shiftSchedules: DailyOperatingHoursDto[];
   isActive: boolean;
   createdAt: string;
   lastModifiedAt?: string;
-  zoneIds: string[];
+  zones: { id: string }[];
 }
 
 export interface DepotSummaryDto {
@@ -63,9 +63,9 @@ export interface DepotResult {
 export interface ZoneDto {
   id: string;
   name: string;
-  geoJson: string;
+  boundaryGeometry: { type: string; coordinates: unknown; crs?: number } | string;
   depotId: string;
-  depotName?: string;
+  depot?: { name: string };
   isActive: boolean;
   createdAt: string;
   lastModifiedAt?: string;
@@ -74,7 +74,7 @@ export interface ZoneDto {
 export interface ZoneSummaryDto {
   id: string;
   name: string;
-  boundaryGeometry: string;
+  boundaryGeometry: { type: string; coordinates: unknown; crs?: number } | string;
   depotId: string;
   depot: { name: string };
   isActive: boolean;

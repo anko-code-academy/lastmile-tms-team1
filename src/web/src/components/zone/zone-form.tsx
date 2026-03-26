@@ -99,20 +99,25 @@ export function ZoneForm({ zoneId }: ZoneFormProps) {
   });
 
   useEffect(() => {
-    if (zoneData?.zone) {
+    if (zoneData?.zone && depotsData?.depots) {
       const zone = zoneData.zone;
       form.reset({
         name: zone.name,
         depotId: zone.depotId,
         isActive: zone.isActive,
       });
+      // Force Select to update by setting value explicitly
+      form.setValue("depotId", zone.depotId, { shouldTouch: true });
+      // Handle boundaryGeometry as object or string
+      const geoJsonValue: string = typeof zone.boundaryGeometry === 'string'
+        ? zone.boundaryGeometry
+        : JSON.stringify(zone.boundaryGeometry);
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setGeoJson(zone.geoJson);
+      setGeoJson(geoJsonValue ?? "");
     }
-  }, [zoneData, form]);
+  }, [zoneData, depotsData, form]);
 
   async function onSubmit(values: ZoneFormValues) {
-    console.log("Submitting with depotId:", values.depotId);
     if (!geoJson && !isEditing) {
       toast.error("Please draw a zone boundary on the map");
       return;
@@ -159,8 +164,6 @@ export function ZoneForm({ zoneId }: ZoneFormProps) {
   }
 
   const depots = depotsData?.depots?.nodes ?? [];
-  // Add this temporarily
-  console.log("Depots from API:", depots.map(d => ({ id: d.id, name: d.name })));
 
   return (
     <Card>
@@ -195,7 +198,11 @@ export function ZoneForm({ zoneId }: ZoneFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Depot</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select
+                    key={field.value || "empty"}
+                    onValueChange={field.onChange}
+                    value={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a depot" />

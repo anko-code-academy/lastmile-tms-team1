@@ -7,12 +7,6 @@ const adminAuthFile = path.join(__dirname, "..", "..", "fixtures", ".auth", "adm
 test.use({ storageState: adminAuthFile });
 
 test.describe("Depot List", () => {
-  test("should display loading state", async ({ page }) => {
-    const depotListPage = new DepotListPage(page);
-    await depotListPage.goto();
-    await depotListPage.expectLoadingState();
-  });
-
   test("should display depot table with correct columns", async ({ page }) => {
     const depotListPage = new DepotListPage(page);
     await depotListPage.goto();

@@ -46,6 +46,8 @@ export class DepotListPage {
   }
 
   async expectDepotInTable(name: string, isActive: boolean = true) {
+    // Wait for the depot name to appear in the table
+    await this.page.getByText(name).waitFor({ state: "visible", timeout: 10000 });
     const row = this.table().locator("tr", { has: this.page.getByText(name) });
     await row.waitFor({ state: "visible" });
     const statusBadge = isActive ? "Active" : "Inactive";

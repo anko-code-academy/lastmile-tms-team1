@@ -117,7 +117,7 @@ export function DepotForm({ depotId }: DepotFormProps) {
   useEffect(() => {
     if (data?.depot) {
       const depot = data.depot;
-      const existingHours = depot.operatingHours ?? [];
+      const existingHours = depot.shiftSchedules ?? [];
 
       // Build operating hours array with all 7 days
       const hoursMap = new Map(existingHours.map((h) => [h.dayOfWeek, h]));

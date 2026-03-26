@@ -20,10 +20,29 @@ public class UpdateDepotHandler(IAppDbContext dbContext) : IRequestHandler<Updat
 
         if (request.OperatingHours != null)
         {
+            // Load existing schedules directly, not via navigation property to avoid EF tracking issues
+            var existingSchedules = await dbContext.ShiftSchedules
+                .Where(s => s.DepotId == depot.Id)
+                .ToListAsync(cancellationToken);
+
+            // Get the set of days in the request
+            var requestedDays = request.OperatingHours
+                .Select(h => h.DayOfWeek)
+                .ToHashSet();
+
+            // Remove schedules for days NOT in the request
+            foreach (var existing in existingSchedules)
+            {
+                if (!requestedDays.Contains(existing.DayOfWeek))
+                {
+                    dbContext.ShiftSchedules.Remove(existing);
+                }
+            }
+
             foreach (var h in request.OperatingHours)
             {
-                var existing = await dbContext.ShiftSchedules
-                    .FirstOrDefaultAsync(s => s.DepotId == depot.Id && s.DayOfWeek == h.DayOfWeek, cancellationToken);
+                var existing = existingSchedules
+                    .FirstOrDefault(s => s.DayOfWeek == h.DayOfWeek);
 
                 if (existing != null)
                 {
@@ -41,13 +60,15 @@ public class UpdateDepotHandler(IAppDbContext dbContext) : IRequestHandler<Updat
                 }
                 else if (h.OpenTime != null && h.CloseTime != null)
                 {
-                    // Insert new schedule (only if times are provided)
-                    depot.ShiftSchedules.Add(new ShiftSchedule
+                    // Insert new schedule
+                    var schedule = new ShiftSchedule
                     {
                         DayOfWeek = h.DayOfWeek,
                         OpenTime = h.OpenTime!.Value,
-                        CloseTime = h.CloseTime!.Value
-                    });
+                        CloseTime = h.CloseTime!.Value,
+                        DepotId = depot.Id
+                    };
+                    dbContext.ShiftSchedules.Add(schedule);
                 }
             }
         }
