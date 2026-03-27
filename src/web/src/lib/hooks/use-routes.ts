@@ -97,6 +97,7 @@ export function useCreateRoute() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["routes"] });
+      queryClient.invalidateQueries({ queryKey: ["vehicles"] });
     },
   });
 }
@@ -130,6 +131,7 @@ export function useUpdateRoute() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["routes"] });
       queryClient.invalidateQueries({ queryKey: ["route", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["vehicles"] });
     },
   });
 }
@@ -148,6 +150,7 @@ export function useDeleteRoute() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["routes"] });
+      queryClient.invalidateQueries({ queryKey: ["vehicles"] });
     },
   });
 }

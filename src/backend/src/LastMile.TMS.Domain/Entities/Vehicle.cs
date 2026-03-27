@@ -59,6 +59,34 @@ public class Vehicle : BaseAuditableEntity
         Status = newStatus;
     }
 
+    public void AssignToRoute(int parcelCount)
+    {
+        if (Status == VehicleStatus.Retired)
+        {
+            throw new InvalidOperationException("Cannot assign a retired vehicle to a route");
+        }
+
+        if (parcelCount > ParcelCapacity)
+        {
+            throw new InvalidOperationException($"Vehicle capacity exceeded. Max: {ParcelCapacity}, Requested: {parcelCount}");
+        }
+
+        if (Status != VehicleStatus.InUse && !CanTransitionTo(VehicleStatus.InUse))
+        {
+             throw new InvalidOperationException($"Vehicle is not available for assignment (Current status: {Status})");
+        }
+
+        Status = VehicleStatus.InUse;
+    }
+
+    public void ReleaseFromRoute()
+    {
+        if (Status == VehicleStatus.InUse)
+        {
+            Status = VehicleStatus.Available;
+        }
+    }
+
     public void Update(
         string registrationPlate,
         VehicleType type,

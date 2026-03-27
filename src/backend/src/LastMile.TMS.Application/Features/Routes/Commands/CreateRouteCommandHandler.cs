@@ -21,21 +21,17 @@ public class CreateRouteCommandHandler(IAppDbContext context) : IRequestHandler<
             VehicleId = request.VehicleId
         };
 
-        context.Routes.Add(route);
-
         if (request.VehicleId.HasValue)
         {
             var vehicle = await context.Vehicles.FirstOrDefaultAsync(v => v.Id == request.VehicleId.Value, cancellationToken);
-            if (vehicle != null)
+            if (vehicle == null)
             {
-                if (vehicle.Status == Domain.Enums.VehicleStatus.Retired)
-                {
-                    throw new InvalidOperationException("Cannot assign a retired vehicle to a route");
-                }
-                vehicle.Status = Domain.Enums.VehicleStatus.InUse;
+                throw new InvalidOperationException($"Vehicle with ID {request.VehicleId.Value} not found.");
             }
+            vehicle.AssignToRoute(request.TotalParcelCount);
         }
 
+        context.Routes.Add(route);
         await context.SaveChangesAsync(cancellationToken);
 
         var vehiclePlate = request.VehicleId.HasValue

@@ -76,10 +76,11 @@ public class ChangeRouteStatusCommandHandler(IAppDbContext context) : IRequestHa
 
                 // Assign vehicle if not already assigned
                 var vehicle = await context.Vehicles.FirstOrDefaultAsync(v => v.Id == oldVehicleId.Value, cancellationToken);
-                if (vehicle != null && vehicle.Status == Domain.Enums.VehicleStatus.Available)
+                if (vehicle == null)
                 {
-                    vehicle.Status = Domain.Enums.VehicleStatus.InUse;
+                    throw new InvalidOperationException($"Vehicle with ID {oldVehicleId.Value} not found.");
                 }
+                vehicle.AssignToRoute(route.TotalParcelCount);
             }
         }
 
@@ -111,7 +112,7 @@ public class ChangeRouteStatusCommandHandler(IAppDbContext context) : IRequestHa
             var stillInUse = await context.Routes.AnyAsync(r => r.VehicleId == vehicleId && r.Id != excludeRouteId, cancellationToken);
             if (!stillInUse)
             {
-                vehicle.Status = Domain.Enums.VehicleStatus.Available;
+                vehicle.ReleaseFromRoute();
             }
         }
     }

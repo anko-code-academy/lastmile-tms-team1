@@ -31,7 +31,7 @@ public class DeleteRouteCommandHandler(IAppDbContext context) : IRequestHandler<
                 var stillInUse = await context.Routes.AnyAsync(r => r.VehicleId == oldVehicleId.Value, cancellationToken);
                 if (!stillInUse)
                 {
-                    vehicle.Status = Domain.Enums.VehicleStatus.Available;
+                    vehicle.ReleaseFromRoute();
                 }
             }
         }
