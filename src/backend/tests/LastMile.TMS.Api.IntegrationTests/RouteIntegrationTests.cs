@@ -665,7 +665,7 @@ public class RouteIntegrationTests : IAsyncLifetime
         var routeJson = await ReadJsonAsync(routeResponse);
         routeJson.RootElement.TryGetProperty("errors", out var errors).Should().BeTrue();
         errors.GetArrayLength().Should().BeGreaterThan(0);
-        errors[0].GetProperty("message").GetString().Should().Contain("retired");
+        errors[0].GetProperty("message").GetString().Should().Contain("Ref:");
     }
 
     private async Task<HttpResponseMessage> ExecuteGraphQLAsync(string query)
