@@ -15,6 +15,7 @@ public class AppDbContext(
     public DbSet<Address> Addresses => Set<Address>();
     public DbSet<Depot> Depots => Set<Depot>();
     public DbSet<Driver> Drivers => Set<Driver>();
+    public DbSet<ShiftSchedule> ShiftSchedules => Set<ShiftSchedule>();
     public DbSet<Zone> Zones => Set<Zone>();
 
     // Custom entities (Users and Roles are inherited from IdentityDbContext)

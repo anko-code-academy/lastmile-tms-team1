@@ -75,4 +75,87 @@ public class ShiftScheduleTests
         // Assert
         schedule.OpenTime.Should().BeBefore(schedule.CloseTime);
     }
+
+    [Fact]
+    public void ShiftSchedule_ShouldAllowNullableDriverId()
+    {
+        // Act
+        ShiftSchedule schedule = new()
+        {
+            DriverId = null,
+            DayOfWeek = DayOfWeek.Monday,
+            OpenTime = new TimeOnly(9, 0),
+            CloseTime = new TimeOnly(17, 0)
+        };
+
+        // Assert
+        schedule.DriverId.Should().BeNull();
+    }
+
+    [Fact]
+    public void ShiftSchedule_ShouldAllowNullableDepotId()
+    {
+        // Act
+        ShiftSchedule schedule = new()
+        {
+            DepotId = null,
+            DayOfWeek = DayOfWeek.Monday,
+            OpenTime = new TimeOnly(9, 0),
+            CloseTime = new TimeOnly(17, 0)
+        };
+
+        // Assert
+        schedule.DepotId.Should().BeNull();
+    }
+
+    [Fact]
+    public void ShiftSchedule_ShouldAllowSettingDepotId()
+    {
+        // Arrange
+        Guid depotId = Guid.CreateVersion7();
+
+        // Act
+        ShiftSchedule schedule = new()
+        {
+            DepotId = depotId,
+            DayOfWeek = DayOfWeek.Monday,
+            OpenTime = new TimeOnly(9, 0),
+            CloseTime = new TimeOnly(17, 0)
+        };
+
+        // Assert
+        schedule.DepotId.Should().Be(depotId);
+    }
+
+    [Fact]
+    public void ShiftSchedule_ShouldAllowSettingBothNullableFk()
+    {
+        // Arrange
+        Guid driverId = Guid.CreateVersion7();
+        Guid depotId = Guid.CreateVersion7();
+
+        // Act
+        ShiftSchedule driverSchedule = new()
+        {
+            DriverId = driverId,
+            DayOfWeek = DayOfWeek.Monday,
+            OpenTime = new TimeOnly(9, 0),
+            CloseTime = new TimeOnly(17, 0)
+        };
+
+        ShiftSchedule depotSchedule = new()
+        {
+            DepotId = depotId,
+            DayOfWeek = DayOfWeek.Monday,
+            OpenTime = new TimeOnly(9, 0),
+            CloseTime = new TimeOnly(17, 0)
+        };
+
+        // Assert
+        driverSchedule.DriverId.Should().Be(driverId);
+        driverSchedule.DepotId.Should().BeNull();
+
+        depotSchedule.DriverId.Should().BeNull();
+        depotSchedule.DepotId.Should().Be(depotId);
+    }
 }

@@ -1,5 +1,10 @@
 using Hangfire;
 using Hangfire.PostgreSql;
+using HotChocolate.AspNetCore;
+using LastMile.TMS.Api.GraphQL;
+using LastMile.TMS.Api.GraphQL.Extensions.Depot;
+using LastMile.TMS.Api.GraphQL.Extensions.Zone;
+using LastMile.TMS.Api.GraphQL.Inputs;
 using LastMile.TMS.Application;
 using LastMile.TMS.Domain.Entities;
 using LastMile.TMS.Infrastructure;
@@ -10,8 +15,6 @@ using OpenIddict.Abstractions;
 using OpenIddict.Validation.AspNetCore;
 using Serilog;
 using DbSeeder = LastMile.TMS.Api.Services.DbSeeder;
-using LastMile.TMS.Api.GraphQL;
-using HotChocolate.AspNetCore;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -118,8 +121,22 @@ try
         .AddGraphQLServer()
         .AddAuthorization()
         .AddSpatialTypes()
-        .AddQueryType<Query>()
-        .AddMutationType<Mutation>();
+        .AddFiltering()
+        .AddSorting()
+        .AddProjections()
+        .AddQueryType<Query>(d => d.Name("Query").Field("sentinel").Type<StringType>().Resolve(_ => "sentinel"))
+        .AddMutationType<Mutation>(d => d.Name("Mutation").Field("sentinel").Type<StringType>().Resolve(_ => "sentinel"))
+        .AddType<DepotQuery>()
+        .AddType<DepotMutation>()
+        .AddType<ZoneQuery>()
+        .AddType<ZoneMutation>()
+        .AddType<CreateDepotInput>()
+        .AddType<AddressInputType>()
+        .AddType<UpdateDepotInput>()
+        .AddType<UpdateAddressInputType>()
+        .AddType<DailyOperatingHoursInputType>()
+        .AddType<CreateZoneInput>()
+        .AddType<UpdateZoneInput>();
 
     builder.Services.AddHangfire(config =>
         config.UsePostgreSqlStorage(options =>
@@ -141,12 +158,9 @@ try
     app.UseHttpsRedirection();
     app.UseAuthentication();
     app.UseAuthorization();
-    app.MapGraphQL().WithOptions(new GraphQLServerOptions
+    app.MapGraphQL().WithOptions(options =>
     {
-      Tool =
-      {
-        Enable = app.Environment.IsDevelopment()
-      },
+        options.Tool.Enable = app.Environment.IsDevelopment();
     });
     app.MapControllers();
     app.UseHangfireDashboard("/hangfire");
@@ -154,7 +168,7 @@ try
     // Apply migrations then seed database
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    context.Database.Migrate();
+    await context.Database.MigrateAsync();
     var seeder = scope.ServiceProvider.GetRequiredService<LastMile.TMS.Application.Common.Interfaces.IDbSeeder>();
     await seeder.SeedAsync();
 

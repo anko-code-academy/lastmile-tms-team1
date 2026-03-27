@@ -1,6 +1,5 @@
 using FluentAssertions;
 using LastMile.TMS.Application.Common.Interfaces;
-using LastMile.TMS.Domain.Common;
 using LastMile.TMS.Domain.Entities;
 using LastMile.TMS.Domain.Enums;
 using LastMile.TMS.Persistence;
@@ -220,7 +219,7 @@ public class SoftDeleteBehaviorTests : IDisposable
         {
             Name = "Main Depot",
             IsActive = true,
-            OperatingHours = OperatingHours.Create()
+            ShiftSchedules = []
         };
         _context.Depots.Add(depot);
         await _context.SaveChangesAsync();

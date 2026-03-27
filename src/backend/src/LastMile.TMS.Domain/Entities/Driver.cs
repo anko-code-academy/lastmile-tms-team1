@@ -23,7 +23,7 @@ public class Driver : BaseAuditableEntity
     public bool IsActive { get; set; } = true;
 
     // Navigation properties
-    public ICollection<ShiftSchedule> ShiftSchedules { get; set; } = [];
+    public ICollection<ShiftSchedule> ShiftSchedules { get; set; } = new List<ShiftSchedule>();
     public ICollection<DayOff> DaysOff { get; set; } = [];
 
     // Navigation properties
