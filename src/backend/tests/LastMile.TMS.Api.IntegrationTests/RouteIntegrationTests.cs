@@ -497,6 +497,16 @@ public class RouteIntegrationTests : IAsyncLifetime
         var createJson = await ReadJsonAsync(createResponse);
         var routeId = createJson.RootElement.GetProperty("data").GetProperty("createRoute").GetProperty("id").GetString();
 
+        // Start the route first (Required: Planned -> InProgress -> Completed)
+        var startMutation = $@"
+            mutation {{
+                changeRouteStatus(id: ""{routeId}"", newStatus: IN_PROGRESS) {{
+                    id
+                    status
+                }}
+            }}";
+        await ExecuteGraphQLAsync(startMutation);
+
         // Act - Change status to COMPLETED
         var completeMutation = $@"
             mutation {{
