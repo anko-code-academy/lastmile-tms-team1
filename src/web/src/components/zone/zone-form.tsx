@@ -24,13 +24,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ZoneBoundaryMap } from "@/components/zone/zone-boundary-map";
 import { useGraphQuery, useGraphMutation } from "@/hooks/use-graphql";
 import { GET_ZONE_QUERY } from "@/lib/graphql/queries/zone";
@@ -198,24 +191,20 @@ export function ZoneForm({ zoneId }: ZoneFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Depot</FormLabel>
-                  <Select
-                    key={field.value || "empty"}
-                    onValueChange={field.onChange}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a depot" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
+                  <FormControl>
+                    <select
+                      className="flex w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                      value={field.value ?? ""}
+                      onChange={(e) => field.onChange(e.target.value)}
+                    >
+                      <option value="">Select a depot</option>
                       {depots.map((depot) => (
-                        <SelectItem key={depot.id} value={depot.id}>
+                        <option key={depot.id} value={depot.id}>
                           {depot.name}
-                        </SelectItem>
+                        </option>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    </select>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

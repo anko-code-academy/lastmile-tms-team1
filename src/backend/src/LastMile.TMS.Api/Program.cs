@@ -1,9 +1,11 @@
 using Hangfire;
 using Hangfire.PostgreSql;
-using HotChocolate.AspNetCore;
+using HotChocolate;
 using LastMile.TMS.Api.GraphQL;
 using LastMile.TMS.Api.GraphQL.Extensions.Depot;
 using LastMile.TMS.Api.GraphQL.Extensions.Zone;
+using LastMile.TMS.Api.GraphQL.Extensions.Vehicle;
+using LastMile.TMS.Api.GraphQL.Extensions.Route;
 using LastMile.TMS.Api.GraphQL.Inputs;
 using LastMile.TMS.Application;
 using LastMile.TMS.Domain.Entities;
@@ -119,24 +121,30 @@ try
     // GraphQL
     builder.Services
         .AddGraphQLServer()
-        .AddAuthorization()
-        .AddSpatialTypes()
+        .ModifyCostOptions(o => o.MaxFieldCost = 15000)
+        .AddProjections()
         .AddFiltering()
         .AddSorting()
-        .AddProjections()
+        .AddAuthorization()
+        .AddSpatialTypes()
         .AddQueryType<Query>(d => d.Name("Query").Field("sentinel").Type<StringType>().Resolve(_ => "sentinel"))
         .AddMutationType<Mutation>(d => d.Name("Mutation").Field("sentinel").Type<StringType>().Resolve(_ => "sentinel"))
         .AddType<DepotQuery>()
         .AddType<DepotMutation>()
         .AddType<ZoneQuery>()
         .AddType<ZoneMutation>()
+        .AddType<VehicleQuery>()
+        .AddType<VehicleMutation>()
+        .AddType<RouteQuery>()
+        .AddType<RouteMutation>()
         .AddType<CreateDepotInput>()
         .AddType<AddressInputType>()
         .AddType<UpdateDepotInput>()
         .AddType<UpdateAddressInputType>()
         .AddType<DailyOperatingHoursInputType>()
         .AddType<CreateZoneInput>()
-        .AddType<UpdateZoneInput>();
+        .AddType<UpdateZoneInput>()
+        .AddErrorFilter<ErrorFilter>();
 
     builder.Services.AddHangfire(config =>
         config.UsePostgreSqlStorage(options =>
