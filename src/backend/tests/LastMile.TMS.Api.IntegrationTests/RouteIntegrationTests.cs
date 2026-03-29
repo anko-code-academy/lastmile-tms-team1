@@ -166,17 +166,17 @@ public class RouteIntegrationTests : IAsyncLifetime
     public async Task CreateRoute_WithEmptyName_ReturnsError()
     {
         // Arrange
-        var mutation = @"
-            mutation {
+        var mutation = $@"
+            mutation {{
                 createRoute(
                     name: """",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(7):O}"",
                     totalDistanceKm: 50.0,
                     totalParcelCount: 25
-                ) {
+                ) {{
                     id
-                }
-            }";
+                }}
+            }}";
 
         // Act
         var response = await ExecuteGraphQLAsync(mutation);
@@ -192,26 +192,26 @@ public class RouteIntegrationTests : IAsyncLifetime
     public async Task GetRoutes_ReturnsAllRoutes()
     {
         // Arrange - Create a couple of routes first
-        var createMutation1 = @"
-            mutation {
+        var createMutation1 = $@"
+            mutation {{
                 createRoute(
                     name: ""Route List 001"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(9):O}"",
                     totalDistanceKm: 30.0,
                     totalParcelCount: 15
-                ) { id }
-            }";
+                ) {{ id }}
+            }}";
         await ExecuteGraphQLAsync(createMutation1);
 
-        var createMutation2 = @"
-            mutation {
+        var createMutation2 = $@"
+            mutation {{
                 createRoute(
                     name: ""Route List 002"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(9):O}"",
                     totalDistanceKm: 40.0,
                     totalParcelCount: 20
-                ) { id }
-            }";
+                ) {{ id }}
+            }}";
         await ExecuteGraphQLAsync(createMutation2);
 
         // Act
@@ -239,15 +239,15 @@ public class RouteIntegrationTests : IAsyncLifetime
     public async Task GetRoute_ById_ReturnsRoute()
     {
         // Arrange - Create a route
-        var createMutation = @"
-            mutation {
+        var createMutation = $@"
+            mutation {{
                 createRoute(
                     name: ""Get Route By ID"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(10):O}"",
                     totalDistanceKm: 60.0,
                     totalParcelCount: 30
-                ) { id }
-            }";
+                ) {{ id }}
+            }}";
         var createResponse = await ExecuteGraphQLAsync(createMutation);
         var createJson = await ReadJsonAsync(createResponse);
         var routeId = createJson.RootElement.GetProperty("data").GetProperty("createRoute").GetProperty("id").GetString();
@@ -278,15 +278,15 @@ public class RouteIntegrationTests : IAsyncLifetime
     public async Task UpdateRoute_ChangesRouteData()
     {
         // Arrange - Create a route
-        var createMutation = @"
-            mutation {
+        var createMutation = $@"
+            mutation {{
                 createRoute(
                     name: ""Update Route Test"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(11):O}"",
                     totalDistanceKm: 25.0,
                     totalParcelCount: 10
-                ) { id }
-            }";
+                ) {{ id }}
+            }}";
         var createResponse = await ExecuteGraphQLAsync(createMutation);
         var createJson = await ReadJsonAsync(createResponse);
         var routeId = createJson.RootElement.GetProperty("data").GetProperty("createRoute").GetProperty("id").GetString();
@@ -323,15 +323,15 @@ public class RouteIntegrationTests : IAsyncLifetime
     public async Task UpdateRoute_WithVehicleAssignment_UpdatesVehicleStatus()
     {
         // Arrange - Create a route without vehicle
-        var createMutation = @"
-            mutation {
+        var createMutation = $@"
+            mutation {{
                 createRoute(
                     name: ""Update Route Vehicle"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(13):O}"",
                     totalDistanceKm: 45.0,
                     totalParcelCount: 20
-                ) { id }
-            }";
+                ) {{ id }}
+            }}";
         var createResponse = await ExecuteGraphQLAsync(createMutation);
         var createJson = await ReadJsonAsync(createResponse);
         var routeId = createJson.RootElement.GetProperty("data").GetProperty("createRoute").GetProperty("id").GetString();
@@ -367,15 +367,15 @@ public class RouteIntegrationTests : IAsyncLifetime
     public async Task DeleteRoute_RemovesRoute()
     {
         // Arrange - Create a route
-        var createMutation = @"
-            mutation {
+        var createMutation = $@"
+            mutation {{
                 createRoute(
                     name: ""Delete Route Test"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(14):O}"",
                     totalDistanceKm: 55.0,
                     totalParcelCount: 25
-                ) { id }
-            }";
+                ) {{ id }}
+            }}";
         var createResponse = await ExecuteGraphQLAsync(createMutation);
         var createJson = await ReadJsonAsync(createResponse);
         var routeId = createJson.RootElement.GetProperty("data").GetProperty("createRoute").GetProperty("id").GetString();
@@ -446,15 +446,15 @@ public class RouteIntegrationTests : IAsyncLifetime
     public async Task ChangeRouteStatus_ToInProgress_SetsActualStartTime()
     {
         // Arrange - Create a route
-        var createMutation = @"
-            mutation {
+        var createMutation = $@"
+            mutation {{
                 createRoute(
                     name: ""Status Change Test"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(12):O}"",
                     totalDistanceKm: 40.0,
                     totalParcelCount: 20
-                ) { id }
-            }";
+                ) {{ id }}
+            }}";
         var createResponse = await ExecuteGraphQLAsync(createMutation);
         var createJson = await ReadJsonAsync(createResponse);
         var routeId = createJson.RootElement.GetProperty("data").GetProperty("createRoute").GetProperty("id").GetString();
