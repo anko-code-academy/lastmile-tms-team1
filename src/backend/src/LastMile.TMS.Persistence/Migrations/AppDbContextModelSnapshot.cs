@@ -228,7 +228,7 @@ namespace LastMile.TMS.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("AddressId")
+                    b.Property<Guid>("AddressId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -774,7 +774,10 @@ namespace LastMile.TMS.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
-                    b.Property<Guid>("DriverId")
+                    b.Property<Guid?>("DepotId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("DriverId")
                         .HasColumnType("uuid");
 
                     b.Property<bool>("IsDeleted")
@@ -793,8 +796,9 @@ namespace LastMile.TMS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DriverId", "DayOfWeek")
-                        .IsUnique();
+                    b.HasIndex("DepotId");
+
+                    b.HasIndex("DriverId");
 
                     b.ToTable("ShiftSchedules", (string)null);
                 });
@@ -1489,30 +1493,10 @@ namespace LastMile.TMS.Persistence.Migrations
                     b.HasOne("LastMile.TMS.Domain.Entities.Address", "Address")
                         .WithMany()
                         .HasForeignKey("AddressId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.OwnsOne("LastMile.TMS.Domain.Common.OperatingHours", "OperatingHours", b1 =>
-                        {
-                            b1.Property<Guid>("DepotId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<string>("Schedule")
-                                .IsRequired()
-                                .HasColumnType("text")
-                                .HasColumnName("OperatingHoursJson");
-
-                            b1.HasKey("DepotId");
-
-                            b1.ToTable("Depots");
-
-                            b1.WithOwner()
-                                .HasForeignKey("DepotId");
-                        });
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Address");
-
-                    b.Navigation("OperatingHours")
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("LastMile.TMS.Domain.Entities.Driver", b =>
@@ -1592,11 +1576,17 @@ namespace LastMile.TMS.Persistence.Migrations
 
             modelBuilder.Entity("LastMile.TMS.Domain.Entities.ShiftSchedule", b =>
                 {
+                    b.HasOne("LastMile.TMS.Domain.Entities.Depot", "Depot")
+                        .WithMany("ShiftSchedules")
+                        .HasForeignKey("DepotId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("LastMile.TMS.Domain.Entities.Driver", "Driver")
                         .WithMany("ShiftSchedules")
                         .HasForeignKey("DriverId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Depot");
 
                     b.Navigation("Driver");
                 });
@@ -1757,6 +1747,8 @@ namespace LastMile.TMS.Persistence.Migrations
             modelBuilder.Entity("LastMile.TMS.Domain.Entities.Depot", b =>
                 {
                     b.Navigation("Drivers");
+
+                    b.Navigation("ShiftSchedules");
 
                     b.Navigation("Zones");
                 });

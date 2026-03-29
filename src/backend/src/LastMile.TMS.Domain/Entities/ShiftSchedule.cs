@@ -10,9 +10,14 @@ public class ShiftSchedule : BaseAuditableEntity
 
     public TimeOnly CloseTime { get; set; }
 
-    // Foreign key
-    public Guid DriverId { get; set; }
+    // Foreign keys — exactly one must be set (XOR enforced at DB level)
+    public Guid? DriverId { get; set; }
+
+    public Guid? DepotId { get; set; }
 
     // Navigation property
     public Driver Driver { get; set; } = null!;
+
+    // Navigation property
+    public Depot Depot { get; set; } = null!;
 }

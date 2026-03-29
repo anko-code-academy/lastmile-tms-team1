@@ -21,7 +21,7 @@ public static class DependencyInjection
         // Primary registration — used by GraphQL, MediatR, Identity, OpenIddict
         services.AddDbContext<AppDbContext>((sp, options) => npgsqlOptions(options));
 
-        // Factory — required for Hangfire background jobs
+        // Factory — only for Hangfire background jobs
         services.AddDbContextFactory<AppDbContext>((sp, options) => npgsqlOptions(options),
             ServiceLifetime.Scoped);
 

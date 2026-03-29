@@ -1,5 +1,10 @@
 using Hangfire;
 using Hangfire.PostgreSql;
+using HotChocolate.AspNetCore;
+using LastMile.TMS.Api.GraphQL;
+using LastMile.TMS.Api.GraphQL.Extensions.Depot;
+using LastMile.TMS.Api.GraphQL.Extensions.Zone;
+using LastMile.TMS.Api.GraphQL.Inputs;
 using LastMile.TMS.Application;
 using LastMile.TMS.Domain.Entities;
 using LastMile.TMS.Infrastructure;
@@ -124,6 +129,17 @@ try
         .AddSpatialTypes()
         .AddQueryType<Query>(d => d.Name("Query").Field("sentinel").Type<StringType>().Resolve(_ => "sentinel"))
         .AddMutationType<Mutation>(d => d.Name("Mutation").Field("sentinel").Type<StringType>().Resolve(_ => "sentinel"))
+        .AddType<DepotQuery>()
+        .AddType<DepotMutation>()
+        .AddType<ZoneQuery>()
+        .AddType<ZoneMutation>()
+        .AddType<CreateDepotInput>()
+        .AddType<AddressInputType>()
+        .AddType<UpdateDepotInput>()
+        .AddType<UpdateAddressInputType>()
+        .AddType<DailyOperatingHoursInputType>()
+        .AddType<CreateZoneInput>()
+        .AddType<UpdateZoneInput>()
         .AddType<UserManagementQuery>()
         .AddType<UserManagementMutation>()
         .AddErrorFilter<GraphQLErrorFilter>();
@@ -148,12 +164,9 @@ try
     app.UseHttpsRedirection();
     app.UseAuthentication();
     app.UseAuthorization();
-    app.MapGraphQL().WithOptions(new GraphQLServerOptions
+    app.MapGraphQL().WithOptions(options =>
     {
-        Tool =
-        {
-            Enable = app.Environment.IsDevelopment()
-        },
+        options.Tool.Enable = app.Environment.IsDevelopment();
     });
     app.MapControllers();
     app.UseHangfireDashboard("/hangfire");

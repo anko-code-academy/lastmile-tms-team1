@@ -12,6 +12,5 @@ public interface IAppDbContext
     DbSet<ShiftSchedule> ShiftSchedules { get; }
     DbSet<User> Users { get; }
     DbSet<Zone> Zones { get; }
-
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
