@@ -102,7 +102,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {{
                 createRoute(
                     name: ""Test Route 001"",
-                    plannedStartTime: ""2026-03-26T09:00:00Z"",
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(7):O}"",
                     totalDistanceKm: 50.5,
                     totalParcelCount: 25
                 ) {{
@@ -138,7 +138,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {{
                 createRoute(
                     name: ""Route With Vehicle"",
-                    plannedStartTime: ""2026-03-27T10:00:00Z"",
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(8):O}"",
                     totalDistanceKm: 100.0,
                     totalParcelCount: 50,
                     vehicleId: ""{_vehicleId}""
@@ -170,7 +170,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {
                 createRoute(
                     name: """",
-                    plannedStartTime: ""2026-03-26T09:00:00Z"",
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(7):O}"",
                     totalDistanceKm: 50.0,
                     totalParcelCount: 25
                 ) {
@@ -196,7 +196,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {
                 createRoute(
                     name: ""Route List 001"",
-                    plannedStartTime: ""2026-03-28T08:00:00Z"",
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(9):O}"",
                     totalDistanceKm: 30.0,
                     totalParcelCount: 15
                 ) { id }
@@ -207,7 +207,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {
                 createRoute(
                     name: ""Route List 002"",
-                    plannedStartTime: ""2026-03-28T10:00:00Z"",
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(9):O}"",
                     totalDistanceKm: 40.0,
                     totalParcelCount: 20
                 ) { id }
@@ -243,7 +243,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {
                 createRoute(
                     name: ""Get Route By ID"",
-                    plannedStartTime: ""2026-03-29T11:00:00Z"",
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(10):O}"",
                     totalDistanceKm: 60.0,
                     totalParcelCount: 30
                 ) { id }
@@ -282,7 +282,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {
                 createRoute(
                     name: ""Update Route Test"",
-                    plannedStartTime: ""2026-03-30T09:00:00Z"",
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(11):O}"",
                     totalDistanceKm: 25.0,
                     totalParcelCount: 10
                 ) { id }
@@ -297,7 +297,7 @@ public class RouteIntegrationTests : IAsyncLifetime
                 updateRoute(
                     id: ""{routeId}"",
                     name: ""Updated Route Name"",
-                    plannedStartTime: ""2026-03-31T10:00:00Z"",
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(12):O}"",
                     totalDistanceKm: 75.0,
                     totalParcelCount: 35
                 ) {{
@@ -327,7 +327,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {
                 createRoute(
                     name: ""Update Route Vehicle"",
-                    plannedStartTime: ""2026-04-01T08:00:00Z"",
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(13):O}"",
                     totalDistanceKm: 45.0,
                     totalParcelCount: 20
                 ) { id }
@@ -342,7 +342,7 @@ public class RouteIntegrationTests : IAsyncLifetime
                 updateRoute(
                     id: ""{routeId}"",
                     name: ""Update Route Vehicle"",
-                    plannedStartTime: ""2026-04-01T08:00:00Z"",
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(13):O}"",
                     totalDistanceKm: 45.0,
                     totalParcelCount: 20,
                     vehicleId: ""{_vehicleId}""
@@ -371,7 +371,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {
                 createRoute(
                     name: ""Delete Route Test"",
-                    plannedStartTime: ""2026-04-02T09:00:00Z"",
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(14):O}"",
                     totalDistanceKm: 55.0,
                     totalParcelCount: 25
                 ) { id }
@@ -418,7 +418,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {{
                 createRoute(
                     name: ""Delete Route With Vehicle"",
-                    plannedStartTime: ""2026-04-03T08:00:00Z"",
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(15):O}"",
                     totalDistanceKm: 35.0,
                     totalParcelCount: 15,
                     vehicleId: ""{_vehicleId}""
@@ -450,7 +450,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {
                 createRoute(
                     name: ""Status Change Test"",
-                    plannedStartTime: ""2026-04-10T09:00:00Z"",
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(12):O}"",
                     totalDistanceKm: 40.0,
                     totalParcelCount: 20
                 ) { id }
@@ -487,7 +487,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {{
                 createRoute(
                     name: ""Complete With Vehicle"",
-                    plannedStartTime: ""2026-04-11T10:00:00Z"",
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(13):O}"",
                     totalDistanceKm: 50.0,
                     totalParcelCount: 25,
                     vehicleId: ""{_vehicleId}""
@@ -538,7 +538,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {{
                 createRoute(
                     name: ""History Test Route"",
-                    plannedStartTime: ""2026-04-15T08:00:00Z"",
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(17):O}"",
                     totalDistanceKm: 60.0,
                     totalParcelCount: 30,
                     vehicleId: ""{_vehicleId}""
@@ -599,7 +599,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {{
                 createRoute(
                     name: ""Cancel With Vehicle"",
-                    plannedStartTime: ""2026-04-20T10:00:00Z"",
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(22):O}"",
                     totalDistanceKm: 45.0,
                     totalParcelCount: 20,
                     vehicleId: ""{_vehicleId}""
@@ -662,7 +662,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {{
                 createRoute(
                     name: ""Route With Retired Vehicle"",
-                    plannedStartTime: ""2026-04-25T10:00:00Z"",
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(27):O}"",
                     totalDistanceKm: 30.0,
                     totalParcelCount: 15,
                     vehicleId: ""{vehicleId}""
