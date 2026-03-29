@@ -276,3 +276,86 @@ export interface UpdateZoneInput {
   depotId: string;
   isActive: boolean;
 }
+
+// Driver types
+export interface DriverDto {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+  licenseNumber: string;
+  licenseExpiryDate: string;
+  photo?: string;
+  zoneId: string;
+  depotId: string;
+  userId?: string;
+  isActive: boolean;
+  createdAt: string;
+  lastModifiedAt?: string;
+  zone?: { id: string; name: string };
+  depot?: { id: string; name: string };
+}
+
+export interface DriverSummaryDto {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+  isActive: boolean;
+  createdAt: string;
+  zone?: { id: string; name: string };
+  depot?: { id: string; name: string };
+}
+
+export interface DriversResponse {
+  drivers: {
+    nodes: DriverSummaryDto[];
+  };
+}
+
+export interface DriverResult {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+  licenseNumber: string;
+  licenseExpiryDate: string;
+  photo?: string;
+  zoneId: string;
+  depotId: string;
+  userId?: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface CreateDriverInput {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+  licenseNumber: string;
+  licenseExpiryDate: string;
+  photo?: string;
+  zoneId: string;
+  depotId: string;
+  userId?: string;
+  isActive?: boolean;
+}
+
+export interface UpdateDriverInput {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+  licenseNumber: string;
+  licenseExpiryDate: string;
+  photo?: string;
+  zoneId: string;
+  depotId: string;
+  userId?: string;
+  isActive: boolean;
+}
