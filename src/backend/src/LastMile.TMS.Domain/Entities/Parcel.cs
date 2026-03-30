@@ -50,10 +50,10 @@ public class Parcel : BaseAuditableEntity
     // Factory method for tracking number generation
     public static string GenerateTrackingNumber()
     {
-        // Format: LMTT1-YYYYMMDD-XXXXXX (16 chars)
-        var datePart = DateTimeOffset.UtcNow.ToString("yyyyMMdd");
+        // Format: LM-yyMMdd-XXXXXX (16 chars total)
+        var datePart = DateTimeOffset.UtcNow.ToString("yyMMdd");
         var randomPart = Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();
-        return $"LMTT1-{datePart}-{randomPart}";
+        return $"LM-{datePart}-{randomPart}";
     }
 
     // Domain logic: Initialize tracking number
