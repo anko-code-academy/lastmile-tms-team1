@@ -3,6 +3,7 @@ using System;
 using LastMile.TMS.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -12,13 +13,15 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LastMile.TMS.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260330083624_ExplicitParcelTableName")]
+    partial class ExplicitParcelTableName
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.5")
+                .HasAnnotation("ProductVersion", "10.0.4")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "postgis");
@@ -976,9 +979,6 @@ namespace LastMile.TMS.Persistence.Migrations
                     b.Property<Guid?>("DepotId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("DepotName")
-                        .HasColumnType("text");
-
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -993,11 +993,6 @@ namespace LastMile.TMS.Persistence.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.Property<bool>("IsSystemAdmin")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
@@ -1041,9 +1036,6 @@ namespace LastMile.TMS.Persistence.Migrations
                     b.Property<Guid?>("RoleId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("RoleName")
-                        .HasColumnType("text");
-
                     b.Property<string>("SecurityStamp")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -1064,9 +1056,6 @@ namespace LastMile.TMS.Persistence.Migrations
                     b.Property<Guid?>("ZoneId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("ZoneName")
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
 
                     b.HasIndex("DepotId");
@@ -1080,9 +1069,6 @@ namespace LastMile.TMS.Persistence.Migrations
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex");
-
-                    b.HasIndex("PhoneNumber")
-                        .IsUnique();
 
                     b.HasIndex("RoleId");
 

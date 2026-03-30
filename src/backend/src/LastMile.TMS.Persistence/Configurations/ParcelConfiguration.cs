@@ -9,6 +9,8 @@ public class ParcelConfiguration : IEntityTypeConfiguration<Parcel>
 {
     public void Configure(EntityTypeBuilder<Parcel> builder)
     {
+        builder.ToTable("Parcel");
+
         // Tracking number
         builder.Property(p => p.TrackingNumber)
             .HasMaxLength(20)
