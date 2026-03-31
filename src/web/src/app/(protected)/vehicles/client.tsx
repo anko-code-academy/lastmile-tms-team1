@@ -5,7 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { VehicleStatus } from "@/types/vehicle";
 import { VehicleTable } from "@/components/vehicles/vehicle-table";
-import { useVehicles, useDeleteVehicle } from "@/lib/hooks/use-vehicles";
+import { useVehicles, useDeleteVehicle } from "@/hooks/use-vehicles";
 
 export function VehicleListClient() {
   const router = useRouter();

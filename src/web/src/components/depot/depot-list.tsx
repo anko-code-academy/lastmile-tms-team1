@@ -18,38 +18,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useGraphQuery, useGraphMutation } from "@/hooks/use-graphql";
-import { GET_DEPOTS_QUERY } from "@/lib/graphql/queries/depot";
-import { DELETE_DEPOT_MUTATION } from "@/lib/graphql/mutations/depot";
-import type { DepotSummaryDto } from "@/lib/graphql/types";
-import { toast } from "sonner";
-
-interface DepotsResponse {
-  depots: {
-    nodes: DepotSummaryDto[];
-  };
-}
+import { useDepots, useDeleteDepot } from "@/hooks/use-depots";
 
 export function DepotList() {
   const router = useRouter();
-  const { data, isLoading, error } = useGraphQuery<DepotsResponse, null>({
-    queryKey: ["depots"],
-    query: GET_DEPOTS_QUERY,
-  });
-
-  const deleteMutation = useGraphMutation<{ deleteDepot: boolean }, { id: string }>({
-    mutation: DELETE_DEPOT_MUTATION,
-    invalidateKeys: ["depots"],
-  });
+  const { data: depots, isLoading, error } = useDepots();
+  const deleteDepot = useDeleteDepot();
 
   async function handleDelete(id: string) {
     if (!confirm("Are you sure you want to delete this depot?")) return;
 
     try {
-      await deleteMutation.mutateAsync({ id });
-      toast.success("Depot deleted successfully");
+      await deleteDepot.mutateAsync(id);
     } catch (err) {
-      toast.error("Failed to delete depot");
       console.error(err);
     }
   }
@@ -74,7 +55,7 @@ export function DepotList() {
     );
   }
 
-  const depots = data?.depots?.nodes ?? [];
+  const depotList = depots ?? [];
 
   return (
     <Card>
@@ -91,7 +72,7 @@ export function DepotList() {
         </div>
       </CardHeader>
       <CardContent>
-        {depots.length === 0 ? (
+        {depotList.length === 0 ? (
           <div className="py-8 text-center text-muted-foreground">
             No depots found. Create your first depot to get started.
           </div>
@@ -107,7 +88,7 @@ export function DepotList() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {depots.map((depot) => (
+              {depotList.map((depot) => (
                 <TableRow key={depot.id}>
                   <TableCell className="font-medium">{depot.name}</TableCell>
                   <TableCell className="text-muted-foreground">
@@ -142,7 +123,7 @@ export function DepotList() {
                         variant="ghost"
                         size="icon-sm"
                         onClick={() => handleDelete(depot.id)}
-                        disabled={deleteMutation.isPending}
+                        disabled={deleteDepot.isPending}
                       >
                         <Trash2 className="size-4 text-destructive" />
                       </Button>

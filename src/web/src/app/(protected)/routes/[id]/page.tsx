@@ -5,7 +5,7 @@ import { ArrowLeft, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useRoute, useChangeRouteStatus } from "@/lib/hooks/use-routes";
+import { useRoute, useChangeRouteStatus } from "@/hooks/use-routes";
 import { RouteStatus } from "@/types/route";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";

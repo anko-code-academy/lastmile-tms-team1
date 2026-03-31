@@ -5,7 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { RouteStatus } from "@/types/route";
 import { RouteTable } from "@/components/routes/route-table";
-import { useRoutes, useDeleteRoute } from "@/lib/hooks/use-routes";
+import { useRoutes, useDeleteRoute } from "@/hooks/use-routes";
 
 export function RouteListClient() {
   const router = useRouter();

@@ -15,7 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import Link from "next/link";
-import { useVehicles } from "@/lib/hooks/use-vehicles";
+import { useVehicles } from "@/hooks/use-vehicles";
 import { VehicleStatus } from "@/types/vehicle";
 
 const routeSchema = z.object({

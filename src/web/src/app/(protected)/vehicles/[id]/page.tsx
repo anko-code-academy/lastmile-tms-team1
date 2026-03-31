@@ -5,7 +5,7 @@ import { ArrowLeft, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useVehicle, useVehicleHistory, useChangeVehicleStatus } from "@/lib/hooks/use-vehicles";
+import { useVehicle, useVehicleHistory, useChangeVehicleStatus } from "@/hooks/use-vehicles";
 import { VehicleStatus } from "@/types/vehicle";
 import { useState } from "react";
 import { useParams } from "next/navigation";

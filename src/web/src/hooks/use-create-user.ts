@@ -1,23 +1,33 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
-import { createUser } from '@/lib/graphql/mutations';
-import type { CreateUserInput } from '@/types/user';
-import { toast } from 'sonner';
+"use client";
+
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
+import { createUser } from "@/services/users.service";
+import { userKeys } from "@/lib/query-key-factory";
+import { toast } from "sonner";
 
 export function useCreateUser() {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const token = session?.user?.accessToken ?? '';
+  const token = session?.user?.accessToken ?? "";
 
   return useMutation({
-    mutationFn: (input: CreateUserInput) => createUser(token, input),
+    mutationFn: (input: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      phone?: string;
+      roleId: string;
+      zoneId?: string;
+      depotId?: string;
+      password: string;
+    }) => createUser(token, input),
     onSuccess: () => {
-      // Invalidate all user queries to force refetch from server
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('User created successfully');
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
+      toast.success("User created successfully");
     },
     onError: () => {
-      toast.error('Failed to create user');
+      toast.error("Failed to create user");
     },
   });
 }

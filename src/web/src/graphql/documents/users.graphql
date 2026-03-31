@@ -1,0 +1,165 @@
+query GetUsers($first: Int, $after: String, $where: UserDtoFilterInput, $order: [UserDtoSortInput!]) {
+  users(first: $first, after: $after, where: $where, order: $order) {
+    nodes {
+      id
+      firstName
+      lastName
+      email
+      phoneNumber
+      status
+      roleName
+      roleId
+      zoneId
+      zoneName
+      depotId
+      depotName
+      createdAt
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+    totalCount
+  }
+}
+
+query GetUserById($id: UUID!) {
+  userById(id: $id) {
+    id
+    firstName
+    lastName
+    email
+    phoneNumber
+    status
+    roleName
+    roleId
+    zoneId
+    depotId
+    createdAt
+  }
+}
+
+query GetUserManagementLookups {
+  userManagementLookups {
+    roles {
+      id
+      name
+      description
+    }
+    depots {
+      id
+      name
+    }
+    zones {
+      id
+      name
+      depotId
+    }
+  }
+}
+
+mutation CreateUser(
+  $firstName: String!
+  $lastName: String!
+  $email: String!
+  $phone: String
+  $roleId: UUID!
+  $zoneId: UUID
+  $depotId: UUID
+  $password: String!
+) {
+  createUser(
+    firstName: $firstName
+    lastName: $lastName
+    email: $email
+    phone: $phone
+    roleId: $roleId
+    zoneId: $zoneId
+    depotId: $depotId
+    password: $password
+  ) {
+    id
+    firstName
+    lastName
+    email
+    phoneNumber
+    status
+    roleName
+    roleId
+    zoneId
+    depotId
+    createdAt
+  }
+}
+
+mutation UpdateUser(
+  $userId: UUID!
+  $firstName: String!
+  $lastName: String!
+  $email: String!
+  $phone: String
+  $roleId: UUID
+  $zoneId: UUID
+  $depotId: UUID
+) {
+  updateUser(
+    userId: $userId
+    firstName: $firstName
+    lastName: $lastName
+    email: $email
+    phone: $phone
+    roleId: $roleId
+    zoneId: $zoneId
+    depotId: $depotId
+  ) {
+    id
+    firstName
+    lastName
+    email
+    phoneNumber
+    status
+    roleName
+    roleId
+    zoneId
+    depotId
+    createdAt
+  }
+}
+
+mutation DeactivateUser($userId: UUID!) {
+  deactivateUser(userId: $userId) {
+    id
+    firstName
+    lastName
+    email
+    phoneNumber
+    status
+    roleName
+    roleId
+    zoneId
+    depotId
+    createdAt
+  }
+}
+
+mutation ActivateUser($userId: UUID!) {
+  activateUser(userId: $userId) {
+    id
+    firstName
+    lastName
+    email
+    phoneNumber
+    status
+    roleName
+    roleId
+    zoneId
+    depotId
+    createdAt
+  }
+}
+
+mutation ResetPassword($email: String!) {
+  resetPassword(email: $email)
+}

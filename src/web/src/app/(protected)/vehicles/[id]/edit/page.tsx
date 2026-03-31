@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { VehicleForm } from "@/components/vehicles/vehicle-form";
-import { useVehicle, useUpdateVehicle } from "@/lib/hooks/use-vehicles";
+import { useVehicle, useUpdateVehicle } from "@/hooks/use-vehicles";
 import { VehicleType } from "@/types/vehicle";
 import { useParams } from "next/navigation";
 
