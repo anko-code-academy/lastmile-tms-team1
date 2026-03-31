@@ -13,6 +13,7 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IEmailService, SendGridEmailService>();
         services.AddScoped<ITokenRevocationService, TokenRevocationService>();
+        services.AddScoped<IDbSeeder, DbSeeder>();
 
         return services;
     }

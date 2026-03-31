@@ -1,5 +1,5 @@
 using System.Linq.Expressions;
-using LastMile.TMS.Application.Users.DTOs;
+using LastMile.TMS.Application.Features.Users.DTOs;
 using LastMile.TMS.Domain.Entities;
 
 namespace LastMile.TMS.Api.GraphQL.Extensions.UserManagement;
