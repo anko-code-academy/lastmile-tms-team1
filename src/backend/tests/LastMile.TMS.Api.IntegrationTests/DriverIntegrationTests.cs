@@ -2,8 +2,10 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using FluentAssertions;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
+using LastMile.TMS.Domain.Entities;
 
 namespace LastMile.TMS.Api.IntegrationTests;
 
@@ -71,7 +73,7 @@ public class DriverIntegrationTests : IAsyncLifetime
         return JsonSerializer.Deserialize<JsonElement>(responseContent);
     }
 
-    private async Task<(string depotId, string zoneId, string userId)> CreateDepotZoneAndUserAsync()
+    private async Task<(string depotId, string zoneId, string userEmail)> CreateDepotZoneAndUserAsync()
     {
         // Create depot
         var createDepotMutation = @"mutation {
@@ -98,30 +100,45 @@ public class DriverIntegrationTests : IAsyncLifetime
         var zoneJson = await GraphQLRequestAsync(createZoneMutation);
         var zoneId = zoneJson.GetProperty("data").GetProperty("createZone").GetProperty("id").GetString();
 
-        // Note: User creation would require a separate flow; for now we assume UserId exists in seeded data
-        // The seeded admin user should have a UserId - we'll use a fixed GUID approach
-        var userId = "00000000-0000-0000-0000-000000000001";
+        // Create a dedicated Driver user for this test
+        var uniqueId = Guid.NewGuid().ToString("N")[..8];
+        var userEmail = $"testdriver.{uniqueId}@lastmile.com";
 
-        return (depotId!, zoneId!, userId);
+        using var scope = _factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<Role>>();
+
+        var driverRole = await roleManager.FindByNameAsync("Driver");
+        if (driverRole == null)
+        {
+            driverRole = Role.CreateDriver();
+            await roleManager.CreateAsync(driverRole);
+        }
+
+        var user = User.Create("Test", "Driver", userEmail, $"driver.{uniqueId}");
+        user.SetPasswordHash("Test@1234");
+        user.AssignRole(driverRole.Id);
+        var result = await userManager.CreateAsync(user);
+
+        return (depotId!, zoneId!, userEmail);
     }
 
     [Fact]
     public async Task CreateDriver_WithValidInput_ReturnsDriver()
     {
         // Arrange
-        var (depotId, zoneId, userId) = await CreateDepotZoneAndUserAsync();
+        var (depotId, zoneId, userEmail) = await CreateDepotZoneAndUserAsync();
 
         var mutation = $@"mutation {{
             createDriver(input: {{
                 firstName: ""John"",
                 lastName: ""Doe"",
                 phone: ""+1-555-0100"",
-                email: ""john.doe.test@example.com"",
+                email: ""{userEmail}"",
                 licenseNumber: ""DL123456"",
                 licenseExpiryDate: ""2027-12-31T00:00:00Z"",
                 zoneId: ""{zoneId}"",
                 depotId: ""{depotId}"",
-                userId: ""{userId}"",
                 isActive: true
             }}) {{
                 id
@@ -145,7 +162,7 @@ public class DriverIntegrationTests : IAsyncLifetime
         jsonResponse.GetProperty("data").GetProperty("createDriver").TryGetProperty("id", out var id).Should().BeTrue();
         jsonResponse.GetProperty("data").GetProperty("createDriver").GetProperty("firstName").GetString().Should().Be("John");
         jsonResponse.GetProperty("data").GetProperty("createDriver").GetProperty("lastName").GetString().Should().Be("Doe");
-        jsonResponse.GetProperty("data").GetProperty("createDriver").GetProperty("email").GetString().Should().Be("john.doe.test@example.com");
+        jsonResponse.GetProperty("data").GetProperty("createDriver").GetProperty("email").GetString().Should().Be(userEmail);
         jsonResponse.GetProperty("data").GetProperty("createDriver").GetProperty("isActive").GetBoolean().Should().BeTrue();
     }
 
@@ -153,19 +170,18 @@ public class DriverIntegrationTests : IAsyncLifetime
     public async Task CreateDriver_WithMissingRequiredField_ReturnsValidationError()
     {
         // Arrange
-        var (depotId, zoneId, userId) = await CreateDepotZoneAndUserAsync();
+        var (depotId, zoneId, userEmail) = await CreateDepotZoneAndUserAsync();
 
         var mutation = $@"mutation {{
             createDriver(input: {{
                 firstName: """",
                 lastName: ""Doe"",
                 phone: ""+1-555-0100"",
-                email: ""john.doe@example.com"",
+                email: ""{userEmail}"",
                 licenseNumber: ""DL123456"",
                 licenseExpiryDate: ""2027-12-31T00:00:00Z"",
                 zoneId: ""{zoneId}"",
                 depotId: ""{depotId}"",
-                userId: ""{userId}""
             }}) {{
                 id
                 firstName
@@ -184,19 +200,18 @@ public class DriverIntegrationTests : IAsyncLifetime
     public async Task CreateDriver_WithPastLicenseExpiry_ReturnsValidationError()
     {
         // Arrange
-        var (depotId, zoneId, userId) = await CreateDepotZoneAndUserAsync();
+        var (depotId, zoneId, userEmail) = await CreateDepotZoneAndUserAsync();
 
         var mutation = $@"mutation {{
             createDriver(input: {{
                 firstName: ""John"",
                 lastName: ""Doe"",
                 phone: ""+1-555-0100"",
-                email: ""past.expiry@example.com"",
+                email: ""{userEmail}"",
                 licenseNumber: ""DL123456"",
                 licenseExpiryDate: ""2020-01-01T00:00:00Z"",
                 zoneId: ""{zoneId}"",
                 depotId: ""{depotId}"",
-                userId: ""{userId}""
             }}) {{
                 id
                 firstName
@@ -215,8 +230,7 @@ public class DriverIntegrationTests : IAsyncLifetime
     public async Task CreateDriver_WithDuplicateEmail_ReturnsValidationError()
     {
         // Arrange
-        var (depotId, zoneId, userId) = await CreateDepotZoneAndUserAsync();
-        var duplicateEmail = $"duplicate.{Guid.NewGuid()}@example.com";
+        var (depotId, zoneId, userEmail) = await CreateDepotZoneAndUserAsync();
 
         // Create first driver
         var createFirstMutation = $@"mutation {{
@@ -224,12 +238,11 @@ public class DriverIntegrationTests : IAsyncLifetime
                 firstName: ""John"",
                 lastName: ""Doe"",
                 phone: ""+1-555-0100"",
-                email: ""{duplicateEmail}"",
+                email: ""{userEmail}"",
                 licenseNumber: ""DL111111"",
                 licenseExpiryDate: ""2027-12-31T00:00:00Z"",
                 zoneId: ""{zoneId}"",
                 depotId: ""{depotId}"",
-                userId: ""{userId}""
             }}) {{
                 id
                 email
@@ -238,18 +251,17 @@ public class DriverIntegrationTests : IAsyncLifetime
 
         await GraphQLRequestAsync(createFirstMutation);
 
-        // Try to create second driver with same email
+        // Try to create second driver with same email (same user, already has driver)
         var createSecondMutation = $@"mutation {{
             createDriver(input: {{
                 firstName: ""Jane"",
                 lastName: ""Smith"",
                 phone: ""+1-555-0101"",
-                email: ""{duplicateEmail}"",
+                email: ""{userEmail}"",
                 licenseNumber: ""DL222222"",
                 licenseExpiryDate: ""2027-12-31T00:00:00Z"",
                 zoneId: ""{zoneId}"",
                 depotId: ""{depotId}"",
-                userId: ""{userId}""
             }}) {{
                 id
                 email
@@ -268,7 +280,7 @@ public class DriverIntegrationTests : IAsyncLifetime
     public async Task UpdateDriver_WithValidInput_ReturnsUpdatedDriver()
     {
         // Arrange
-        var (depotId, zoneId, userId) = await CreateDepotZoneAndUserAsync();
+        var (depotId, zoneId, userEmail) = await CreateDepotZoneAndUserAsync();
 
         // Create driver first
         var createMutation = $@"mutation {{
@@ -276,12 +288,11 @@ public class DriverIntegrationTests : IAsyncLifetime
                 firstName: ""John"",
                 lastName: ""Doe"",
                 phone: ""+1-555-0100"",
-                email: ""update.test.{Guid.NewGuid()}@example.com"",
+                email: ""{userEmail}"",
                 licenseNumber: ""DL123456"",
                 licenseExpiryDate: ""2027-12-31T00:00:00Z"",
                 zoneId: ""{zoneId}"",
                 depotId: ""{depotId}"",
-                userId: ""{userId}"",
                 isActive: true
             }}) {{
                 id
@@ -300,12 +311,11 @@ public class DriverIntegrationTests : IAsyncLifetime
                 firstName: ""John Updated"",
                 lastName: ""Doe Updated"",
                 phone: ""+1-555-9999"",
-                email: ""updated.email.{Guid.NewGuid()}@example.com"",
+                email: ""{userEmail}"",
                 licenseNumber: ""DL654321"",
                 licenseExpiryDate: ""2028-12-31T00:00:00Z"",
                 zoneId: ""{zoneId}"",
                 depotId: ""{depotId}"",
-                userId: ""{userId}"",
                 isActive: false
             }}) {{
                 id
@@ -334,7 +344,7 @@ public class DriverIntegrationTests : IAsyncLifetime
     public async Task DeleteDriver_WithValidId_ReturnsTrue()
     {
         // Arrange
-        var (depotId, zoneId, userId) = await CreateDepotZoneAndUserAsync();
+        var (depotId, zoneId, userEmail) = await CreateDepotZoneAndUserAsync();
 
         // Create driver first
         var createMutation = $@"mutation {{
@@ -342,12 +352,11 @@ public class DriverIntegrationTests : IAsyncLifetime
                 firstName: ""Delete Me"",
                 lastName: ""Driver"",
                 phone: ""+1-555-0100"",
-                email: ""delete.test.{Guid.NewGuid()}@example.com"",
+                email: ""{userEmail}"",
                 licenseNumber: ""DL123456"",
                 licenseExpiryDate: ""2027-12-31T00:00:00Z"",
                 zoneId: ""{zoneId}"",
                 depotId: ""{depotId}"",
-                userId: ""{userId}"",
                 isActive: true
             }}) {{
                 id
@@ -377,8 +386,7 @@ public class DriverIntegrationTests : IAsyncLifetime
     public async Task QueryDriver_ById_ReturnsDriver()
     {
         // Arrange
-        var (depotId, zoneId, userId) = await CreateDepotZoneAndUserAsync();
-        var testEmail = $"query.test.{Guid.NewGuid()}@example.com";
+        var (depotId, zoneId, userEmail) = await CreateDepotZoneAndUserAsync();
 
         // Create driver
         var createMutation = $@"mutation {{
@@ -386,12 +394,11 @@ public class DriverIntegrationTests : IAsyncLifetime
                 firstName: ""Query"",
                 lastName: ""Test"",
                 phone: ""+1-555-0100"",
-                email: ""{testEmail}"",
+                email: ""{userEmail}"",
                 licenseNumber: ""DL123456"",
                 licenseExpiryDate: ""2027-12-31T00:00:00Z"",
                 zoneId: ""{zoneId}"",
                 depotId: ""{depotId}"",
-                userId: ""{userId}"",
                 isActive: true
             }}) {{
                 id
@@ -426,7 +433,7 @@ public class DriverIntegrationTests : IAsyncLifetime
 
         queryJson.GetProperty("data").GetProperty("driver").GetProperty("firstName").GetString().Should().Be("Query");
         queryJson.GetProperty("data").GetProperty("driver").GetProperty("lastName").GetString().Should().Be("Test");
-        queryJson.GetProperty("data").GetProperty("driver").GetProperty("email").GetString().Should().Be(testEmail);
+        queryJson.GetProperty("data").GetProperty("driver").GetProperty("email").GetString().Should().Be(userEmail);
         queryJson.GetProperty("data").GetProperty("driver").GetProperty("isActive").GetBoolean().Should().BeTrue();
     }
 
@@ -434,30 +441,26 @@ public class DriverIntegrationTests : IAsyncLifetime
     public async Task QueryDrivers_WithPagination_ReturnsPaginatedResults()
     {
         // Arrange
-        var (depotId, zoneId, userId) = await CreateDepotZoneAndUserAsync();
+        var (depotId, zoneId, userEmail) = await CreateDepotZoneAndUserAsync();
 
-        // Create multiple drivers
-        for (int i = 1; i <= 3; i++)
-        {
-            var createMutation = $@"mutation {{
-                createDriver(input: {{
-                    firstName: ""Paginate{i}"",
-                    lastName: ""Driver{i}"",
-                    phone: ""+1-555-010{i}"",
-                    email: ""paginate.test.{i}.{Guid.NewGuid()}@example.com"",
-                    licenseNumber: ""DL{i}23456"",
-                    licenseExpiryDate: ""2027-12-31T00:00:00Z"",
-                    zoneId: ""{zoneId}"",
-                    depotId: ""{depotId}"",
-                    userId: ""{userId}"",
-                    isActive: true
-                }}) {{
-                    id
-                }}
-            }}";
+        // Create one driver (pagination tested separately from creation)
+        var createMutation = $@"mutation {{
+            createDriver(input: {{
+                firstName: ""Paginate1"",
+                lastName: ""Driver1"",
+                phone: ""+1-555-0101"",
+                email: ""{userEmail}"",
+                licenseNumber: ""DL123456"",
+                licenseExpiryDate: ""2027-12-31T00:00:00Z"",
+                zoneId: ""{zoneId}"",
+                depotId: ""{depotId}"",
+                isActive: true
+            }}) {{
+                id
+            }}
+        }}";
 
-            await GraphQLRequestAsync(createMutation);
-        }
+        await GraphQLRequestAsync(createMutation);
 
         // Act - Query drivers with pagination
         var query = @"query {
@@ -492,8 +495,7 @@ public class DriverIntegrationTests : IAsyncLifetime
     public async Task QueryDrivers_WithFiltering_ReturnsFilteredResults()
     {
         // Arrange
-        var (depotId, zoneId, userId) = await CreateDepotZoneAndUserAsync();
-        var filterEmail = $"filter.test.active.{Guid.NewGuid()}@example.com";
+        var (depotId, zoneId, userEmail) = await CreateDepotZoneAndUserAsync();
 
         // Create an active driver
         var createActiveMutation = $@"mutation {{
@@ -501,12 +503,11 @@ public class DriverIntegrationTests : IAsyncLifetime
                 firstName: ""FilterActive"",
                 lastName: ""Driver"",
                 phone: ""+1-555-0100"",
-                email: ""{filterEmail}"",
+                email: ""{userEmail}"",
                 licenseNumber: ""DL111111"",
                 licenseExpiryDate: ""2027-12-31T00:00:00Z"",
                 zoneId: ""{zoneId}"",
                 depotId: ""{depotId}"",
-                userId: ""{userId}"",
                 isActive: true
             }}) {{
                 id
@@ -554,6 +555,11 @@ public class DriverIntegrationTests : IAsyncLifetime
             await cmd.ExecuteNonQueryAsync();
         }
         await using (var cmd = new NpgsqlCommand("DELETE FROM \"Depots\";", connection))
+        {
+            await cmd.ExecuteNonQueryAsync();
+        }
+        // Delete test driver users
+        await using (var cmd = new NpgsqlCommand("DELETE FROM \"AspNetUsers\" WHERE \"Email\" LIKE 'testdriver.%@lastmile.com';", connection))
         {
             await cmd.ExecuteNonQueryAsync();
         }

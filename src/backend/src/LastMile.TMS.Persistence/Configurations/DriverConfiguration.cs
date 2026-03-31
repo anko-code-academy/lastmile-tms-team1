@@ -64,6 +64,13 @@ public class DriverConfiguration : IEntityTypeConfiguration<Driver>
             .HasForeignKey(d => d.DepotId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(d => d.User)
+            .WithMany()
+            .HasForeignKey(d => d.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(d => d.UserId).IsUnique();
+
         // Soft delete
         builder.Property(d => d.IsDeleted).HasDefaultValue(false);
         builder.Property(d => d.DeletedAt);

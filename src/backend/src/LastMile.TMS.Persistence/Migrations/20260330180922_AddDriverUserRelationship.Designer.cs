@@ -3,19 +3,21 @@ using System;
 using LastMile.TMS.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using NpgsqlTypes;
 
 #nullable disable
 
 namespace LastMile.TMS.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260330180922_AddDriverUserRelationship")]
+    partial class AddDriverUserRelationship
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -30,11 +32,6 @@ namespace LastMile.TMS.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-
-                    b.Property<NpgsqlTsVector>("AddressSearchVector")
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("tsvector")
-                        .HasComputedColumnSql("to_tsvector('english', coalesce(\"Street1\", '') || ' ' || coalesce(\"City\", '') || ' ' || coalesce(\"PostalCode\", ''))", true);
 
                     b.Property<string>("City")
                         .IsRequired()
@@ -99,11 +96,6 @@ namespace LastMile.TMS.Persistence.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<NpgsqlTsVector>("RecipientNameSearchVector")
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("tsvector")
-                        .HasComputedColumnSql("to_tsvector('english', coalesce(\"ContactName\", ''))", true);
-
                     b.Property<string>("State")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -120,19 +112,11 @@ namespace LastMile.TMS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AddressSearchVector");
-
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("AddressSearchVector"), "GIN");
-
                     b.HasIndex("City");
 
                     b.HasIndex("PostalCode");
 
-                    b.HasIndex("RecipientNameSearchVector");
-
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("RecipientNameSearchVector"), "GIN");
-
-                    b.ToTable("Addresses", (string)null);
+                    b.ToTable("Addresses");
                 });
 
             modelBuilder.Entity("LastMile.TMS.Domain.Entities.DayOff", b =>
@@ -447,13 +431,9 @@ namespace LastMile.TMS.Persistence.Migrations
                         .HasPrecision(10, 3)
                         .HasColumnType("numeric(10,3)");
 
-                    b.Property<string>("Notes")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
                     b.Property<string>("ParcelType")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<Guid>("RecipientAddressId")
                         .HasColumnType("uuid");
@@ -507,7 +487,7 @@ namespace LastMile.TMS.Persistence.Migrations
 
                     b.HasIndex("ZoneId");
 
-                    b.ToTable("Parcel", (string)null);
+                    b.ToTable("Parcel");
                 });
 
             modelBuilder.Entity("LastMile.TMS.Domain.Entities.ParcelContentItem", b =>
@@ -1247,6 +1227,7 @@ namespace LastMile.TMS.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<Geometry>("BoundaryGeometry")
+                        .IsRequired()
                         .HasColumnType("geometry (polygon)");
 
                     b.Property<DateTimeOffset>("CreatedAt")

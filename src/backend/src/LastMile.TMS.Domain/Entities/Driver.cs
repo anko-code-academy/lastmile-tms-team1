@@ -29,7 +29,5 @@ public class Driver : BaseAuditableEntity
     // Navigation properties
     public Zone Zone { get; set; } = null!;
     public Depot Depot { get; set; } = null!;
-
-    // Navigation properties - commented until User entity is available
-    // public User User { get; set; } = null!;
+    public User User { get; set; } = null!;
 }

@@ -19,7 +19,6 @@ public class UpdateDriverInput : InputObjectType<UpdateDriverCommand>
         descriptor.Field(d => d.Photo).Type<StringType>();
         descriptor.Field(d => d.ZoneId).Type<NonNullType<UuidType>>();
         descriptor.Field(d => d.DepotId).Type<NonNullType<UuidType>>();
-        descriptor.Field(d => d.UserId).Type<NonNullType<UuidType>>();
         descriptor.Field(d => d.IsActive).Type<NonNullType<BooleanType>>();
     }
 }

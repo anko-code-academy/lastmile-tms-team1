@@ -13,5 +13,4 @@ public record CreateDriverCommand(
     string? Photo,
     Guid ZoneId,
     Guid DepotId,
-    Guid UserId,
     bool IsActive = true) : IRequest<DriverResult>;

@@ -22,7 +22,6 @@ public class UpdateDriverHandler(IAppDbContext dbContext) : IRequestHandler<Upda
         driver.Photo = request.Photo;
         driver.ZoneId = request.ZoneId;
         driver.DepotId = request.DepotId;
-        driver.UserId = request.UserId;
         driver.IsActive = request.IsActive;
 
         await dbContext.SaveChangesAsync(cancellationToken);

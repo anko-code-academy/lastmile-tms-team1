@@ -58,7 +58,6 @@ const driverFormSchema = z.object({
   photo: z.string().nullable().optional().transform((v) => v ?? ""),
   zoneId: z.string().min(1, "Zone is required"),
   depotId: z.string().min(1, "Depot is required"),
-  userId: z.string().uuid("User ID must be a valid GUID"),
   isActive: z.boolean(),
 });
 
@@ -112,7 +111,6 @@ export function DriverForm({ driverId }: DriverFormProps) {
       photo: "",
       zoneId: "",
       depotId: "",
-      userId: "",
       isActive: true,
     },
   });
@@ -130,7 +128,6 @@ export function DriverForm({ driverId }: DriverFormProps) {
         photo: driver.photo ?? "",
         zoneId: driver.zoneId,
         depotId: driver.depotId,
-        userId: driver.userId ?? "",
         isActive: driver.isActive,
       });
       form.setValue("zoneId", driver.zoneId, { shouldTouch: true });
@@ -153,7 +150,6 @@ export function DriverForm({ driverId }: DriverFormProps) {
             photo: values.photo || undefined,
             zoneId: values.zoneId,
             depotId: values.depotId,
-            userId: values.userId,
             isActive: values.isActive,
           },
         });
@@ -170,7 +166,6 @@ export function DriverForm({ driverId }: DriverFormProps) {
             photo: values.photo || undefined,
             zoneId: values.zoneId,
             depotId: values.depotId,
-            userId: values.userId,
             isActive: values.isActive,
           },
         });
@@ -375,23 +370,6 @@ export function DriverForm({ driverId }: DriverFormProps) {
                   )}
                 />
               </div>
-
-              <FormField
-                control={form.control}
-                name="userId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>User ID (optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="User GUID for mobile app login" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Link this driver to a user account for mobile app access
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
 
             <FormField
