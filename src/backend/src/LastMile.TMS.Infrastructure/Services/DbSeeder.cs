@@ -118,7 +118,8 @@ public class DbSeeder : IDbSeeder
                 var adminRole = await _roleManager.FindByNameAsync("Admin");
                 if (adminRole != null)
                 {
-                    existingAdmin.AssignRole(adminRole.Id, adminRole.Name);
+                    existingAdmin.RoleId = adminRole.Id;
+                    existingAdmin.RoleName = adminRole.Name;
                     await _userManager.UpdateAsync(existingAdmin);
                 }
                 _logger.LogInformation("Added Admin role to existing user.");
@@ -168,7 +169,8 @@ public class DbSeeder : IDbSeeder
                 var adminRole = await _roleManager.FindByNameAsync("Admin");
                 if (adminRole != null)
                 {
-                    existingByEmail.AssignRole(adminRole.Id, adminRole.Name);
+                    existingByEmail.RoleId = adminRole.Id;
+                    existingByEmail.RoleName = adminRole.Name;
                     await _userManager.UpdateAsync(existingByEmail);
                 }
                 _logger.LogInformation("Added Admin role to existing user.");
@@ -202,7 +204,8 @@ public class DbSeeder : IDbSeeder
                 var adminRole = await _roleManager.FindByNameAsync("Admin");
                 if (adminRole != null)
                 {
-                    admin.AssignRole(adminRole.Id, adminRole.Name);
+                    admin.RoleId = adminRole.Id;
+                    admin.RoleName = adminRole.Name;
                 }
                 admin.MarkAsSystemAdmin();
                 await _userManager.UpdateAsync(admin);
@@ -258,7 +261,8 @@ public class DbSeeder : IDbSeeder
                 var role = await _roleManager.FindByNameAsync(roleName);
                 if (role != null && existing.RoleId != role.Id)
                 {
-                    existing.AssignRole(role.Id, role.Name);
+                    existing.RoleId = role.Id;
+                    existing.RoleName = role.Name;
                     await _userManager.UpdateAsync(existing);
                     _logger.LogInformation("Synced RoleId foreign key for {Email}", email);
                 }
@@ -277,7 +281,8 @@ public class DbSeeder : IDbSeeder
                     var role = await _roleManager.FindByNameAsync(roleName);
                     if (role != null)
                     {
-                        user.AssignRole(role.Id, role.Name);
+                        user.RoleId = role.Id;
+                        user.RoleName = role.Name;
                         await _userManager.UpdateAsync(user);
                     }
                     _logger.LogInformation("Created test user: {Email} with role {Role}", email, roleName);

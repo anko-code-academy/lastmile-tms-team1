@@ -52,7 +52,8 @@ public class UpdateUserCommandHandler(
             {
                 return Result<UserDto>.Failure("Role not found");
             }
-            user.AssignRole(request.RoleId.Value, role.Name);
+            user.RoleId = request.RoleId.Value;
+            user.RoleName = role.Name;
 
             // Update in identity role table too
             var currentRoles = await userManager.GetRolesAsync(user);
@@ -75,21 +76,25 @@ public class UpdateUserCommandHandler(
         if (request.ZoneId.HasValue)
         {
             var zone = await context.Zones.FindAsync(new object[] { request.ZoneId.Value }, cancellationToken);
-            user.AssignToZone(request.ZoneId.Value, zone?.Name);
+            user.ZoneId = request.ZoneId;
+            user.ZoneName = zone?.Name;
         }
         else
         {
-            user.ClearZone();
+            user.ZoneId = null;
+            user.ZoneName = null;
         }
 
         if (request.DepotId.HasValue)
         {
             var depot = await context.Depots.FindAsync(new object[] { request.DepotId.Value }, cancellationToken);
-            user.AssignToDepot(request.DepotId.Value, depot?.Name);
+            user.DepotId = request.DepotId;
+            user.DepotName = depot?.Name;
         }
         else
         {
-            user.ClearDepot();
+            user.DepotId = null;
+            user.DepotName = null;
         }
 
         var result = await userManager.UpdateAsync(user);

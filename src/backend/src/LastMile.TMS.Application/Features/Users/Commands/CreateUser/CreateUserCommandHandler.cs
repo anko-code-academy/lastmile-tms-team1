@@ -65,20 +65,23 @@ public class CreateUserCommandHandler(
             request.Email,
             phone: request.Phone);
 
-        // Assign role using domain method
-        user.AssignRole(request.RoleId, role.Name);
+        // Assign role directly
+        user.RoleId = request.RoleId;
+        user.RoleName = role.Name;
 
         // Assign zone or depot if provided
         if (request.ZoneId.HasValue)
         {
             var zone = await context.Zones.FindAsync(new object[] { request.ZoneId.Value }, cancellationToken);
-            user.AssignToZone(request.ZoneId.Value, zone?.Name);
+            user.ZoneId = request.ZoneId;
+            user.ZoneName = zone?.Name;
         }
 
         if (request.DepotId.HasValue)
         {
             var depot = await context.Depots.FindAsync(new object[] { request.DepotId.Value }, cancellationToken);
-            user.AssignToDepot(request.DepotId.Value, depot?.Name);
+            user.DepotId = request.DepotId;
+            user.DepotName = depot?.Name;
         }
 
         // Create user with password
