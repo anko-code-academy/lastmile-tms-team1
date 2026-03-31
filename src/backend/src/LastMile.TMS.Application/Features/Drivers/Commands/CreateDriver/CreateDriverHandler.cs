@@ -30,9 +30,43 @@ public class CreateDriverHandler(IAppDbContext dbContext) : IRequestHandler<Crea
             IsActive = request.IsActive
         };
 
+        // Add ShiftSchedules
+        if (request.ShiftSchedules != null)
+        {
+            foreach (var s in request.ShiftSchedules)
+            {
+                if (s.OpenTime != null && s.CloseTime != null)
+                {
+                    driver.ShiftSchedules.Add(new ShiftSchedule
+                    {
+                        DayOfWeek = s.DayOfWeek,
+                        OpenTime = s.OpenTime.Value,
+                        CloseTime = s.CloseTime.Value,
+                        DriverId = driver.Id
+                    });
+                }
+            }
+        }
+
+        // Add DaysOff
+        if (request.DaysOff != null)
+        {
+            foreach (var d in request.DaysOff)
+            {
+                driver.DaysOff.Add(new DayOff
+                {
+                    Date = d.Date,
+                    DriverId = driver.Id
+                });
+            }
+        }
+
         dbContext.Drivers.Add(driver);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return new DriverResult(driver.Id, driver.FirstName, driver.LastName, driver.Email, driver.Phone, driver.LicenseNumber, driver.LicenseExpiryDate, driver.Photo, driver.ZoneId, driver.DepotId, driver.UserId, driver.IsActive, driver.CreatedAt);
+        var shiftScheduleResults = driver.ShiftSchedules.Select(s => new ShiftScheduleResult(s.DayOfWeek, s.OpenTime, s.CloseTime)).ToList();
+        var dayOffResults = driver.DaysOff.Select(d => new DayOffResult(d.Date)).ToList();
+
+        return new DriverResult(driver.Id, driver.FirstName, driver.LastName, driver.Email, driver.Phone, driver.LicenseNumber, driver.LicenseExpiryDate, driver.Photo, driver.ZoneId, driver.DepotId, driver.UserId, driver.IsActive, driver.CreatedAt, shiftScheduleResults, dayOffResults);
     }
 }

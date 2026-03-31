@@ -5,7 +5,6 @@ using LastMile.TMS.Api.GraphQL.Common;
 using LastMile.TMS.Api.GraphQL.Extensions.Depot;
 using LastMile.TMS.Api.GraphQL.Extensions.Parcel;
 using LastMile.TMS.Api.GraphQL.Extensions.Route;
-using LastMile.TMS.Api.GraphQL.Extensions.UserManagement;
 using LastMile.TMS.Api.GraphQL.Extensions.Vehicle;
 using LastMile.TMS.Api.GraphQL.Extensions.Zone;
 using LastMile.TMS.Api.GraphQL.Inputs;
@@ -45,10 +44,10 @@ public static class DependencyInjection
             .AddType<DailyOperatingHoursInputType>()
             .AddType<CreateZoneInput>()
             .AddType<UpdateZoneInput>()
-            .AddType<UserManagementQuery>()
-            .AddType<UserManagementMutation>()
             .AddErrorFilter<DomainExceptionErrorFilter>()
-            .AddErrorFilter<ErrorFilter>();
+            .AddErrorFilter<ErrorFilter>()
+            .AddType<ShiftScheduleInputType>()
+            .AddType<DayOffInputType>();
 
         return services;
     }

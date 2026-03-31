@@ -14,4 +14,6 @@ public record UpdateDriverCommand(
     string? Photo,
     Guid ZoneId,
     Guid DepotId,
-    bool IsActive) : IRequest<DriverResult>;
+    bool IsActive,
+    List<ShiftScheduleInput>? ShiftSchedules = null,
+    List<DayOffInput>? DaysOff = null) : IRequest<DriverResult>;

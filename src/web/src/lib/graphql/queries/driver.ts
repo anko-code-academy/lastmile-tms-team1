@@ -23,6 +23,14 @@ export const GET_DRIVER_QUERY = /* GraphQL */ `
         id
         name
       }
+      shiftSchedules {
+        dayOfWeek
+        openTime
+        closeTime
+      }
+      daysOff {
+        date
+      }
     }
   }
 `;

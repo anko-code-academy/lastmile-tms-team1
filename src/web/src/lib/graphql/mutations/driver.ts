@@ -14,6 +14,14 @@ export const CREATE_DRIVER_MUTATION = /* GraphQL */ `
       userId
       isActive
       createdAt
+      shiftSchedules {
+        dayOfWeek
+        openTime
+        closeTime
+      }
+      daysOff {
+        date
+      }
     }
   }
 `;
@@ -34,6 +42,14 @@ export const UPDATE_DRIVER_MUTATION = /* GraphQL */ `
       userId
       isActive
       createdAt
+      shiftSchedules {
+        dayOfWeek
+        openTime
+        closeTime
+      }
+      daysOff {
+        date
+      }
     }
   }
 `;

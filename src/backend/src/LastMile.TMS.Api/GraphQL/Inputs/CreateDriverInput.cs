@@ -19,5 +19,7 @@ public class CreateDriverInput : InputObjectType<CreateDriverCommand>
         descriptor.Field(d => d.ZoneId).Type<NonNullType<UuidType>>();
         descriptor.Field(d => d.DepotId).Type<NonNullType<UuidType>>();
         descriptor.Field(d => d.IsActive).DefaultValue(true);
+        descriptor.Field(d => d.ShiftSchedules).Type<ListType<ShiftScheduleInputType>>();
+        descriptor.Field(d => d.DaysOff).Type<ListType<DayOffInputType>>();
     }
 }

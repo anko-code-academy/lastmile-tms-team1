@@ -13,4 +13,10 @@ public record DriverResult(
     Guid DepotId,
     Guid UserId,
     bool IsActive,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    List<ShiftScheduleResult>? ShiftSchedules = null,
+    List<DayOffResult>? DaysOff = null);
+
+public record ShiftScheduleResult(DayOfWeek DayOfWeek, TimeOnly OpenTime, TimeOnly CloseTime);
+
+public record DayOffResult(DateTimeOffset Date);

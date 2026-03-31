@@ -13,4 +13,6 @@ public record CreateDriverCommand(
     string? Photo,
     Guid ZoneId,
     Guid DepotId,
-    bool IsActive = true) : IRequest<DriverResult>;
+    bool IsActive = true,
+    List<ShiftScheduleInput>? ShiftSchedules = null,
+    List<DayOffInput>? DaysOff = null) : IRequest<DriverResult>;

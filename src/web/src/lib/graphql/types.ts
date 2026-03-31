@@ -278,6 +278,16 @@ export interface UpdateZoneInput {
 }
 
 // Driver types
+export interface ShiftScheduleDto {
+  dayOfWeek: DayOfWeek;
+  openTime: string;
+  closeTime: string;
+}
+
+export interface DayOffDto {
+  date: string;
+}
+
 export interface DriverDto {
   id: string;
   firstName: string;
@@ -295,6 +305,8 @@ export interface DriverDto {
   lastModifiedAt?: string;
   zone?: { id: string; name: string };
   depot?: { id: string; name: string };
+  shiftSchedules?: ShiftScheduleDto[];
+  daysOff?: DayOffDto[];
 }
 
 export interface DriverSummaryDto {
@@ -331,6 +343,16 @@ export interface DriverResult {
   createdAt: string;
 }
 
+export interface ShiftScheduleInput {
+  dayOfWeek: string;
+  openTime: string | null;
+  closeTime: string | null;
+}
+
+export interface DayOffInput {
+  date: string;
+}
+
 export interface CreateDriverInput {
   firstName: string;
   lastName: string;
@@ -342,6 +364,8 @@ export interface CreateDriverInput {
   zoneId: string;
   depotId: string;
   isActive?: boolean;
+  shiftSchedules?: ShiftScheduleInput[];
+  daysOff?: DayOffInput[];
 }
 
 export interface UpdateDriverInput {
@@ -356,4 +380,6 @@ export interface UpdateDriverInput {
   zoneId: string;
   depotId: string;
   isActive: boolean;
+  shiftSchedules?: ShiftScheduleInput[];
+  daysOff?: DayOffInput[];
 }
