@@ -82,11 +82,12 @@ public class UserTests
         var zoneId = Guid.NewGuid();
 
         // Act
-        user.AssignToZone(zoneId);
+        user.ZoneId = zoneId;
+        user.ZoneName = "Test Zone";
 
         // Assert
         user.ZoneId.Should().Be(zoneId);
-        user.DepotId.Should().BeNull();
+        user.ZoneName.Should().Be("Test Zone");
     }
 
     [Fact]
@@ -97,11 +98,12 @@ public class UserTests
         var depotId = Guid.NewGuid();
 
         // Act
-        user.AssignToDepot(depotId);
+        user.DepotId = depotId;
+        user.DepotName = "Test Depot";
 
         // Assert
         user.DepotId.Should().Be(depotId);
-        user.ZoneId.Should().BeNull();
+        user.DepotName.Should().Be("Test Depot");
     }
 
     [Fact]

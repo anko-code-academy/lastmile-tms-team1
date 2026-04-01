@@ -1,11 +1,11 @@
 using HotChocolate.Authorization;
 using HotChocolate.Data;
 using LastMile.TMS.Application.Features.Vehicles;
+using LastMile.TMS.Domain.Entities;
 using LastMile.TMS.Domain.Enums;
 using LastMile.TMS.Persistence;
 using Microsoft.EntityFrameworkCore;
 using VehicleEntity = LastMile.TMS.Domain.Entities.Vehicle;
-using LastMile.TMS.Domain.Entities;
 
 namespace LastMile.TMS.Api.GraphQL.Extensions.Vehicle;
 
@@ -18,15 +18,15 @@ public class VehicleQuery
     [UseSorting]
     public IQueryable<VehicleEntity> GetVehicles(AppDbContext context)
     {
-        return context.Vehicles;
+        return context.Vehicles.AsNoTracking();
     }
 
     [Authorize(Roles = [Role.RoleNames.Admin, Role.RoleNames.OperationsManager])]
+    [UseSingleOrDefault]
     [UseProjection]
-    [UseFirstOrDefault]
     public IQueryable<VehicleEntity> GetVehicle(AppDbContext context, Guid id)
     {
-        return context.Vehicles.Include(v => v.Depot).Where(v => v.Id == id);
+        return context.Vehicles.AsNoTracking().Where(v => v.Id == id);
     }
 
     // GetVehicleHistory uses manual aggregation (Sum, Count, Distinct) that cannot be

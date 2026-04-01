@@ -9,14 +9,10 @@ public class User : IdentityUser<Guid>, IBaseAuditableEntity
     // Override to get UUIDv7 auto-generation (like BaseEntity does)
     public override Guid Id { get; set; } = Guid.CreateVersion7();
 
-    public string FirstName { get; private set; } = string.Empty;
-    public string LastName { get; private set; } = string.Empty;
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
 
-    // Status (maps to IdentityUser's inherited properties for account state)
-    // IdentityUser already has: Email, EmailConfirmed, PhoneNumber, PhoneNumberConfirmed
-    // PasswordHash, SecurityStamp, LockoutEnd, LockoutEnabled, AccessFailedCount
-
-    public UserStatus Status { get; private set; }
+    public UserStatus Status { get; set; }
 
     // Calculated property for easy filtering
     public bool IsActive => Status == UserStatus.Active;
@@ -25,9 +21,7 @@ public class User : IdentityUser<Guid>, IBaseAuditableEntity
     public string? Phone => PhoneNumber;
 
     // System admin flag (cannot be deactivated or modified by other admins)
-    public bool IsSystemAdmin { get; private set; }
-
-    public void MarkAsSystemAdmin() => IsSystemAdmin = true;
+    public bool IsSystemAdmin { get; set; }
 
     // IBaseAuditableEntity
     public DateTimeOffset CreatedAt { get; set; }
@@ -38,26 +32,20 @@ public class User : IdentityUser<Guid>, IBaseAuditableEntity
     public DateTimeOffset? DeletedAt { get; set; }
     public string? DeletedBy { get; set; }
 
-    // Role assignment (1:1 relationship)
-    public Guid? RoleId { get; private set; }
-    public Role? Role { get; private set; }
+    // Role assignment - plain EF Core properties
+    public Guid? RoleId { get; set; }
+    public string? RoleName { get; set; }
+    public Role? Role { get; set; }
 
-    // Computed property for GraphQL projection
-    public string? RoleName => Role?.Name;
+    // Zone assignment - plain EF Core properties
+    public Guid? ZoneId { get; set; }
+    public string? ZoneName { get; set; }
+    public Zone? Zone { get; set; }
 
-    // Zone assignment (for drivers/dispatchers)
-    public Guid? ZoneId { get; private set; }
-    public Zone? Zone { get; private set; }
-
-    // Computed property for GraphQL projection
-    public string? ZoneName => Zone?.Name;
-
-    // Depot assignment (for warehouse operators)
-    public Guid? DepotId { get; private set; }
-    public Depot? Depot { get; private set; }
-
-    // Computed property for GraphQL projection
-    public string? DepotName => Depot?.Name;
+    // Depot assignment - plain EF Core properties
+    public Guid? DepotId { get; set; }
+    public string? DepotName { get; set; }
+    public Depot? Depot { get; set; }
 
     // Factory method
     public static User Create(
@@ -105,42 +93,13 @@ public class User : IdentityUser<Guid>, IBaseAuditableEntity
         }
     }
 
-    // Domain methods
-    public void Activate()
-    {
-        Status = UserStatus.Active;
-    }
+    // Domain methods for status
+    public void Activate() => Status = UserStatus.Active;
+    public void Deactivate() => Status = UserStatus.Inactive;
+    public void Suspend() => Status = UserStatus.Suspended;
+    public void MarkAsSystemAdmin() => IsSystemAdmin = true;
 
-    public void Deactivate()
-    {
-        Status = UserStatus.Inactive;
-    }
-
-    public void Suspend()
-    {
-        Status = UserStatus.Suspended;
-    }
-
-    public void AssignToZone(Guid zoneId)
-    {
-        ZoneId = zoneId;
-    }
-
-    public void AssignToDepot(Guid depotId)
-    {
-        DepotId = depotId;
-    }
-
-    public void AssignRole(Guid roleId)
-    {
-        RoleId = roleId;
-    }
-
-    public void RemoveRole()
-    {
-        RoleId = null;
-    }
-
+    // Domain methods for validation
     public void UpdateName(string firstName, string lastName)
     {
         if (string.IsNullOrWhiteSpace(firstName))
@@ -168,22 +127,6 @@ public class User : IdentityUser<Guid>, IBaseAuditableEntity
 
         Email = email.ToLowerInvariant().Trim();
         UserName = email.ToLowerInvariant().Trim();
-    }
-
-    public void ClearZoneAndDepot()
-    {
-        ZoneId = null;
-        DepotId = null;
-    }
-
-    public void ClearZone()
-    {
-        ZoneId = null;
-    }
-
-    public void ClearDepot()
-    {
-        DepotId = null;
     }
 
     // Set password hash (PasswordHash is inherited from IdentityUser but with protected setter)

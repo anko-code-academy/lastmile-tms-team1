@@ -1,10 +1,10 @@
 using HotChocolate;
 using HotChocolate.Authorization;
 using HotChocolate.Data;
+using LastMile.TMS.Domain.Entities;
 using LastMile.TMS.Persistence;
 using Microsoft.EntityFrameworkCore;
 using DomainZone = LastMile.TMS.Domain.Entities.Zone;
-using LastMile.TMS.Domain.Entities;
 
 namespace LastMile.TMS.Api.GraphQL.Extensions.Zone;
 
@@ -20,8 +20,8 @@ public class ZoneQuery
         => context.Zones.AsNoTracking();
 
     [Authorize(Roles = new[] { Role.RoleNames.Admin, Role.RoleNames.OperationsManager })]
+    [UseSingleOrDefault]
     [UseProjection]
-    [UseFirstOrDefault]
     public IQueryable<DomainZone> GetZone(Guid id, [Service] AppDbContext context)
-        => context.Zones.Include(z => z.Depot).AsNoTracking().Where(z => z.Id == id);
+        => context.Zones.AsNoTracking().Where(z => z.Id == id);
 }

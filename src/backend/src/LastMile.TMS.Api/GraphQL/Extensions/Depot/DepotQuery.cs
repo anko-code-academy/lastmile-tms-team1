@@ -1,10 +1,10 @@
 using HotChocolate;
 using HotChocolate.Authorization;
 using HotChocolate.Data;
+using LastMile.TMS.Domain.Entities;
 using LastMile.TMS.Persistence;
 using Microsoft.EntityFrameworkCore;
 using DomainDepot = LastMile.TMS.Domain.Entities.Depot;
-using LastMile.TMS.Domain.Entities;
 
 namespace LastMile.TMS.Api.GraphQL.Extensions.Depot;
 
@@ -20,8 +20,8 @@ public class DepotQuery
         => context.Depots.AsNoTracking();
 
     [Authorize(Roles = new[] { Role.RoleNames.Admin, Role.RoleNames.OperationsManager })]
-    [UseProjection]
     [UseSingleOrDefault]
+    [UseProjection]
     public IQueryable<DomainDepot> GetDepot(Guid id, [Service] AppDbContext context)
-        => context.Depots.Include(d => d.Address).Include(d => d.ShiftSchedules).AsNoTracking().Where(d => d.Id == id);
+        => context.Depots.AsNoTracking().Where(d => d.Id == id);
 }

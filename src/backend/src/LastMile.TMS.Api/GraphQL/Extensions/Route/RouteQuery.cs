@@ -1,8 +1,9 @@
 using HotChocolate.Authorization;
 using HotChocolate.Data;
-using LastMile.TMS.Persistence;
-using RouteEntity = LastMile.TMS.Domain.Entities.Route;
 using LastMile.TMS.Domain.Entities;
+using LastMile.TMS.Persistence;
+using Microsoft.EntityFrameworkCore;
+using RouteEntity = LastMile.TMS.Domain.Entities.Route;
 
 namespace LastMile.TMS.Api.GraphQL.Extensions.Route;
 
@@ -15,14 +16,14 @@ public class RouteQuery
     [UseSorting]
     public IQueryable<RouteEntity> GetRoutes(AppDbContext context)
     {
-        return context.Routes;
+        return context.Routes.AsNoTracking();
     }
 
     [Authorize(Roles = [Role.RoleNames.Admin, Role.RoleNames.OperationsManager])]
+    [UseSingleOrDefault]
     [UseProjection]
-    [UseFirstOrDefault]
     public IQueryable<RouteEntity> GetRoute(AppDbContext context, Guid id)
     {
-        return context.Routes.Where(r => r.Id == id);
+        return context.Routes.AsNoTracking().Where(r => r.Id == id);
     }
 }

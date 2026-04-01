@@ -1,12 +1,12 @@
 using HotChocolate.Authorization;
 using LastMile.TMS.Api.GraphQL;
-using LastMile.TMS.Application.Users.Commands.ActivateUser;
-using LastMile.TMS.Application.Users.Commands.CompletePasswordReset;
-using LastMile.TMS.Application.Users.Commands.CreateUser;
-using LastMile.TMS.Application.Users.Commands.DeactivateUser;
-using LastMile.TMS.Application.Users.Commands.ResetPassword;
-using LastMile.TMS.Application.Users.Commands.UpdateUser;
-using LastMile.TMS.Application.Users.DTOs;
+using LastMile.TMS.Application.Features.Users.Commands.ActivateUser;
+using LastMile.TMS.Application.Features.Users.Commands.CompletePasswordReset;
+using LastMile.TMS.Application.Features.Users.Commands.CreateUser;
+using LastMile.TMS.Application.Features.Users.Commands.DeactivateUser;
+using LastMile.TMS.Application.Features.Users.Commands.ResetPassword;
+using LastMile.TMS.Application.Features.Users.Commands.UpdateUser;
+using LastMile.TMS.Application.Features.Users.DTOs;
 using LastMile.TMS.Domain.Entities;
 using MediatR;
 

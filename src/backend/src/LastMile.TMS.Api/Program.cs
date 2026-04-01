@@ -1,11 +1,15 @@
 using Hangfire;
 using Hangfire.PostgreSql;
 using HotChocolate;
+using HotChocolate.AspNetCore;
+using LastMile.TMS.Api;
 using LastMile.TMS.Api.GraphQL;
+using LastMile.TMS.Api.GraphQL.Common;
 using LastMile.TMS.Api.GraphQL.Extensions.Depot;
 using LastMile.TMS.Api.GraphQL.Extensions.Zone;
 using LastMile.TMS.Api.GraphQL.Extensions.Vehicle;
 using LastMile.TMS.Api.GraphQL.Extensions.Route;
+using LastMile.TMS.Api.GraphQL.Extensions.UserManagement;
 using LastMile.TMS.Api.GraphQL.Inputs;
 using LastMile.TMS.Application;
 using LastMile.TMS.Domain.Entities;
@@ -16,12 +20,6 @@ using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
 using OpenIddict.Validation.AspNetCore;
 using Serilog;
-using DbSeeder = LastMile.TMS.Api.Services.DbSeeder;
-using LastMile.TMS.Api.GraphQL;
-using LastMile.TMS.Api.GraphQL.Extensions.UserManagement;
-using HotChocolate.AspNetCore;
-using LastMile.TMS.Api.GraphQL.Extensions.Vehicle;
-using LastMile.TMS.Api.GraphQL.Extensions.Route;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -124,43 +122,12 @@ try
         options.Configuration = builder.Configuration.GetConnectionString("Redis"));
 
     // GraphQL
-    builder.Services
-        .AddGraphQLServer()
-        .ModifyCostOptions(o => o.MaxFieldCost = 15000)
-        .AddProjections()
-        .AddFiltering()
-        .AddSorting()
-        .AddAuthorization()
-        .AddSpatialTypes()
-        .AddQueryType<Query>(d => d.Name("Query").Field("sentinel").Type<StringType>().Resolve(_ => "sentinel"))
-        .AddMutationType<Mutation>(d => d.Name("Mutation").Field("sentinel").Type<StringType>().Resolve(_ => "sentinel"))
-        .AddType<DepotQuery>()
-        .AddType<DepotMutation>()
-        .AddType<ZoneQuery>()
-        .AddType<ZoneMutation>()
-        .AddType<VehicleQuery>()
-        .AddType<VehicleMutation>()
-        .AddType<RouteQuery>()
-        .AddType<RouteMutation>()
-        .AddType<CreateDepotInput>()
-        .AddType<AddressInputType>()
-        .AddType<UpdateDepotInput>()
-        .AddType<UpdateAddressInputType>()
-        .AddType<DailyOperatingHoursInputType>()
-        .AddType<CreateZoneInput>()
-        .AddType<UpdateZoneInput>()
-        .AddType<UserManagementQuery>()
-        .AddType<UserManagementMutation>()
-        .AddErrorFilter<GraphQLErrorFilter>()
-        .AddErrorFilter<ErrorFilter>();
+    builder.Services.AddLastMileApi();
 
     builder.Services.AddHangfire(config =>
         config.UsePostgreSqlStorage(options =>
             options.UseNpgsqlConnection(builder.Configuration.GetConnectionString("HangfireConnection"))));
     builder.Services.AddHangfireServer();
-
-    // Register DbSeeder
-    builder.Services.AddScoped<LastMile.TMS.Application.Common.Interfaces.IDbSeeder, DbSeeder>();
 
     var app = builder.Build();
 

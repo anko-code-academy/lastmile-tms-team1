@@ -1,12 +1,9 @@
 using HotChocolate.Authorization;
 using HotChocolate.Data;
-using LastMile.TMS.Api.GraphQL;
-using LastMile.TMS.Application.Users.DTOs;
-using LastMile.TMS.Application.Users.Queries.GetUserById;
-using LastMile.TMS.Application.Users.Queries.GetUserManagementLookups;
+using LastMile.TMS.Api.GraphQL.Common;
+using LastMile.TMS.Application.Features.Users.DTOs;
 using LastMile.TMS.Domain.Entities;
 using LastMile.TMS.Persistence;
-using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace LastMile.TMS.Api.GraphQL.Extensions.UserManagement;
@@ -16,44 +13,37 @@ public class UserManagementQuery
 {
     [Authorize(Roles = [Role.RoleNames.Admin])]
     [UsePaging(IncludeTotalCount = true)]
+    [UseProjection]
     [UseFiltering]
     [UseSorting]
-    public IQueryable<UserDto> GetUsers([Service] AppDbContext context)
-    {
-        return context.Users
-            .IgnoreQueryFilters()
-            .Where(u => !u.IsDeleted)
-            .Include(u => u.Role)
-            .Include(u => u.Zone)
-            .Include(u => u.Depot)
-            .Select(UserMappings.ToUserDto);
-    }
+    public IQueryable<User> GetUsers([Service] AppDbContext context)
+        => context.Users.AsNoTracking();
 
     [Authorize(Roles = [Role.RoleNames.Admin])]
-    public IQueryable<UserDto> GetUser([Service] AppDbContext context, Guid id)
-    {
-        return context.Users
-            .Where(u => u.Id == id)
-            .Include(u => u.Role)
-            .Include(u => u.Zone)
-            .Include(u => u.Depot)
-            .Select(UserMappings.ToUserDto);
-    }
+    [UseSingleOrDefault]
+    [UseProjection]
+    public IQueryable<User> GetUser(Guid id, [Service] AppDbContext context)
+        => context.Users.AsNoTracking().Where(u => u.Id == id);
 
-    public async Task<UserDto?> GetUserById(
-        [Service] IMediator mediator,
-        Guid id,
-        CancellationToken cancellationToken = default)
-    {
-        var result = await mediator.Send(new GetUserByIdQuery(id), cancellationToken);
-        return result.Value;
-    }
-
+    [Authorize(Roles = [Role.RoleNames.Admin])]
     public async Task<UserManagementLookupsDto> GetUserManagementLookups(
-        [Service] IMediator mediator,
+        [Service] AppDbContext context,
         CancellationToken cancellationToken = default)
     {
-        var result = await mediator.Send(new GetUserManagementLookupsQuery(), cancellationToken);
-        return result.Value!;
+        var roles = await context.Roles
+            .Select(r => new RoleLookupDto(r.Id, r.Name!, r.Description))
+            .ToListAsync(cancellationToken);
+
+        var depots = await context.Depots
+            .Where(d => d.IsActive)
+            .Select(d => new DepotLookupDto(d.Id, d.Name))
+            .ToListAsync(cancellationToken);
+
+        var zones = await context.Zones
+            .Where(z => z.IsActive)
+            .Select(z => new ZoneLookupDto(z.Id, z.Name, z.DepotId))
+            .ToListAsync(cancellationToken);
+
+        return new UserManagementLookupsDto(roles, depots, zones);
     }
 }
