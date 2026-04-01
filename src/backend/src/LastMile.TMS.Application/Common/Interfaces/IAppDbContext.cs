@@ -9,6 +9,7 @@ public interface IAppDbContext
     DbSet<Depot> Depots { get; }
     DbSet<Driver> Drivers { get; }
     DbSet<Role> Roles { get; }
+    DbSet<Parcel> Parcels { get; }
     DbSet<Route> Routes { get; }
     DbSet<ShiftSchedule> ShiftSchedules { get; }
     DbSet<User> Users { get; }

@@ -1,5 +1,4 @@
 using LastMile.TMS.Application.Common.Interfaces;
-using LastMile.TMS.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,10 +6,12 @@ namespace LastMile.TMS.Api.Controllers;
 
 [ApiController]
 [Route("api/labels")]
-public class LabelController(ILabelService labelService) : ControllerBase
+public class LabelController(
+    ILabelService labelService,
+    IAppDbContext context) : ControllerBase
 {
     [HttpGet("{parcelId}/zpl")]
-    public async Task<IActionResult> GetZplLabel(Guid parcelId, AppDbContext context)
+    public async Task<IActionResult> GetZplLabel(Guid parcelId)
     {
         var parcel = await context.Parcels
             .Include(p => p.RecipientAddress)
@@ -25,7 +26,7 @@ public class LabelController(ILabelService labelService) : ControllerBase
     }
 
     [HttpGet("{parcelId}/pdf")]
-    public async Task<IActionResult> GetPdfLabel(Guid parcelId, AppDbContext context)
+    public async Task<IActionResult> GetPdfLabel(Guid parcelId)
     {
         var parcel = await context.Parcels
             .Include(p => p.RecipientAddress)
@@ -40,7 +41,7 @@ public class LabelController(ILabelService labelService) : ControllerBase
     }
 
     [HttpPost("bulk/pdf")]
-    public async Task<IActionResult> GetBulkPdfLabels([FromBody] List<Guid> parcelIds, AppDbContext context)
+    public async Task<IActionResult> GetBulkPdfLabels([FromBody] List<Guid> parcelIds)
     {
         var parcels = await context.Parcels
             .Include(p => p.RecipientAddress)
