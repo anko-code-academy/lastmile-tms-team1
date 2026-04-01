@@ -37,6 +37,10 @@ npm start                   # Expo dev server
 docker compose up --build   # everything at http://localhost
 ```
 
+## Documentation
+
+Use the `context7` MCP tool to fetch up-to-date HotChocolate documentation before writing query/mutation code.
+
 ## Architecture
 
 Monorepo with three apps: `src/backend` (API), `src/web` (dispatcher UI), `src/mobile` (driver app).
@@ -60,6 +64,45 @@ Api             → Application, Infrastructure, Persistence
 - **Api**: Composition root. `Program.cs` wires DI via `AddApplication()`, `AddPersistence()`, `AddInfrastructure()`.
 
 Each layer registers its own services via an `IServiceCollection` extension method in `DependencyInjection.cs`.
+
+#### GraphQL / HotChocolate
+
+##### Queries — No MediatR
+
+Queries are direct HotChocolate resolvers using `AppDbContext` directly. **Do NOT use MediatR for queries.**
+
+Middleware attribute order matters — HotChocolate processes them bottom-to-top:
+
+**Collection queries (with pagination):**
+```csharp
+[Authorize(Roles = new[] { Role.RoleNames.Admin, Role.RoleNames.OperationsManager })]
+[UsePaging(IncludeTotalCount = true)]
+[UseProjection]
+[UseFiltering]
+[UseSorting]
+public IQueryable<Zone> GetZones([Service] AppDbContext context)
+    => context.Zones.AsNoTracking();
+```
+
+**Single-item queries:**
+```csharp
+[Authorize(Roles = new[] { Role.RoleNames.Admin, Role.RoleNames.OperationsManager })]
+[UseSingleOrDefault]
+[UseProjection]
+public IQueryable<Zone> GetZone(Guid id, [Service] AppDbContext context)
+    => context.Zones.AsNoTracking().Where(z => z.Id == id);
+```
+
+Reference implementations: `src/backend/src/LastMile.TMS.Api/GraphQL/Extensions/Zone/ZoneQuery.cs`, `DepotQuery.cs`.
+
+##### Mutations — Use MediatR
+
+Mutations use MediatR commands via `IRequest<T>` / `IRequestHandler<T, TResponse>` in `Application/Features/{Entity}/Commands/`. The `ValidationBehavior` pipeline auto-applies FluentValidation.
+
+```csharp
+public async Task<ZoneResult> CreateZone(CreateZoneCommand input, [Service] IMediator mediator)
+    => await mediator.Send(input);
+```
 
 ### Docker Services
 
