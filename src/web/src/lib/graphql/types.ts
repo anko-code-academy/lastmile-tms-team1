@@ -279,7 +279,7 @@ export interface UpdateZoneInput {
 
 // Driver types
 export interface ShiftScheduleDto {
-  dayOfWeek: DayOfWeek;
+  dayOfWeek: string;
   openTime: string;
   closeTime: string;
 }
@@ -290,35 +290,43 @@ export interface DayOffDto {
 
 export interface DriverDto {
   id: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  email: string;
   licenseNumber: string;
   licenseExpiryDate: string;
   photo?: string;
-  zoneId: string;
-  depotId: string;
-  userId?: string;
-  isActive: boolean;
+  userId: string;
   createdAt: string;
   lastModifiedAt?: string;
-  zone?: { id: string; name: string };
-  depot?: { id: string; name: string };
+  user?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email?: string;
+    phoneNumber?: string;
+    isActive: boolean;
+    zone?: { id: string; name: string };
+    depot?: { id: string; name: string };
+  };
   shiftSchedules?: ShiftScheduleDto[];
   daysOff?: DayOffDto[];
 }
 
 export interface DriverSummaryDto {
   id: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  email: string;
-  isActive: boolean;
+  licenseNumber: string;
+  licenseExpiryDate: string;
+  photo?: string;
+  userId: string;
   createdAt: string;
-  zone?: { id: string; name: string };
-  depot?: { id: string; name: string };
+  user?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email?: string;
+    phoneNumber?: string;
+    isActive: boolean;
+    zone?: { id: string; name: string };
+    depot?: { id: string; name: string };
+  };
 }
 
 export interface DriversResponse {
@@ -329,17 +337,10 @@ export interface DriversResponse {
 
 export interface DriverResult {
   id: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  email: string;
   licenseNumber: string;
   licenseExpiryDate: string;
   photo?: string;
-  zoneId: string;
-  depotId: string;
-  userId?: string;
-  isActive: boolean;
+  userId: string;
   createdAt: string;
 }
 
@@ -354,32 +355,19 @@ export interface DayOffInput {
 }
 
 export interface CreateDriverInput {
-  firstName: string;
-  lastName: string;
-  phone: string;
   email: string;
   licenseNumber: string;
   licenseExpiryDate: string;
   photo?: string;
-  zoneId: string;
-  depotId: string;
-  isActive?: boolean;
   shiftSchedules?: ShiftScheduleInput[];
   daysOff?: DayOffInput[];
 }
 
 export interface UpdateDriverInput {
   id: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  email: string;
   licenseNumber: string;
   licenseExpiryDate: string;
   photo?: string;
-  zoneId: string;
-  depotId: string;
-  isActive: boolean;
   shiftSchedules?: ShiftScheduleInput[];
   daysOff?: DayOffInput[];
 }

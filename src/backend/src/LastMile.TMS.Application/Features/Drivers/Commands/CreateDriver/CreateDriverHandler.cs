@@ -17,17 +17,10 @@ public class CreateDriverHandler(IAppDbContext dbContext) : IRequestHandler<Crea
 
         var driver = new Driver
         {
-            FirstName = request.FirstName,
-            LastName = request.LastName,
-            Phone = request.Phone,
-            Email = request.Email,
+            UserId = user.Id,
             LicenseNumber = request.LicenseNumber,
             LicenseExpiryDate = request.LicenseExpiryDate,
-            Photo = request.Photo,
-            ZoneId = request.ZoneId,
-            DepotId = request.DepotId,
-            UserId = user.Id,
-            IsActive = request.IsActive
+            Photo = request.Photo
         };
 
         // Add ShiftSchedules
@@ -67,6 +60,6 @@ public class CreateDriverHandler(IAppDbContext dbContext) : IRequestHandler<Crea
         var shiftScheduleResults = driver.ShiftSchedules.Select(s => new ShiftScheduleResult(s.DayOfWeek, s.OpenTime, s.CloseTime)).ToList();
         var dayOffResults = driver.DaysOff.Select(d => new DayOffResult(d.Date)).ToList();
 
-        return new DriverResult(driver.Id, driver.FirstName, driver.LastName, driver.Email, driver.Phone, driver.LicenseNumber, driver.LicenseExpiryDate, driver.Photo, driver.ZoneId, driver.DepotId, driver.UserId, driver.IsActive, driver.CreatedAt, shiftScheduleResults, dayOffResults);
+        return new DriverResult(driver.Id, driver.LicenseNumber, driver.LicenseExpiryDate, driver.Photo, driver.UserId, driver.CreatedAt, shiftScheduleResults, dayOffResults);
     }
 }

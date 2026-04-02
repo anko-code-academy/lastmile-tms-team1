@@ -18,36 +18,14 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useGraphQuery, useGraphMutation } from "@/hooks/use-graphql";
-import { GET_DRIVER_QUERY } from "@/lib/graphql/queries/driver";
-import { GET_ZONES_QUERY } from "@/lib/graphql/queries/zone";
-import { GET_DEPOTS_QUERY } from "@/lib/graphql/queries/depot";
-import { CREATE_DRIVER_MUTATION, UPDATE_DRIVER_MUTATION } from "@/lib/graphql/mutations/driver";
-import { DayOfWeek } from "@/lib/graphql/types";
-import type { DriverDto, ZoneSummaryDto, DepotSummaryDto, CreateDriverInput, UpdateDriverInput, ShiftScheduleInput, DayOffInput } from "@/lib/graphql/types";
+import { useDriver, useCreateDriver, useUpdateDriver } from "@/hooks/use-drivers";
 import { toast } from "sonner";
 
-interface DriverResponse {
-  driver: DriverDto;
-}
-
-interface ZonesResponse {
-  zones: {
-    nodes: ZoneSummaryDto[];
-  };
-}
-
-interface DepotsResponse {
-  depots: {
-    nodes: DepotSummaryDto[];
-  };
-}
 
 const DAYS_OF_WEEK = [
   { value: "SUNDAY", label: "Sunday" },
@@ -60,16 +38,10 @@ const DAYS_OF_WEEK = [
 ] as const;
 
 const driverFormSchema = z.object({
-  firstName: z.string().min(1, "First name is required").max(100),
-  lastName: z.string().min(1, "Last name is required").max(100),
-  phone: z.string().min(1, "Phone is required").max(20),
   email: z.string().min(1, "Email is required").email("Valid email is required").max(255),
   licenseNumber: z.string().min(1, "License number is required").max(50),
   licenseExpiryDate: z.string().min(1, "License expiry date is required"),
   photo: z.string().nullable().optional().transform((v) => v ?? ""),
-  zoneId: z.string().min(1, "Zone is required"),
-  depotId: z.string().min(1, "Depot is required"),
-  isActive: z.boolean(),
   shiftSchedules: z.array(z.object({
     dayOfWeek: z.string(),
     openTime: z.string().nullable(),
@@ -92,77 +64,39 @@ export function DriverForm({ driverId }: DriverFormProps) {
   const [activeTab, setActiveTab] = useState<"details" | "schedule" | "daysoff">("details");
   const [newDayOffDate, setNewDayOffDate] = useState("");
 
-  const { data: driverData, isLoading: driverLoading } = useGraphQuery<DriverResponse, { id: string }>({
-    queryKey: ["drivers", driverId ?? ""] as string[],
-    query: GET_DRIVER_QUERY,
-    variables: { id: driverId! } as { id: string },
-    enabled: isEditing,
-  });
-
-  const { data: zonesData, isLoading: zonesLoading } = useGraphQuery<ZonesResponse, null>({
-    queryKey: ["zones"],
-    query: GET_ZONES_QUERY,
-  });
-
-  const { data: depotsData, isLoading: depotsLoading } = useGraphQuery<DepotsResponse, null>({
-    queryKey: ["depots"],
-    query: GET_DEPOTS_QUERY,
-  });
-
-  const createMutation = useGraphMutation<{ createDriver: { id: string } }, { input: CreateDriverInput }>({
-    mutation: CREATE_DRIVER_MUTATION,
-    invalidateKeys: ["drivers"],
-  });
-
-  const updateMutation = useGraphMutation<{ updateDriver: { id: string } }, { input: UpdateDriverInput }>({
-    mutation: UPDATE_DRIVER_MUTATION,
-    invalidateKeys: ["drivers"],
-  });
+  const { data: driverData, isLoading: driverLoading } = useDriver(driverId!);
+  const createDriver = useCreateDriver();
+  const updateDriver = useUpdateDriver();
 
   const form = useForm<DriverFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(driverFormSchema) as any,
     defaultValues: {
-      firstName: "",
-      lastName: "",
-      phone: "",
       email: "",
       licenseNumber: "",
       licenseExpiryDate: "",
       photo: "",
-      zoneId: "",
-      depotId: "",
-      isActive: true,
       shiftSchedules: [],
       daysOff: [],
     },
   });
 
   useEffect(() => {
-    if (driverData?.driver) {
-      const driver = driverData.driver;
+    if (driverData) {
       form.reset({
-        firstName: driver.firstName,
-        lastName: driver.lastName,
-        phone: driver.phone,
-        email: driver.email,
-        licenseNumber: driver.licenseNumber,
-        licenseExpiryDate: driver.licenseExpiryDate.slice(0, 16),
-        photo: driver.photo ?? "",
-        zoneId: driver.zoneId,
-        depotId: driver.depotId,
-        isActive: driver.isActive,
-        shiftSchedules: driver.shiftSchedules?.map(s => ({
-          dayOfWeek: DayOfWeek[s.dayOfWeek as number].toUpperCase() as string,
+        email: driverData.user?.email ?? "",
+        licenseNumber: driverData.licenseNumber,
+        licenseExpiryDate: driverData.licenseExpiryDate.slice(0, 16),
+        photo: driverData.photo ?? "",
+        shiftSchedules: driverData.shiftSchedules?.map(s => ({
+          dayOfWeek: s.dayOfWeek,
           openTime: s.openTime || null,
           closeTime: s.closeTime || null,
         })) ?? [],
-        daysOff: driver.daysOff?.map(d => ({
+        daysOff: driverData.daysOff?.map(d => ({
           date: d.date.slice(0, 10),
         })) ?? [],
       });
-      form.setValue("zoneId", driver.zoneId, { shouldTouch: true });
-      form.setValue("depotId", driver.depotId, { shouldTouch: true });
     }
   }, [driverData, form]);
 
@@ -205,7 +139,7 @@ export function DriverForm({ driverId }: DriverFormProps) {
 
   async function onSubmit(values: DriverFormValues) {
     try {
-      const shiftSchedules: ShiftScheduleInput[] = values.shiftSchedules
+      const shiftSchedules = values.shiftSchedules
         ?.filter(s => s.openTime && s.closeTime)
         ?.map(s => ({
           dayOfWeek: s.dayOfWeek,
@@ -213,45 +147,28 @@ export function DriverForm({ driverId }: DriverFormProps) {
           closeTime: s.closeTime,
         })) ?? [];
 
-      const daysOff: DayOffInput[] = values.daysOff?.map(d => ({
-        date: d.date,
+      const daysOff = values.daysOff?.map(d => ({
+        date: `${d.date}T00:00:00Z`,
       })) ?? [];
 
       if (isEditing && driverId) {
-        await updateMutation.mutateAsync({
-          input: {
-            id: driverId,
-            firstName: values.firstName,
-            lastName: values.lastName,
-            phone: values.phone,
-            email: values.email,
-            licenseNumber: values.licenseNumber,
-            licenseExpiryDate: `${values.licenseExpiryDate}:00Z`,
-            photo: values.photo || undefined,
-            zoneId: values.zoneId,
-            depotId: values.depotId,
-            isActive: values.isActive,
-            shiftSchedules,
-            daysOff,
-          },
+        await updateDriver.mutateAsync({
+          id: driverId,
+          licenseNumber: values.licenseNumber,
+          licenseExpiryDate: `${values.licenseExpiryDate}:00Z`,
+          photo: values.photo || undefined,
+          shiftSchedules,
+          daysOff,
         });
         toast.success("Driver updated successfully");
       } else {
-        await createMutation.mutateAsync({
-          input: {
-            firstName: values.firstName,
-            lastName: values.lastName,
-            phone: values.phone,
-            email: values.email,
-            licenseNumber: values.licenseNumber,
-            licenseExpiryDate: `${values.licenseExpiryDate}:00Z`,
-            photo: values.photo || undefined,
-            zoneId: values.zoneId,
-            depotId: values.depotId,
-            isActive: values.isActive,
-            shiftSchedules,
-            daysOff,
-          },
+        await createDriver.mutateAsync({
+          email: values.email,
+          licenseNumber: values.licenseNumber,
+          licenseExpiryDate: `${values.licenseExpiryDate}:00Z`,
+          photo: values.photo || undefined,
+          shiftSchedules,
+          daysOff,
         });
         toast.success("Driver created successfully");
       }
@@ -262,7 +179,7 @@ export function DriverForm({ driverId }: DriverFormProps) {
     }
   }
 
-  if ((driverLoading && isEditing) || zonesLoading || depotsLoading) {
+  if ((driverLoading && isEditing)) {
     return (
       <Card>
         <CardContent className="py-8 text-center text-muted-foreground">
@@ -272,9 +189,7 @@ export function DriverForm({ driverId }: DriverFormProps) {
     );
   }
 
-  const zones = zonesData?.zones?.nodes ?? [];
-  const depots = depotsData?.depots?.nodes ?? [];
-  const daysOff = form.getValues("daysOff") ?? [];
+  const daysOff = form.watch("daysOff") ?? [];
 
   return (
     <Card>
@@ -331,55 +246,11 @@ export function DriverForm({ driverId }: DriverFormProps) {
             {activeTab === "details" && (
               <>
                 <div className="space-y-4">
-                  <h3 className="text-sm font-medium">Personal Information</h3>
+                  <h3 className="text-sm font-medium">User Information</h3>
+                  <p className="text-sm text-muted-foreground">
+                    The driver must be an existing user in the system. Enter their email to link the driver record.
+                  </p>
                   <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="firstName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>First Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="John" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="lastName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Last Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Doe" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium">Contact Information</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Phone</FormLabel>
-                          <FormControl>
-                            <Input placeholder="+1 555-123-4567" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
                     <FormField
                       control={form.control}
                       name="email"
@@ -387,7 +258,12 @@ export function DriverForm({ driverId }: DriverFormProps) {
                         <FormItem>
                           <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input placeholder="john.doe@example.com" type="email" {...field} />
+                            <Input
+                              placeholder="john.doe@example.com"
+                              type="email"
+                              disabled={isEditing}
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -443,83 +319,25 @@ export function DriverForm({ driverId }: DriverFormProps) {
                   />
                 </div>
 
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium">Assignment</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="zoneId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Zone</FormLabel>
-                          <FormControl>
-                            <select
-                              className="flex w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                              value={field.value ?? ""}
-                              onChange={(e) => field.onChange(e.target.value)}
-                            >
-                              <option value="">Select a zone</option>
-                              {zones.map((zone) => (
-                                <option key={zone.id} value={zone.id}>
-                                  {zone.name}
-                                </option>
-                              ))}
-                            </select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="depotId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Depot</FormLabel>
-                          <FormControl>
-                            <select
-                              className="flex w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                              value={field.value ?? ""}
-                              onChange={(e) => field.onChange(e.target.value)}
-                            >
-                              <option value="">Select a depot</option>
-                              {depots.map((depot) => (
-                                <option key={depot.id} value={depot.id}>
-                                  {depot.name}
-                                </option>
-                              ))}
-                            </select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="isActive"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel>Active</FormLabel>
-                        <FormDescription>
-                          Mark this driver as active for dispatch
-                        </FormDescription>
+                {isEditing && driverData?.user && (
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium">Driver Details</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-sm">
+                        <span className="font-medium">Name:</span> {driverData.user.firstName} {driverData.user.lastName}
                       </div>
-                      <FormControl>
-                        <input
-                          type="checkbox"
-                          checked={field.value}
-                          onChange={field.onChange}
-                          className="mt-1 h-4 w-4 rounded border-gray-300"
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
+                      <div className="text-sm">
+                        <span className="font-medium">Phone:</span> {driverData.user.phoneNumber ?? "N/A"}
+                      </div>
+                      <div className="text-sm">
+                        <span className="font-medium">Zone:</span> {driverData.user.zone?.name ?? "N/A"}
+                      </div>
+                      <div className="text-sm">
+                        <span className="font-medium">Depot:</span> {driverData.user.depot?.name ?? "N/A"}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             )}
 
@@ -602,7 +420,7 @@ export function DriverForm({ driverId }: DriverFormProps) {
             </Button>
             <Button
               type="submit"
-              disabled={createMutation.isPending || updateMutation.isPending}
+              disabled={createDriver.isPending || updateDriver.isPending}
             >
               {isEditing ? "Update Driver" : "Create Driver"}
             </Button>

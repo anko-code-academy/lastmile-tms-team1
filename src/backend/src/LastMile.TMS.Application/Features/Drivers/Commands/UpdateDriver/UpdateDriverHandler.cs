@@ -14,16 +14,9 @@ public class UpdateDriverHandler(IAppDbContext dbContext) : IRequestHandler<Upda
             .FirstOrDefaultAsync(d => d.Id == request.Id && !d.IsDeleted, cancellationToken)
             ?? throw new InvalidOperationException($"Driver with ID {request.Id} not found.");
 
-        driver.FirstName = request.FirstName;
-        driver.LastName = request.LastName;
-        driver.Phone = request.Phone;
-        driver.Email = request.Email;
         driver.LicenseNumber = request.LicenseNumber;
         driver.LicenseExpiryDate = request.LicenseExpiryDate;
         driver.Photo = request.Photo;
-        driver.ZoneId = request.ZoneId;
-        driver.DepotId = request.DepotId;
-        driver.IsActive = request.IsActive;
 
         // Sync ShiftSchedules
         var existingSchedules = await dbContext.ShiftSchedules
@@ -128,6 +121,6 @@ public class UpdateDriverHandler(IAppDbContext dbContext) : IRequestHandler<Upda
         var shiftScheduleResults = updatedSchedules.Select(s => new ShiftScheduleResult(s.DayOfWeek, s.OpenTime, s.CloseTime)).ToList();
         var dayOffResults = updatedDaysOff.Select(d => new DayOffResult(d.Date)).ToList();
 
-        return new DriverResult(driver.Id, driver.FirstName, driver.LastName, driver.Email, driver.Phone, driver.LicenseNumber, driver.LicenseExpiryDate, driver.Photo, driver.ZoneId, driver.DepotId, driver.UserId, driver.IsActive, driver.CreatedAt, shiftScheduleResults, dayOffResults);
+        return new DriverResult(driver.Id, driver.LicenseNumber, driver.LicenseExpiryDate, driver.Photo, driver.UserId, driver.CreatedAt, shiftScheduleResults, dayOffResults);
     }
 }

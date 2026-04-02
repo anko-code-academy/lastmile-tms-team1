@@ -1,0 +1,98 @@
+query GetDrivers {
+  drivers {
+    nodes {
+      id
+      licenseNumber
+      licenseExpiryDate
+      photo
+      userId
+      createdAt
+      user {
+        id
+        firstName
+        lastName
+        email
+        phoneNumber
+        isActive
+        zone {
+          id
+          name
+        }
+        depot {
+          id
+          name
+        }
+      }
+      shiftSchedules {
+        dayOfWeek
+        openTime
+        closeTime
+      }
+      daysOff {
+        date
+      }
+    }
+  }
+}
+
+query GetDriver($id: UUID!) {
+  driver(id: $id) {
+    id
+    licenseNumber
+    licenseExpiryDate
+    photo
+    userId
+    createdAt
+    lastModifiedAt
+    user {
+      id
+      firstName
+      lastName
+      email
+      phoneNumber
+      isActive
+      zone {
+        id
+        name
+      }
+      depot {
+        id
+        name
+      }
+    }
+    shiftSchedules {
+      dayOfWeek
+      openTime
+      closeTime
+    }
+    daysOff {
+      date
+    }
+  }
+}
+
+mutation CreateDriver($input: CreateDriverCommandInput!) {
+  createDriver(input: $input) {
+    id
+    licenseNumber
+    licenseExpiryDate
+    photo
+    userId
+    createdAt
+  }
+}
+
+mutation UpdateDriver($input: UpdateDriverCommandInput!) {
+  updateDriver(input: $input) {
+    id
+    licenseNumber
+    licenseExpiryDate
+    photo
+    userId
+    createdAt
+  }
+}
+
+mutation DeleteDriver($id: UUID!) {
+  deleteDriver(id: $id)
+}

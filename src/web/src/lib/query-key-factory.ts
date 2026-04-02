@@ -50,3 +50,11 @@ export const parcelKeys = {
   details: () => [...parcelKeys.all, 'detail'] as const,
   detail: (id: string) => [...parcelKeys.details(), id] as const,
 };
+
+export const driverKeys = {
+  all: ['drivers'] as const,
+  lists: () => [...driverKeys.all, 'list'] as const,
+  list: () => [...driverKeys.lists()] as const,
+  details: () => [...driverKeys.all, 'detail'] as const,
+  detail: (id: string) => [...driverKeys.details(), id] as const,
+};

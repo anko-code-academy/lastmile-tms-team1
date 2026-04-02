@@ -18,35 +18,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useGraphQuery, useGraphMutation } from "@/hooks/use-graphql";
-import { GET_DRIVERS_QUERY } from "@/lib/graphql/queries/driver";
-import { DELETE_DRIVER_MUTATION } from "@/lib/graphql/mutations/driver";
-import type { DriverSummaryDto } from "@/lib/graphql/types";
+import { useDrivers, useDeleteDriver } from "@/hooks/use-drivers";
 import { toast } from "sonner";
-
-interface DriversResponse {
-  drivers: {
-    nodes: DriverSummaryDto[];
-  };
-}
 
 export function DriverList() {
   const router = useRouter();
-  const { data, isLoading, error } = useGraphQuery<DriversResponse, null>({
-    queryKey: ["drivers"],
-    query: GET_DRIVERS_QUERY,
-  });
-
-  const deleteMutation = useGraphMutation<{ deleteDriver: boolean }, { id: string }>({
-    mutation: DELETE_DRIVER_MUTATION,
-    invalidateKeys: ["drivers"],
-  });
+  const { data, isLoading, error } = useDrivers();
+  const deleteDriver = useDeleteDriver();
 
   async function handleDelete(id: string) {
     if (!confirm("Are you sure you want to delete this driver?")) return;
 
     try {
-      await deleteMutation.mutateAsync({ id });
+      await deleteDriver.mutateAsync(id);
       toast.success("Driver deleted successfully");
     } catch (err) {
       toast.error("Failed to delete driver");
@@ -74,7 +58,7 @@ export function DriverList() {
     );
   }
 
-  const drivers = data?.drivers?.nodes ?? [];
+  const drivers = data ?? [];
 
   return (
     <Card>
@@ -103,7 +87,6 @@ export function DriverList() {
                 <TableHead>Contact</TableHead>
                 <TableHead>Zone</TableHead>
                 <TableHead>Depot</TableHead>
-                <TableHead>Status</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
@@ -112,25 +95,14 @@ export function DriverList() {
               {drivers.map((driver) => (
                 <TableRow key={driver.id}>
                   <TableCell className="font-medium">
-                    {driver.firstName} {driver.lastName}
+                    {driver.user?.firstName} {driver.user?.lastName}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    <div>{driver.email}</div>
-                    <div className="text-xs">{driver.phone}</div>
+                    <div>{driver.user?.email}</div>
+                    <div className="text-xs">{driver.user?.phoneNumber ?? "-"}</div>
                   </TableCell>
-                  <TableCell>{driver.zone?.name ?? "-"}</TableCell>
-                  <TableCell>{driver.depot?.name ?? "-"}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                        driver.isActive
-                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-                          : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400"
-                      }`}
-                    >
-                      {driver.isActive ? "Active" : "Inactive"}
-                    </span>
-                  </TableCell>
+                  <TableCell>{driver.user?.zone?.name ?? "-"}</TableCell>
+                  <TableCell>{driver.user?.depot?.name ?? "-"}</TableCell>
                   <TableCell className="text-muted-foreground">
                     {new Date(driver.createdAt).toLocaleDateString()}
                   </TableCell>
@@ -147,7 +119,7 @@ export function DriverList() {
                         variant="ghost"
                         size="icon-sm"
                         onClick={() => handleDelete(driver.id)}
-                        disabled={deleteMutation.isPending}
+                        disabled={deleteDriver.isPending}
                       >
                         <Trash2 className="size-4 text-destructive" />
                       </Button>

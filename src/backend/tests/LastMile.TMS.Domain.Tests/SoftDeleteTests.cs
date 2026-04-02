@@ -47,14 +47,8 @@ public class SoftDeleteTests
         // Act
         var driver = new Driver
         {
-            FirstName = "Jane",
-            LastName = "Doe",
-            Email = "jane@driver.com",
-            Phone = "+1234567890",
             LicenseNumber = "DL123",
             LicenseExpiryDate = DateTimeOffset.UtcNow.AddYears(1),
-            ZoneId = Guid.NewGuid(),
-            DepotId = Guid.NewGuid(),
             UserId = Guid.NewGuid()
         };
 
@@ -184,14 +178,8 @@ public class SoftDeleteTests
         var depot = new Depot { Name = "Main Depot" };
         var driver = new Driver
         {
-            FirstName = "Jane",
-            LastName = "Doe",
-            Email = "jane@driver.com",
-            Phone = "+1234567890",
             LicenseNumber = "DL123",
             LicenseExpiryDate = DateTimeOffset.UtcNow.AddYears(1),
-            ZoneId = Guid.NewGuid(),
-            DepotId = Guid.NewGuid(),
             UserId = Guid.NewGuid()
         };
 
@@ -216,14 +204,8 @@ public class SoftDeleteTests
         var depot = new Depot { Name = "Main Depot" };
         var driver = new Driver
         {
-            FirstName = "Jane",
-            LastName = "Doe",
-            Email = "jane@driver.com",
-            Phone = "+1234567890",
             LicenseNumber = "DL123",
             LicenseExpiryDate = DateTimeOffset.UtcNow.AddYears(1),
-            ZoneId = Guid.NewGuid(),
-            DepotId = Guid.NewGuid(),
             UserId = Guid.NewGuid()
         };
 

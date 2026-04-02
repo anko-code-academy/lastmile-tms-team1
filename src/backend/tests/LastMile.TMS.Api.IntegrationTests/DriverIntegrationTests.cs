@@ -117,7 +117,7 @@ public class DriverIntegrationTests : IAsyncLifetime
 
         var user = User.Create("Test", "Driver", userEmail, $"driver.{uniqueId}");
         user.SetPasswordHash("Test@1234");
-        user.AssignRole(driverRole.Id);
+        user.RoleId = driverRole.Id;
         var result = await userManager.CreateAsync(user);
 
         return (depotId!, zoneId!, userEmail);
@@ -131,21 +131,13 @@ public class DriverIntegrationTests : IAsyncLifetime
 
         var mutation = $@"mutation {{
             createDriver(input: {{
-                firstName: ""John"",
-                lastName: ""Doe"",
-                phone: ""+1-555-0100"",
                 email: ""{userEmail}"",
                 licenseNumber: ""DL123456"",
-                licenseExpiryDate: ""2027-12-31T00:00:00Z"",
-                zoneId: ""{zoneId}"",
-                depotId: ""{depotId}"",
-                isActive: true
+                licenseExpiryDate: ""2027-12-31T00:00:00Z""
             }}) {{
                 id
-                firstName
-                lastName
-                email
-                isActive
+                licenseNumber
+                userId
                 createdAt
             }}
         }}";
@@ -160,10 +152,7 @@ public class DriverIntegrationTests : IAsyncLifetime
         }
 
         jsonResponse.GetProperty("data").GetProperty("createDriver").TryGetProperty("id", out var id).Should().BeTrue();
-        jsonResponse.GetProperty("data").GetProperty("createDriver").GetProperty("firstName").GetString().Should().Be("John");
-        jsonResponse.GetProperty("data").GetProperty("createDriver").GetProperty("lastName").GetString().Should().Be("Doe");
-        jsonResponse.GetProperty("data").GetProperty("createDriver").GetProperty("email").GetString().Should().Be(userEmail);
-        jsonResponse.GetProperty("data").GetProperty("createDriver").GetProperty("isActive").GetBoolean().Should().BeTrue();
+        jsonResponse.GetProperty("data").GetProperty("createDriver").GetProperty("licenseNumber").GetString().Should().Be("DL123456");
     }
 
     [Fact]
@@ -174,17 +163,11 @@ public class DriverIntegrationTests : IAsyncLifetime
 
         var mutation = $@"mutation {{
             createDriver(input: {{
-                firstName: """",
-                lastName: ""Doe"",
-                phone: ""+1-555-0100"",
                 email: ""{userEmail}"",
-                licenseNumber: ""DL123456"",
-                licenseExpiryDate: ""2027-12-31T00:00:00Z"",
-                zoneId: ""{zoneId}"",
-                depotId: ""{depotId}"",
+                licenseNumber: """",
+                licenseExpiryDate: ""2027-12-31T00:00:00Z""
             }}) {{
                 id
-                firstName
             }}
         }}";
 
@@ -204,17 +187,11 @@ public class DriverIntegrationTests : IAsyncLifetime
 
         var mutation = $@"mutation {{
             createDriver(input: {{
-                firstName: ""John"",
-                lastName: ""Doe"",
-                phone: ""+1-555-0100"",
                 email: ""{userEmail}"",
                 licenseNumber: ""DL123456"",
-                licenseExpiryDate: ""2020-01-01T00:00:00Z"",
-                zoneId: ""{zoneId}"",
-                depotId: ""{depotId}"",
+                licenseExpiryDate: ""2020-01-01T00:00:00Z""
             }}) {{
                 id
-                firstName
             }}
         }}";
 
@@ -235,17 +212,11 @@ public class DriverIntegrationTests : IAsyncLifetime
         // Create first driver
         var createFirstMutation = $@"mutation {{
             createDriver(input: {{
-                firstName: ""John"",
-                lastName: ""Doe"",
-                phone: ""+1-555-0100"",
                 email: ""{userEmail}"",
                 licenseNumber: ""DL111111"",
-                licenseExpiryDate: ""2027-12-31T00:00:00Z"",
-                zoneId: ""{zoneId}"",
-                depotId: ""{depotId}"",
+                licenseExpiryDate: ""2027-12-31T00:00:00Z""
             }}) {{
                 id
-                email
             }}
         }}";
 
@@ -254,17 +225,11 @@ public class DriverIntegrationTests : IAsyncLifetime
         // Try to create second driver with same email (same user, already has driver)
         var createSecondMutation = $@"mutation {{
             createDriver(input: {{
-                firstName: ""Jane"",
-                lastName: ""Smith"",
-                phone: ""+1-555-0101"",
                 email: ""{userEmail}"",
                 licenseNumber: ""DL222222"",
-                licenseExpiryDate: ""2027-12-31T00:00:00Z"",
-                zoneId: ""{zoneId}"",
-                depotId: ""{depotId}"",
+                licenseExpiryDate: ""2027-12-31T00:00:00Z""
             }}) {{
                 id
-                email
             }}
         }}";
 
@@ -285,19 +250,11 @@ public class DriverIntegrationTests : IAsyncLifetime
         // Create driver first
         var createMutation = $@"mutation {{
             createDriver(input: {{
-                firstName: ""John"",
-                lastName: ""Doe"",
-                phone: ""+1-555-0100"",
                 email: ""{userEmail}"",
                 licenseNumber: ""DL123456"",
-                licenseExpiryDate: ""2027-12-31T00:00:00Z"",
-                zoneId: ""{zoneId}"",
-                depotId: ""{depotId}"",
-                isActive: true
+                licenseExpiryDate: ""2027-12-31T00:00:00Z""
             }}) {{
                 id
-                firstName
-                lastName
             }}
         }}";
 
@@ -308,21 +265,11 @@ public class DriverIntegrationTests : IAsyncLifetime
         var updateMutation = $@"mutation {{
             updateDriver(input: {{
                 id: ""{driverId}"",
-                firstName: ""John Updated"",
-                lastName: ""Doe Updated"",
-                phone: ""+1-555-9999"",
-                email: ""{userEmail}"",
                 licenseNumber: ""DL654321"",
-                licenseExpiryDate: ""2028-12-31T00:00:00Z"",
-                zoneId: ""{zoneId}"",
-                depotId: ""{depotId}"",
-                isActive: false
+                licenseExpiryDate: ""2028-12-31T00:00:00Z""
             }}) {{
                 id
-                firstName
-                lastName
-                phone
-                isActive
+                licenseNumber
             }}
         }}";
 
@@ -334,10 +281,7 @@ public class DriverIntegrationTests : IAsyncLifetime
             throw new Exception($"GraphQL errors: {errors.GetRawText()}");
         }
 
-        updateJson.GetProperty("data").GetProperty("updateDriver").GetProperty("firstName").GetString().Should().Be("John Updated");
-        updateJson.GetProperty("data").GetProperty("updateDriver").GetProperty("lastName").GetString().Should().Be("Doe Updated");
-        updateJson.GetProperty("data").GetProperty("updateDriver").GetProperty("phone").GetString().Should().Be("+1-555-9999");
-        updateJson.GetProperty("data").GetProperty("updateDriver").GetProperty("isActive").GetBoolean().Should().BeFalse();
+        updateJson.GetProperty("data").GetProperty("updateDriver").GetProperty("licenseNumber").GetString().Should().Be("DL654321");
     }
 
     [Fact]
@@ -349,15 +293,9 @@ public class DriverIntegrationTests : IAsyncLifetime
         // Create driver first
         var createMutation = $@"mutation {{
             createDriver(input: {{
-                firstName: ""Delete Me"",
-                lastName: ""Driver"",
-                phone: ""+1-555-0100"",
                 email: ""{userEmail}"",
                 licenseNumber: ""DL123456"",
-                licenseExpiryDate: ""2027-12-31T00:00:00Z"",
-                zoneId: ""{zoneId}"",
-                depotId: ""{depotId}"",
-                isActive: true
+                licenseExpiryDate: ""2027-12-31T00:00:00Z""
             }}) {{
                 id
             }}
@@ -391,19 +329,11 @@ public class DriverIntegrationTests : IAsyncLifetime
         // Create driver
         var createMutation = $@"mutation {{
             createDriver(input: {{
-                firstName: ""Query"",
-                lastName: ""Test"",
-                phone: ""+1-555-0100"",
                 email: ""{userEmail}"",
                 licenseNumber: ""DL123456"",
-                licenseExpiryDate: ""2027-12-31T00:00:00Z"",
-                zoneId: ""{zoneId}"",
-                depotId: ""{depotId}"",
-                isActive: true
+                licenseExpiryDate: ""2027-12-31T00:00:00Z""
             }}) {{
                 id
-                firstName
-                lastName
             }}
         }}";
 
@@ -414,12 +344,16 @@ public class DriverIntegrationTests : IAsyncLifetime
         var query = $@"query {{
             driver(id: ""{driverId}"") {{
                 id
-                firstName
-                lastName
-                email
-                phone
-                isActive
+                licenseNumber
+                licenseExpiryDate
+                userId
                 createdAt
+                user {{
+                    firstName
+                    lastName
+                    email
+                    isActive
+                }}
             }}
         }}";
 
@@ -431,10 +365,10 @@ public class DriverIntegrationTests : IAsyncLifetime
             throw new Exception($"GraphQL errors: {errors.GetRawText()}");
         }
 
-        queryJson.GetProperty("data").GetProperty("driver").GetProperty("firstName").GetString().Should().Be("Query");
-        queryJson.GetProperty("data").GetProperty("driver").GetProperty("lastName").GetString().Should().Be("Test");
-        queryJson.GetProperty("data").GetProperty("driver").GetProperty("email").GetString().Should().Be(userEmail);
-        queryJson.GetProperty("data").GetProperty("driver").GetProperty("isActive").GetBoolean().Should().BeTrue();
+        queryJson.GetProperty("data").GetProperty("driver").GetProperty("licenseNumber").GetString().Should().Be("DL123456");
+        queryJson.GetProperty("data").GetProperty("driver").GetProperty("user").GetProperty("firstName").GetString().Should().Be("Test");
+        queryJson.GetProperty("data").GetProperty("driver").GetProperty("user").GetProperty("lastName").GetString().Should().Be("Driver");
+        queryJson.GetProperty("data").GetProperty("driver").GetProperty("user").GetProperty("email").GetString().Should().Be(userEmail);
     }
 
     [Fact]
@@ -446,15 +380,9 @@ public class DriverIntegrationTests : IAsyncLifetime
         // Create one driver (pagination tested separately from creation)
         var createMutation = $@"mutation {{
             createDriver(input: {{
-                firstName: ""Paginate1"",
-                lastName: ""Driver1"",
-                phone: ""+1-555-0101"",
                 email: ""{userEmail}"",
                 licenseNumber: ""DL123456"",
-                licenseExpiryDate: ""2027-12-31T00:00:00Z"",
-                zoneId: ""{zoneId}"",
-                depotId: ""{depotId}"",
-                isActive: true
+                licenseExpiryDate: ""2027-12-31T00:00:00Z""
             }}) {{
                 id
             }}
@@ -467,8 +395,7 @@ public class DriverIntegrationTests : IAsyncLifetime
             drivers {
                 nodes {
                     id
-                    firstName
-                    lastName
+                    licenseNumber
                 }
                 pageInfo {
                     hasNextPage
@@ -497,35 +424,31 @@ public class DriverIntegrationTests : IAsyncLifetime
         // Arrange
         var (depotId, zoneId, userEmail) = await CreateDepotZoneAndUserAsync();
 
-        // Create an active driver
-        var createActiveMutation = $@"mutation {{
+        // Create a driver
+        var createMutation = $@"mutation {{
             createDriver(input: {{
-                firstName: ""FilterActive"",
-                lastName: ""Driver"",
-                phone: ""+1-555-0100"",
                 email: ""{userEmail}"",
                 licenseNumber: ""DL111111"",
-                licenseExpiryDate: ""2027-12-31T00:00:00Z"",
-                zoneId: ""{zoneId}"",
-                depotId: ""{depotId}"",
-                isActive: true
+                licenseExpiryDate: ""2027-12-31T00:00:00Z""
             }}) {{
                 id
             }}
         }}";
 
-        await GraphQLRequestAsync(createActiveMutation);
+        await GraphQLRequestAsync(createMutation);
 
-        // Act - Query with isActive filter
-        var query = $@"query {{
-            drivers(where: {{ isActive: {{ eq: true }} }}) {{
-                nodes {{
+        // Act - Query drivers (filtering by isActive is now on User, not Driver)
+        var query = @"query {
+            drivers {
+                nodes {
                     id
-                    firstName
-                    isActive
-                }}
-            }}
-        }}";
+                    licenseNumber
+                    user {
+                        isActive
+                    }
+                }
+            }
+        }";
 
         var queryJson = await GraphQLRequestAsync(query);
 
@@ -536,8 +459,7 @@ public class DriverIntegrationTests : IAsyncLifetime
         }
 
         var drivers = queryJson.GetProperty("data").GetProperty("drivers").GetProperty("nodes");
-        var activeDrivers = drivers.EnumerateArray().Where(d => d.GetProperty("isActive").GetBoolean() == true).ToList();
-        activeDrivers.Should().NotBeEmpty();
+        drivers.GetArrayLength().Should().BeGreaterThan(0);
     }
 
     private static async Task CleanupTestDataAsync(string connectionString)

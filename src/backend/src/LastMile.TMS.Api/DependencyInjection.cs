@@ -6,6 +6,7 @@ using LastMile.TMS.Api.GraphQL.Extensions.Depot;
 using LastMile.TMS.Api.GraphQL.Extensions.Driver;
 using LastMile.TMS.Api.GraphQL.Extensions.Parcel;
 using LastMile.TMS.Api.GraphQL.Extensions.Route;
+using LastMile.TMS.Api.GraphQL.Extensions.UserManagement;
 using LastMile.TMS.Api.GraphQL.Extensions.Vehicle;
 using LastMile.TMS.Api.GraphQL.Extensions.Zone;
 using LastMile.TMS.Api.GraphQL.Inputs;
@@ -38,6 +39,8 @@ public static class DependencyInjection
             .AddType<RouteMutation>()
             .AddType<DriverQuery>()
             .AddType<DriverMutation>()
+            .AddType<UserManagementQuery>()
+            .AddType<UserManagementMutation>()
             .AddType<CreateDriverInput>()
             .AddType<UpdateDriverInput>()
             .AddType<CreateDepotInput>()

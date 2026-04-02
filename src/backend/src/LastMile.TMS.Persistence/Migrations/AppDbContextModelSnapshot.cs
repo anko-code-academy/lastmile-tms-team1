@@ -372,9 +372,6 @@ namespace LastMile.TMS.Persistence.Migrations
 
                     b.HasIndex("LicenseNumber");
 
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
                     b.HasIndex("ZoneId");
 
                     b.ToTable("Drivers", (string)null);
@@ -1662,12 +1659,6 @@ namespace LastMile.TMS.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("LastMile.TMS.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("LastMile.TMS.Domain.Entities.Zone", "Zone")
                         .WithMany("Drivers")
                         .HasForeignKey("ZoneId")
@@ -1675,8 +1666,6 @@ namespace LastMile.TMS.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Depot");
-
-                    b.Navigation("User");
 
                     b.Navigation("Zone");
                 });
