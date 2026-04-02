@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace LastMile.TMS.Api.Controllers;
 
 [ApiController]
-[Route("api/labels")]
+[Route("labels")]
 public class LabelController(
     ILabelService labelService,
     IAppDbContext context) : ControllerBase

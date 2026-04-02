@@ -113,7 +113,7 @@ public class LabelIntegrationTests : IAsyncLifetime
         var (parcelId, trackingNumber) = await SeedParcelAsync();
 
         // Act
-        var response = await _client.GetAsync($"/api/labels/{parcelId}/zpl");
+        var response = await _client.GetAsync($"/labels/{parcelId}/zpl");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -130,7 +130,7 @@ public class LabelIntegrationTests : IAsyncLifetime
         var invalidParcelId = Guid.NewGuid();
 
         // Act
-        var response = await _client.GetAsync($"/api/labels/{invalidParcelId}/zpl");
+        var response = await _client.GetAsync($"/labels/{invalidParcelId}/zpl");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -143,7 +143,7 @@ public class LabelIntegrationTests : IAsyncLifetime
         var (parcelId, trackingNumber) = await SeedParcelAsync();
 
         // Act
-        var response = await _client.GetAsync($"/api/labels/{parcelId}/pdf");
+        var response = await _client.GetAsync($"/labels/{parcelId}/pdf");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -161,7 +161,7 @@ public class LabelIntegrationTests : IAsyncLifetime
         var invalidParcelId = Guid.NewGuid();
 
         // Act
-        var response = await _client.GetAsync($"/api/labels/{invalidParcelId}/pdf");
+        var response = await _client.GetAsync($"/labels/{invalidParcelId}/pdf");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -178,7 +178,7 @@ public class LabelIntegrationTests : IAsyncLifetime
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         // Act
-        var response = await _client.PostAsync("/api/labels/bulk/pdf", content);
+        var response = await _client.PostAsync("/labels/bulk/pdf", content);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -198,7 +198,7 @@ public class LabelIntegrationTests : IAsyncLifetime
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         // Act
-        var response = await _client.PostAsync("/api/labels/bulk/pdf", content);
+        var response = await _client.PostAsync("/labels/bulk/pdf", content);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
