@@ -83,11 +83,9 @@ public class UserTests
 
         // Act
         user.ZoneId = zoneId;
-        user.ZoneName = "Test Zone";
 
         // Assert
         user.ZoneId.Should().Be(zoneId);
-        user.ZoneName.Should().Be("Test Zone");
     }
 
     [Fact]
@@ -99,11 +97,9 @@ public class UserTests
 
         // Act
         user.DepotId = depotId;
-        user.DepotName = "Test Depot";
 
         // Assert
         user.DepotId.Should().Be(depotId);
-        user.DepotName.Should().Be("Test Depot");
     }
 
     [Fact]

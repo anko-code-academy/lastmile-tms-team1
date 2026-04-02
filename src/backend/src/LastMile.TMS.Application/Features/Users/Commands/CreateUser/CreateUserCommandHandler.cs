@@ -67,21 +67,16 @@ public class CreateUserCommandHandler(
 
         // Assign role directly
         user.RoleId = request.RoleId;
-        user.RoleName = role.Name;
 
         // Assign zone or depot if provided
         if (request.ZoneId.HasValue)
         {
-            var zone = await context.Zones.FindAsync(new object[] { request.ZoneId.Value }, cancellationToken);
             user.ZoneId = request.ZoneId;
-            user.ZoneName = zone?.Name;
         }
 
         if (request.DepotId.HasValue)
         {
-            var depot = await context.Depots.FindAsync(new object[] { request.DepotId.Value }, cancellationToken);
             user.DepotId = request.DepotId;
-            user.DepotName = depot?.Name;
         }
 
         // Create user with password
@@ -100,19 +95,24 @@ public class CreateUserCommandHandler(
             return Result<UserDto>.Failure($"Failed to assign role: {errors}");
         }
 
+        // Reload user with navigation properties to get names
+        var userWithRelations = await context.Users
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.Id == user.Id, cancellationToken);
+
         return Result<UserDto>.Success(new UserDto(
-            user.Id,
-            user.FirstName,
-            user.LastName,
-            user.Email!,
-            user.PhoneNumber,
-            user.Status,
-            user.RoleName,
-            user.RoleId,
-            user.ZoneId,
-            user.ZoneName,
-            user.DepotId,
-            user.DepotName,
-            user.CreatedAt));
+            userWithRelations!.Id,
+            userWithRelations.FirstName,
+            userWithRelations.LastName,
+            userWithRelations.Email!,
+            userWithRelations.PhoneNumber,
+            userWithRelations.Status,
+            userWithRelations.RoleId,
+            userWithRelations.Role?.Name,
+            userWithRelations.ZoneId,
+            userWithRelations.Zone?.Name,
+            userWithRelations.DepotId,
+            userWithRelations.Depot?.Name,
+            userWithRelations.CreatedAt));
     }
 }

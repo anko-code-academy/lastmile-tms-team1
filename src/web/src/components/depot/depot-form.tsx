@@ -24,16 +24,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useGraphQuery, useGraphMutation } from "@/hooks/use-graphql";
-import { GET_DEPOT_QUERY } from "@/lib/graphql/queries/depot";
-import { CREATE_DEPOT_MUTATION, UPDATE_DEPOT_MUTATION } from "@/lib/graphql/mutations/depot";
-import type { DepotDto, CreateDepotInput, UpdateDepotInput, AddressInput, DailyOperatingHoursInput } from "@/lib/graphql/types";
-import { toast } from "sonner";
+import { useDepot, useCreateDepot, useUpdateDepot } from "@/hooks/use-depots";
+import type { AddressInput, DailyOperatingHoursInput } from "@/lib/graphql/types";
 import { ChevronDown, ChevronRight, Clock } from "lucide-react";
-
-interface DepotResponse {
-  depot: DepotDto;
-}
 
 const DAYS = [
   { value: "SUNDAY", label: "Sunday" },
@@ -82,22 +75,9 @@ export function DepotForm({ depotId }: DepotFormProps) {
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const [operatingHoursOpen, setOperatingHoursOpen] = useState(false);
 
-  const { data, isLoading } = useGraphQuery<DepotResponse, { id: string }>({
-    queryKey: ["depots", depotId ?? ""] as string[],
-    query: GET_DEPOT_QUERY,
-    variables: { id: depotId! } as { id: string },
-    enabled: isEditing,
-  });
-
-  const createMutation = useGraphMutation<{ createDepot: { id: string } }, { input: CreateDepotInput }>({
-    mutation: CREATE_DEPOT_MUTATION,
-    invalidateKeys: ["depots"],
-  });
-
-  const updateMutation = useGraphMutation<{ updateDepot: { id: string } }, { input: UpdateDepotInput }>({
-    mutation: UPDATE_DEPOT_MUTATION,
-    invalidateKeys: ["depots"],
-  });
+  const { data: depot, isLoading } = useDepot(depotId!);
+  const createDepot = useCreateDepot();
+  const updateDepot = useUpdateDepot();
 
   const form = useForm<DepotFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -115,12 +95,11 @@ export function DepotForm({ depotId }: DepotFormProps) {
   });
 
   useEffect(() => {
-    if (data?.depot) {
-      const depot = data.depot;
+    if (depot) {
       const existingHours = depot.shiftSchedules ?? [];
 
       // Build operating hours array with all 7 days
-      const hoursMap = new Map(existingHours.map((h) => [h.dayOfWeek, h]));
+      const hoursMap = new Map(existingHours.map((h: { dayOfWeek: string; openTime?: string; closeTime?: string }) => [h.dayOfWeek, h]));
       const operatingHours = DAYS.map((d) => {
         const existing = hoursMap.get(d.value);
         return {
@@ -149,7 +128,7 @@ export function DepotForm({ depotId }: DepotFormProps) {
         operatingHours,
       });
     }
-  }, [data, form]);
+  }, [depot, form]);
 
   async function onSubmit(values: DepotFormValues) {
     try {
@@ -176,30 +155,23 @@ export function DepotForm({ depotId }: DepotFormProps) {
         }));
 
       if (isEditing && depotId) {
-        await updateMutation.mutateAsync({
-          input: {
-            id: depotId,
-            name: values.name,
-            address,
-            operatingHours,
-            isActive: values.isActive,
-          },
+        await updateDepot.mutateAsync({
+          id: depotId,
+          name: values.name,
+          address,
+          operatingHours,
+          isActive: values.isActive,
         });
-        toast.success("Depot updated successfully");
       } else {
-        await createMutation.mutateAsync({
-          input: {
-            name: values.name,
-            address,
-            operatingHours,
-            isActive: values.isActive,
-          },
+        await createDepot.mutateAsync({
+          name: values.name,
+          address,
+          operatingHours,
+          isActive: values.isActive,
         });
-        toast.success("Depot created successfully");
       }
       router.push("/depots");
     } catch (err) {
-      toast.error(isEditing ? "Failed to update depot" : "Failed to create depot");
       console.error(err);
     }
   }
@@ -424,7 +396,7 @@ export function DepotForm({ depotId }: DepotFormProps) {
             </Button>
             <Button
               type="submit"
-              disabled={createMutation.isPending || updateMutation.isPending}
+              disabled={createDepot.isPending || updateDepot.isPending}
             >
               {isEditing ? "Update Depot" : "Create Depot"}
             </Button>

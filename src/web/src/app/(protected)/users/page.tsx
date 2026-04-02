@@ -12,11 +12,11 @@ import { UserList } from '@/components/users/user-list';
 import { UserDialog } from '@/components/users/user-dialog';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import type { UserDto, CreateUserInput, UpdateUserInput } from '@/types/user';
+import type { User, CreateUserInput, UpdateUserInput } from '@/types/user';
 
 export default function UsersPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<UserDto | undefined>();
+  const [selectedUser, setSelectedUser] = useState<User | undefined>();
 
   const { data: session } = useSession();
   const token = session?.user?.accessToken ?? null;
@@ -38,7 +38,7 @@ export default function UsersPage() {
     setDialogOpen(true);
   };
 
-  const handleOpenEdit = (user: UserDto) => {
+  const handleOpenEdit = (user: User) => {
     // Get fresh user data from the users list (which is updated by React Query cache)
     const freshUser = users.find((u) => u.id === user.id);
     setSelectedUser(freshUser || user);

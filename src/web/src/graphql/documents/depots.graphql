@@ -1,0 +1,75 @@
+query GetDepots {
+  depots {
+    nodes {
+      id
+      name
+      address {
+        street1
+        street2
+        city
+        state
+        postalCode
+        countryCode
+        isResidential
+        contactName
+        companyName
+        phone
+        email
+      }
+      isActive
+      createdAt
+    }
+  }
+}
+
+query GetDepot($id: UUID!) {
+  depot(id: $id) {
+    id
+    name
+    address {
+      street1
+      street2
+      city
+      state
+      postalCode
+      countryCode
+      isResidential
+      contactName
+      companyName
+      phone
+      email
+    }
+    shiftSchedules {
+      dayOfWeek
+      openTime
+      closeTime
+    }
+    isActive
+    zones {
+      id
+    }
+    createdAt
+  }
+}
+
+mutation CreateDepot($input: CreateDepotCommandInput!) {
+  createDepot(input: $input) {
+    id
+    name
+    isActive
+    createdAt
+  }
+}
+
+mutation UpdateDepot($input: UpdateDepotCommandInput!) {
+  updateDepot(input: $input) {
+    id
+    name
+    isActive
+    createdAt
+  }
+}
+
+mutation DeleteDepot($id: UUID!) {
+  deleteDepot(id: $id)
+}

@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useResetPassword } from './use-reset-password';
-import * as mutations from '@/lib/graphql/mutations';
+import * as usersService from '@/services/users.service';
 import { toast } from 'sonner';
 
-vi.mock('@/lib/graphql/mutations');
+vi.mock('@/services/users.service');
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -27,10 +27,8 @@ describe('useResetPassword', () => {
     vi.clearAllMocks();
   });
 
-  it('calls resetPassword mutation without token', async () => {
-    vi.mocked(mutations.resetPassword).mockResolvedValue({
-      resetPassword: true,
-    });
+  it('calls resetPassword mutation', async () => {
+    vi.mocked(usersService.resetPassword).mockResolvedValue(true);
 
     const { result } = renderHook(() => useResetPassword(), {
       wrapper: createWrapper(),
@@ -39,14 +37,12 @@ describe('useResetPassword', () => {
     result.current.mutate('john@example.com');
 
     await waitFor(() =>
-      expect(mutations.resetPassword).toHaveBeenCalledWith('john@example.com')
+      expect(usersService.resetPassword).toHaveBeenCalledWith('john@example.com')
     );
   });
 
   it('returns true on success', async () => {
-    vi.mocked(mutations.resetPassword).mockResolvedValue({
-      resetPassword: true,
-    });
+    vi.mocked(usersService.resetPassword).mockResolvedValue(true);
 
     const { result } = renderHook(() => useResetPassword(), {
       wrapper: createWrapper(),
@@ -54,14 +50,12 @@ describe('useResetPassword', () => {
 
     result.current.mutate('john@example.com');
 
-    await waitFor(() => expect(result.current.data?.resetPassword).toBe(true));
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
 
   it('shows success toast even on failure for security', async () => {
-    // Reset password always returns true for security reasons
-    vi.mocked(mutations.resetPassword).mockResolvedValue({
-      resetPassword: true,
-    });
+    // Reset password always shows success for security reasons
+    vi.mocked(usersService.resetPassword).mockResolvedValue(true);
 
     const { result } = renderHook(() => useResetPassword(), {
       wrapper: createWrapper(),

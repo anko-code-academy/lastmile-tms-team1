@@ -53,7 +53,6 @@ public class UpdateUserCommandHandler(
                 return Result<UserDto>.Failure("Role not found");
             }
             user.RoleId = request.RoleId.Value;
-            user.RoleName = role.Name;
 
             // Update in identity role table too
             var currentRoles = await userManager.GetRolesAsync(user);
@@ -75,26 +74,20 @@ public class UpdateUserCommandHandler(
         // Update zone/depot assignment
         if (request.ZoneId.HasValue)
         {
-            var zone = await context.Zones.FindAsync(new object[] { request.ZoneId.Value }, cancellationToken);
             user.ZoneId = request.ZoneId;
-            user.ZoneName = zone?.Name;
         }
         else
         {
             user.ZoneId = null;
-            user.ZoneName = null;
         }
 
         if (request.DepotId.HasValue)
         {
-            var depot = await context.Depots.FindAsync(new object[] { request.DepotId.Value }, cancellationToken);
             user.DepotId = request.DepotId;
-            user.DepotName = depot?.Name;
         }
         else
         {
             user.DepotId = null;
-            user.DepotName = null;
         }
 
         var result = await userManager.UpdateAsync(user);
@@ -104,19 +97,24 @@ public class UpdateUserCommandHandler(
             return Result<UserDto>.Failure($"Failed to update user: {errors}");
         }
 
+        // Reload user with navigation properties to get names
+        var userWithRelations = await context.Users
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.Id == user.Id, cancellationToken);
+
         return Result<UserDto>.Success(new UserDto(
-            user.Id,
-            user.FirstName,
-            user.LastName,
-            user.Email!,
-            user.PhoneNumber,
-            user.Status,
-            user.RoleName,
-            user.RoleId,
-            user.ZoneId,
-            user.ZoneName,
-            user.DepotId,
-            user.DepotName,
-            user.CreatedAt));
+            userWithRelations!.Id,
+            userWithRelations.FirstName,
+            userWithRelations.LastName,
+            userWithRelations.Email!,
+            userWithRelations.PhoneNumber,
+            userWithRelations.Status,
+            userWithRelations.RoleId,
+            userWithRelations.Role?.Name,
+            userWithRelations.ZoneId,
+            userWithRelations.Zone?.Name,
+            userWithRelations.DepotId,
+            userWithRelations.Depot?.Name,
+            userWithRelations.CreatedAt));
     }
 }

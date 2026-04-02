@@ -64,12 +64,12 @@ public class ActivateUserCommandHandler(
             user.Email!,
             user.PhoneNumber,
             user.Status,
-            roleName,
             user.RoleId,
+            roleName,
             user.ZoneId,
-            user.Zone != null ? user.Zone.Name : null,
+            user.Zone?.Name,
             user.DepotId,
-            user.Depot != null ? user.Depot.Name : null,
+            user.Depot?.Name,
             user.CreatedAt);
     }
 }

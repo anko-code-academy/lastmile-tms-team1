@@ -119,7 +119,6 @@ public class DbSeeder : IDbSeeder
                 if (adminRole != null)
                 {
                     existingAdmin.RoleId = adminRole.Id;
-                    existingAdmin.RoleName = adminRole.Name;
                     await _userManager.UpdateAsync(existingAdmin);
                 }
                 _logger.LogInformation("Added Admin role to existing user.");
@@ -170,7 +169,6 @@ public class DbSeeder : IDbSeeder
                 if (adminRole != null)
                 {
                     existingByEmail.RoleId = adminRole.Id;
-                    existingByEmail.RoleName = adminRole.Name;
                     await _userManager.UpdateAsync(existingByEmail);
                 }
                 _logger.LogInformation("Added Admin role to existing user.");
@@ -205,7 +203,6 @@ public class DbSeeder : IDbSeeder
                 if (adminRole != null)
                 {
                     admin.RoleId = adminRole.Id;
-                    admin.RoleName = adminRole.Name;
                 }
                 admin.MarkAsSystemAdmin();
                 await _userManager.UpdateAsync(admin);
@@ -262,7 +259,6 @@ public class DbSeeder : IDbSeeder
                 if (role != null && existing.RoleId != role.Id)
                 {
                     existing.RoleId = role.Id;
-                    existing.RoleName = role.Name;
                     await _userManager.UpdateAsync(existing);
                     _logger.LogInformation("Synced RoleId foreign key for {Email}", email);
                 }
@@ -282,7 +278,6 @@ public class DbSeeder : IDbSeeder
                     if (role != null)
                     {
                         user.RoleId = role.Id;
-                        user.RoleName = role.Name;
                         await _userManager.UpdateAsync(user);
                     }
                     _logger.LogInformation("Created test user: {Email} with role {Role}", email, roleName);

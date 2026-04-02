@@ -18,38 +18,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useGraphQuery, useGraphMutation } from "@/hooks/use-graphql";
-import { GET_ZONES_QUERY } from "@/lib/graphql/queries/zone";
-import { DELETE_ZONE_MUTATION } from "@/lib/graphql/mutations/zone";
+import { useZones, useDeleteZone } from "@/hooks/use-zones";
 import type { ZoneSummaryDto } from "@/lib/graphql/types";
-import { toast } from "sonner";
-
-interface ZonesResponse {
-  zones: {
-    nodes: ZoneSummaryDto[];
-  };
-}
 
 export function ZoneList() {
   const router = useRouter();
-  const { data, isLoading, error } = useGraphQuery<ZonesResponse, null>({
-    queryKey: ["zones"],
-    query: GET_ZONES_QUERY,
-  });
-
-  const deleteMutation = useGraphMutation<{ deleteZone: boolean }, { id: string }>({
-    mutation: DELETE_ZONE_MUTATION,
-    invalidateKeys: ["zones"],
-  });
+  const { data: zones, isLoading, error } = useZones();
+  const deleteZone = useDeleteZone();
 
   async function handleDelete(id: string) {
     if (!confirm("Are you sure you want to delete this zone?")) return;
 
     try {
-      await deleteMutation.mutateAsync({ id });
-      toast.success("Zone deleted successfully");
+      await deleteZone.mutateAsync(id);
     } catch (err) {
-      toast.error("Failed to delete zone");
       console.error(err);
     }
   }
@@ -74,9 +56,9 @@ export function ZoneList() {
     );
   }
 
-  const zones = data?.zones?.nodes ?? [];
+  const zoneList = zones ?? [];
 
-  const zonesByDepot = zones.reduce(
+  const zonesByDepot = zoneList.reduce(
     (acc, zone) => {
       const depotName = zone.depot?.name ?? "Unassigned";
       if (!acc[depotName]) {
@@ -103,7 +85,7 @@ export function ZoneList() {
         </div>
       </CardHeader>
       <CardContent>
-        {zones.length === 0 ? (
+        {zoneList.length === 0 ? (
           <div className="py-8 text-center text-muted-foreground">
             No zones found. Create your first zone to get started.
           </div>
@@ -153,7 +135,7 @@ export function ZoneList() {
                             variant="ghost"
                             size="icon-sm"
                             onClick={() => handleDelete(zone.id)}
-                            disabled={deleteMutation.isPending}
+                            disabled={deleteZone.isPending}
                           >
                             <Trash2 className="size-4 text-destructive" />
                           </Button>

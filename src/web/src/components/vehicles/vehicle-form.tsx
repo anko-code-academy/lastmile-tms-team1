@@ -16,8 +16,7 @@ import {
 } from "@/components/ui/form";
 import Link from "next/link";
 import { VehicleType } from "@/types/vehicle";
-import { useGraphQuery } from "@/hooks/use-graphql";
-import { GET_DEPOTS_QUERY } from "@/lib/graphql/queries/depot";
+import { useDepots } from "@/hooks/use-depots";
 
 const vehicleSchema = z.object({
   registrationPlate: z.string().min(1, "Registration plate is required").max(20),
@@ -30,12 +29,6 @@ const vehicleSchema = z.object({
 });
 
 type VehicleFormValues = z.infer<typeof vehicleSchema>;
-
-interface DepotsResponse {
-  depots: {
-    nodes: { id: string; name: string }[];
-  };
-}
 
 interface VehicleFormProps {
   defaultValues?: Partial<VehicleFormValues>;
@@ -61,12 +54,7 @@ export function VehicleForm({
     },
   });
 
-  const { data: depotsData, isLoading: depotsLoading } = useGraphQuery<DepotsResponse, null>({
-    queryKey: ["depots"],
-    query: GET_DEPOTS_QUERY,
-  });
-
-  const depots = depotsData?.depots?.nodes ?? [];
+  const { data: depots, isLoading: depotsLoading } = useDepots();
 
   return (
     <Form {...form}>
@@ -176,7 +164,7 @@ export function VehicleForm({
                   disabled={depotsLoading}
                 >
                   <option value="">Select depot</option>
-                  {depots.map((depot) => (
+                  {(depots ?? []).map((depot) => (
                     <option key={depot.id} value={depot.id}>
                       {depot.name}
                     </option>

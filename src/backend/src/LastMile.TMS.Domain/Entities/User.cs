@@ -32,19 +32,16 @@ public class User : IdentityUser<Guid>, IBaseAuditableEntity
     public DateTimeOffset? DeletedAt { get; set; }
     public string? DeletedBy { get; set; }
 
-    // Role assignment - plain EF Core properties
+    // Role assignment - navigation property
     public Guid? RoleId { get; set; }
-    public string? RoleName { get; set; }
     public Role? Role { get; set; }
 
-    // Zone assignment - plain EF Core properties
+    // Zone assignment - navigation property
     public Guid? ZoneId { get; set; }
-    public string? ZoneName { get; set; }
     public Zone? Zone { get; set; }
 
-    // Depot assignment - plain EF Core properties
+    // Depot assignment - navigation property
     public Guid? DepotId { get; set; }
-    public string? DepotName { get; set; }
     public Depot? Depot { get; set; }
 
     // Factory method

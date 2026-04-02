@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { UserForm } from './user-form';
-import type { UserDto, CreateUserInput, UpdateUserInput } from '@/types/user';
+import type { User, CreateUserInput, UpdateUserInput } from '@/types/user';
 
 interface ZoneLookup {
   id: string;
@@ -27,7 +27,7 @@ interface UserDialogProps {
   zones: ZoneLookup[];
   depots: DepotLookup[];
   onSubmit: (data: CreateUserInput | UpdateUserInput) => void;
-  user?: UserDto;
+  user?: User;
   isLoading?: boolean;
 }
 

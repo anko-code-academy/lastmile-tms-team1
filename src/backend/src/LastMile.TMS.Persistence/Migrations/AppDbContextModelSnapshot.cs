@@ -976,9 +976,6 @@ namespace LastMile.TMS.Persistence.Migrations
                     b.Property<Guid?>("DepotId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("DepotName")
-                        .HasColumnType("text");
-
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -1041,9 +1038,6 @@ namespace LastMile.TMS.Persistence.Migrations
                     b.Property<Guid?>("RoleId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("RoleName")
-                        .HasColumnType("text");
-
                     b.Property<string>("SecurityStamp")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -1063,9 +1057,6 @@ namespace LastMile.TMS.Persistence.Migrations
 
                     b.Property<Guid?>("ZoneId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("ZoneName")
-                        .HasColumnType("text");
 
                     b.HasKey("Id");
 

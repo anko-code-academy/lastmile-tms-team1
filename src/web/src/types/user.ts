@@ -1,5 +1,38 @@
 export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
 
+export interface RoleInfo {
+  id: string;
+  name: string | null;
+}
+
+export interface ZoneInfo {
+  id: string;
+  name: string;
+}
+
+export interface DepotInfo {
+  id: string;
+  name: string;
+}
+
+// User type returned by queries (uses navigation properties)
+export interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string | null;
+  status: UserStatus;
+  roleId: string | null;
+  role: RoleInfo | null;
+  zoneId: string | null;
+  zone: ZoneInfo | null;
+  depotId: string | null;
+  depot: DepotInfo | null;
+  createdAt: string;
+}
+
+// UserDto type returned by mutations (uses scalar name fields)
 export interface UserDto {
   id: string;
   firstName: string;
@@ -7,8 +40,8 @@ export interface UserDto {
   email: string;
   phoneNumber: string | null;
   status: UserStatus;
-  roleName: string | null;
   roleId: string | null;
+  roleName: string | null;
   zoneId: string | null;
   zoneName: string | null;
   depotId: string | null;
@@ -71,13 +104,13 @@ export interface ResetPasswordMutationResponse {
 
 export interface UsersQueryResponse {
   users: {
-    nodes: UserDto[];
+    nodes: User[];
   };
 }
 
 // Flattened version returned by fetchUsers
 export interface FlatUsersQueryResponse {
-  users: UserDto[];
+  users: User[];
 }
 
 export interface PageInfo {
@@ -89,12 +122,12 @@ export interface PageInfo {
 
 export interface PaginatedUsersQueryResponse {
   users: {
-    nodes: UserDto[];
+    nodes: User[];
     pageInfo: PageInfo;
     totalCount: number;
   };
 }
 
 export interface UserByIdQueryResponse {
-  userById: UserDto | null;
+  user: User | null;
 }

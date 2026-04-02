@@ -25,22 +25,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { ZoneBoundaryMap } from "@/components/zone/zone-boundary-map";
-import { useGraphQuery, useGraphMutation } from "@/hooks/use-graphql";
-import { GET_ZONE_QUERY } from "@/lib/graphql/queries/zone";
-import { GET_DEPOTS_QUERY } from "@/lib/graphql/queries/depot";
-import { CREATE_ZONE_MUTATION, UPDATE_ZONE_MUTATION } from "@/lib/graphql/mutations/zone";
-import type { ZoneDto, DepotSummaryDto, CreateZoneInput, UpdateZoneInput } from "@/lib/graphql/types";
+import { useZone, useCreateZone, useUpdateZone } from "@/hooks/use-zones";
+import { useDepots } from "@/hooks/use-depots";
 import { toast } from "sonner";
-
-interface ZoneResponse {
-  zone: ZoneDto;
-}
-
-interface DepotsResponse {
-  depots: {
-    nodes: DepotSummaryDto[];
-  };
-}
 
 const zoneFormSchema = z.object({
   name: z.string().min(1, "Zone name is required"),
@@ -59,27 +46,10 @@ export function ZoneForm({ zoneId }: ZoneFormProps) {
   const isEditing = !!zoneId;
   const [geoJson, setGeoJson] = useState("");
 
-  const { data: zoneData, isLoading: zoneLoading } = useGraphQuery<ZoneResponse, { id: string }>({
-    queryKey: ["zones", zoneId ?? ""] as string[],
-    query: GET_ZONE_QUERY,
-    variables: { id: zoneId! } as { id: string },
-    enabled: isEditing,
-  });
-
-  const { data: depotsData, isLoading: depotsLoading } = useGraphQuery<DepotsResponse, null>({
-    queryKey: ["depots"],
-    query: GET_DEPOTS_QUERY,
-  });
-
-  const createMutation = useGraphMutation<{ createZone: { id: string } }, { input: CreateZoneInput }>({
-    mutation: CREATE_ZONE_MUTATION,
-    invalidateKeys: ["zones"],
-  });
-
-  const updateMutation = useGraphMutation<{ updateZone: { id: string } }, { input: UpdateZoneInput }>({
-    mutation: UPDATE_ZONE_MUTATION,
-    invalidateKeys: ["zones"],
-  });
+  const { data: zone, isLoading: zoneLoading } = useZone(zoneId!);
+  const { data: depotsData, isLoading: depotsLoading } = useDepots();
+  const createZone = useCreateZone();
+  const updateZone = useUpdateZone();
 
   const form = useForm<ZoneFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -92,8 +62,7 @@ export function ZoneForm({ zoneId }: ZoneFormProps) {
   });
 
   useEffect(() => {
-    if (zoneData?.zone && depotsData?.depots) {
-      const zone = zoneData.zone;
+    if (zone && depotsData) {
       form.reset({
         name: zone.name,
         depotId: zone.depotId,
@@ -108,7 +77,7 @@ export function ZoneForm({ zoneId }: ZoneFormProps) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setGeoJson(geoJsonValue ?? "");
     }
-  }, [zoneData, depotsData, form]);
+  }, [zone, depotsData, form]);
 
   async function onSubmit(values: ZoneFormValues) {
     if (!geoJson && !isEditing) {
@@ -118,30 +87,23 @@ export function ZoneForm({ zoneId }: ZoneFormProps) {
 
     try {
       if (isEditing && zoneId) {
-        await updateMutation.mutateAsync({
-          input: {
-            id: zoneId,
-            name: values.name,
-            depotId: values.depotId,
-            isActive: values.isActive,
-            geoJson: geoJson || undefined,
-          },
+        await updateZone.mutateAsync({
+          id: zoneId,
+          name: values.name,
+          depotId: values.depotId,
+          isActive: values.isActive,
+          geoJson: geoJson || undefined,
         });
-        toast.success("Zone updated successfully");
       } else {
-        await createMutation.mutateAsync({
-          input: {
-            name: values.name,
-            depotId: values.depotId,
-            geoJson,
-            isActive: values.isActive,
-          },
+        await createZone.mutateAsync({
+          name: values.name,
+          depotId: values.depotId,
+          geoJson,
+          isActive: values.isActive,
         });
-        toast.success("Zone created successfully");
       }
       router.push("/zones");
     } catch (err) {
-      toast.error(isEditing ? "Failed to update zone" : "Failed to create zone");
       console.error(err);
     }
   }
@@ -156,7 +118,7 @@ export function ZoneForm({ zoneId }: ZoneFormProps) {
     );
   }
 
-  const depots = depotsData?.depots?.nodes ?? [];
+  const depots = depotsData ?? [];
 
   return (
     <Card>
@@ -248,7 +210,7 @@ export function ZoneForm({ zoneId }: ZoneFormProps) {
             </Button>
             <Button
               type="submit"
-              disabled={createMutation.isPending || updateMutation.isPending}
+              disabled={createZone.isPending || updateZone.isPending}
             >
               {isEditing ? "Update Zone" : "Create Zone"}
             </Button>

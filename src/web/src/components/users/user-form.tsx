@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { UserDto, CreateUserInput, UpdateUserInput } from '@/types/user';
+import type { User, CreateUserInput, UpdateUserInput } from '@/types/user';
 
 const createUserSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -49,7 +49,7 @@ interface UserFormProps {
   zones: ZoneLookup[];
   depots: DepotLookup[];
   onSubmit: (data: CreateUserInput | UpdateUserInput) => void;
-  user?: UserDto;
+  user?: User;
   isLoading?: boolean;
 }
 

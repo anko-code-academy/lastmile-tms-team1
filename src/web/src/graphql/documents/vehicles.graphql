@@ -1,0 +1,111 @@
+query GetVehicles($where: VehicleFilterInput) {
+  vehicles(where: $where) {
+    id
+    registrationPlate
+    type
+    status
+    depotId
+  }
+}
+
+query GetVehicle($id: UUID!) {
+  vehicle(id: $id) {
+    id
+    registrationPlate
+    type
+    parcelCapacity
+    weightCapacityKg
+    status
+    depotId
+    depot {
+      name
+    }
+    createdAt
+  }
+}
+
+query GetVehicleHistory($id: UUID!) {
+  vehicleHistory(id: $id) {
+    id
+    registrationPlate
+    type
+    totalMileageKm
+    totalRoutesCompleted
+    routes {
+      routeId
+      routeName
+      completedAt
+      distanceKm
+      parcelCount
+    }
+  }
+}
+
+mutation CreateVehicle(
+  $registrationPlate: String!
+  $type: VehicleType!
+  $parcelCapacity: Int!
+  $weightCapacityKg: Decimal!
+  $depotId: UUID
+) {
+  createVehicle(
+    registrationPlate: $registrationPlate
+    type: $type
+    parcelCapacity: $parcelCapacity
+    weightCapacityKg: $weightCapacityKg
+    depotId: $depotId
+  ) {
+    id
+    registrationPlate
+    type
+    parcelCapacity
+    weightCapacityKg
+    status
+    depotId
+    createdAt
+  }
+}
+
+mutation UpdateVehicle(
+  $id: UUID!
+  $registrationPlate: String!
+  $type: VehicleType!
+  $parcelCapacity: Int!
+  $weightCapacityKg: Decimal!
+  $depotId: UUID
+) {
+  updateVehicle(
+    id: $id
+    registrationPlate: $registrationPlate
+    type: $type
+    parcelCapacity: $parcelCapacity
+    weightCapacityKg: $weightCapacityKg
+    depotId: $depotId
+  ) {
+    id
+    registrationPlate
+    type
+    parcelCapacity
+    weightCapacityKg
+    status
+    depotId
+    createdAt
+  }
+}
+
+mutation DeleteVehicle($id: UUID!) {
+  deleteVehicle(id: $id)
+}
+
+mutation ChangeVehicleStatus($id: UUID!, $newStatus: VehicleStatus!) {
+  changeVehicleStatus(id: $id, newStatus: $newStatus) {
+    id
+    registrationPlate
+    type
+    parcelCapacity
+    weightCapacityKg
+    status
+    depotId
+    createdAt
+  }
+}

@@ -5,12 +5,12 @@ import { UserStatusBadge } from './user-status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
-import type { UserDto, PageInfo } from '@/types/user';
+import type { User, PageInfo } from '@/types/user';
 
 interface UserListProps {
-  users: UserDto[];
+  users: User[];
   isLoading: boolean;
-  onEdit: (user: UserDto) => void;
+  onEdit: (user: User) => void;
   onDeactivate: (userId: string) => void;
   onActivate: (userId: string) => void;
   pageInfo?: PageInfo;
@@ -89,9 +89,9 @@ export function UserList({
                 </td>
                 <td className="px-4 py-3 text-sm">{user.email}</td>
                 <td className="px-4 py-3 text-sm">{user.phoneNumber ?? '-'}</td>
-                <td className="px-4 py-3 text-sm">{user.roleName ?? '-'}</td>
-                <td className="px-4 py-3 text-sm">{user.zoneName ?? '-'}</td>
-                <td className="px-4 py-3 text-sm">{user.depotName ?? '-'}</td>
+                <td className="px-4 py-3 text-sm">{user.role?.name ?? '-'}</td>
+                <td className="px-4 py-3 text-sm">{user.zone?.name ?? '-'}</td>
+                <td className="px-4 py-3 text-sm">{user.depot?.name ?? '-'}</td>
                 <td className="px-4 py-3 text-sm">
                   <UserStatusBadge status={user.status} />
                 </td>

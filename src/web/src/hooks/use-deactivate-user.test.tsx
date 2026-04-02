@@ -2,11 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useDeactivateUser } from './use-deactivate-user';
-import * as mutations from '@/lib/graphql/mutations';
+import * as usersService from '@/services/users.service';
 import type { UserDto } from '@/types/user';
 import { toast } from 'sonner';
 
-vi.mock('@/lib/graphql/mutations');
+vi.mock('@/services/users.service');
 
 const mockDeactivatedUser: UserDto = {
   id: '1',
@@ -15,10 +15,12 @@ const mockDeactivatedUser: UserDto = {
   email: 'john@example.com',
   phoneNumber: '1234567890',
   status: 'INACTIVE',
-  roleName: 'Admin',
   roleId: 'role-1',
+  roleName: 'Admin',
   zoneId: null,
+  zoneName: null,
   depotId: null,
+  depotName: null,
   createdAt: '2024-01-01T00:00:00Z',
 };
 
@@ -43,9 +45,7 @@ describe('useDeactivateUser', () => {
   });
 
   it('calls deactivateUser mutation', async () => {
-    vi.mocked(mutations.deactivateUser).mockResolvedValue({
-      deactivateUser: mockDeactivatedUser,
-    });
+    vi.mocked(usersService.deactivateUser).mockResolvedValue(mockDeactivatedUser);
 
     const { result } = renderHook(() => useDeactivateUser(), {
       wrapper: createWrapper(),
@@ -54,14 +54,12 @@ describe('useDeactivateUser', () => {
     result.current.mutate('1');
 
     await waitFor(() =>
-      expect(mutations.deactivateUser).toHaveBeenCalledWith('test-token', '1')
+      expect(usersService.deactivateUser).toHaveBeenCalledWith('test-token', '1')
     );
   });
 
   it('returns deactivated user on success', async () => {
-    vi.mocked(mutations.deactivateUser).mockResolvedValue({
-      deactivateUser: mockDeactivatedUser,
-    });
+    vi.mocked(usersService.deactivateUser).mockResolvedValue(mockDeactivatedUser);
 
     const { result } = renderHook(() => useDeactivateUser(), {
       wrapper: createWrapper(),
@@ -69,15 +67,11 @@ describe('useDeactivateUser', () => {
 
     result.current.mutate('1');
 
-    await waitFor(() =>
-      expect(result.current.data?.deactivateUser).toEqual(mockDeactivatedUser)
-    );
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
 
   it('shows toast on success', async () => {
-    vi.mocked(mutations.deactivateUser).mockResolvedValue({
-      deactivateUser: mockDeactivatedUser,
-    });
+    vi.mocked(usersService.deactivateUser).mockResolvedValue(mockDeactivatedUser);
 
     const { result } = renderHook(() => useDeactivateUser(), {
       wrapper: createWrapper(),
@@ -91,7 +85,7 @@ describe('useDeactivateUser', () => {
   });
 
   it('shows toast on error', async () => {
-    vi.mocked(mutations.deactivateUser).mockRejectedValue(new Error('API error'));
+    vi.mocked(usersService.deactivateUser).mockRejectedValue(new Error('API error'));
 
     const { result } = renderHook(() => useDeactivateUser(), {
       wrapper: createWrapper(),

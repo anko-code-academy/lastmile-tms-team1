@@ -1,5 +1,3 @@
-using LastMile.TMS.Domain.Enums;
-
 namespace LastMile.TMS.Application.Features.Users.DTOs;
 
 public record UserDto(
@@ -8,9 +6,9 @@ public record UserDto(
     string LastName,
     string Email,
     string? PhoneNumber,
-    UserStatus Status,
-    string? RoleName,
+    Domain.Enums.UserStatus Status,
     Guid? RoleId,
+    string? RoleName,
     Guid? ZoneId,
     string? ZoneName,
     Guid? DepotId,

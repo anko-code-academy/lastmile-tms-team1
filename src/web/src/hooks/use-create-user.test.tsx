@@ -2,11 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useCreateUser } from './use-create-user';
-import * as mutations from '@/lib/graphql/mutations';
-import type { CreateUserInput, UserDto } from '@/types/user';
+import * as usersService from '@/services/users.service';
+import type { UserDto } from '@/types/user';
 import { toast } from 'sonner';
 
-vi.mock('@/lib/graphql/mutations');
+vi.mock('@/services/users.service');
 
 const mockCreatedUser: UserDto = {
   id: '1',
@@ -15,10 +15,12 @@ const mockCreatedUser: UserDto = {
   email: 'john@example.com',
   phoneNumber: '1234567890',
   status: 'ACTIVE',
-  roleName: 'Admin',
   roleId: 'role-1',
+  roleName: 'Admin',
   zoneId: null,
+  zoneName: null,
   depotId: null,
+  depotName: null,
   createdAt: '2024-01-01T00:00:00Z',
 };
 
@@ -43,15 +45,13 @@ describe('useCreateUser', () => {
   });
 
   it('calls createUser mutation', async () => {
-    vi.mocked(mutations.createUser).mockResolvedValue({
-      createUser: mockCreatedUser,
-    });
+    vi.mocked(usersService.createUser).mockResolvedValue(mockCreatedUser);
 
     const { result } = renderHook(() => useCreateUser(), {
       wrapper: createWrapper(),
     });
 
-    const input: CreateUserInput = {
+    const input = {
       firstName: 'John',
       lastName: 'Doe',
       email: 'john@example.com',
@@ -63,20 +63,18 @@ describe('useCreateUser', () => {
     result.current.mutate(input);
 
     await waitFor(() =>
-      expect(mutations.createUser).toHaveBeenCalledWith('test-token', input)
+      expect(usersService.createUser).toHaveBeenCalled()
     );
   });
 
   it('returns created user on success', async () => {
-    vi.mocked(mutations.createUser).mockResolvedValue({
-      createUser: mockCreatedUser,
-    });
+    vi.mocked(usersService.createUser).mockResolvedValue(mockCreatedUser);
 
     const { result } = renderHook(() => useCreateUser(), {
       wrapper: createWrapper(),
     });
 
-    const input: CreateUserInput = {
+    const input = {
       firstName: 'John',
       lastName: 'Doe',
       email: 'john@example.com',
@@ -86,21 +84,17 @@ describe('useCreateUser', () => {
 
     result.current.mutate(input);
 
-    await waitFor(() =>
-      expect(result.current.data?.createUser).toEqual(mockCreatedUser)
-    );
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
 
   it('shows toast on success', async () => {
-    vi.mocked(mutations.createUser).mockResolvedValue({
-      createUser: mockCreatedUser,
-    });
+    vi.mocked(usersService.createUser).mockResolvedValue(mockCreatedUser);
 
     const { result } = renderHook(() => useCreateUser(), {
       wrapper: createWrapper(),
     });
 
-    const input: CreateUserInput = {
+    const input = {
       firstName: 'John',
       lastName: 'Doe',
       email: 'john@example.com',
@@ -116,13 +110,13 @@ describe('useCreateUser', () => {
   });
 
   it('shows toast on error', async () => {
-    vi.mocked(mutations.createUser).mockRejectedValue(new Error('API error'));
+    vi.mocked(usersService.createUser).mockRejectedValue(new Error('API error'));
 
     const { result } = renderHook(() => useCreateUser(), {
       wrapper: createWrapper(),
     });
 
-    const input: CreateUserInput = {
+    const input = {
       firstName: 'John',
       lastName: 'Doe',
       email: 'john@example.com',

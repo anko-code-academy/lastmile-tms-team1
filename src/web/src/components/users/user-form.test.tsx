@@ -2,19 +2,21 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { UserForm } from './user-form';
-import type { UserDto } from '@/types/user';
+import type { User } from '@/types/user';
 
-const mockUser: UserDto = {
+const mockUser: User = {
   id: '1',
   firstName: 'John',
   lastName: 'Doe',
   email: 'john@example.com',
   phoneNumber: '1234567890',
   status: 'ACTIVE',
-  roleName: 'Admin',
   roleId: 'role-1',
+  role: { id: 'role-1', name: 'Admin' },
   zoneId: null,
+  zone: null,
   depotId: null,
+  depot: null,
   createdAt: '2024-01-01T00:00:00Z',
 };
 

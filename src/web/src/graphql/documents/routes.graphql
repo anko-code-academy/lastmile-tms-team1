@@ -1,0 +1,104 @@
+query GetRoutes($where: RouteFilterInput) {
+  routes(where: $where) {
+    id
+    name
+    status
+    plannedStartTime
+    vehicleId
+    vehicle {
+      registrationPlate
+    }
+  }
+}
+
+query GetRoute($id: UUID!) {
+  route(id: $id) {
+    id
+    name
+    status
+    plannedStartTime
+    actualStartTime
+    actualEndTime
+    totalDistanceKm
+    totalParcelCount
+    vehicleId
+    vehicle {
+      registrationPlate
+    }
+    createdAt
+  }
+}
+
+mutation CreateRoute(
+  $name: String!
+  $plannedStartTime: DateTime!
+  $totalDistanceKm: Decimal!
+  $totalParcelCount: Int!
+  $vehicleId: UUID
+) {
+  createRoute(
+    name: $name
+    plannedStartTime: $plannedStartTime
+    totalDistanceKm: $totalDistanceKm
+    totalParcelCount: $totalParcelCount
+    vehicleId: $vehicleId
+  ) {
+    id
+    name
+    status
+    plannedStartTime
+    totalDistanceKm
+    totalParcelCount
+    vehicleId
+    vehiclePlate
+    createdAt
+  }
+}
+
+mutation UpdateRoute(
+  $id: UUID!
+  $name: String!
+  $plannedStartTime: DateTime!
+  $totalDistanceKm: Decimal!
+  $totalParcelCount: Int!
+  $vehicleId: UUID
+) {
+  updateRoute(
+    id: $id
+    name: $name
+    plannedStartTime: $plannedStartTime
+    totalDistanceKm: $totalDistanceKm
+    totalParcelCount: $totalParcelCount
+    vehicleId: $vehicleId
+  ) {
+    id
+    name
+    status
+    plannedStartTime
+    totalDistanceKm
+    totalParcelCount
+    vehicleId
+    vehiclePlate
+    createdAt
+  }
+}
+
+mutation DeleteRoute($id: UUID!) {
+  deleteRoute(id: $id)
+}
+
+mutation ChangeRouteStatus($id: UUID!, $newStatus: RouteStatus!) {
+  changeRouteStatus(id: $id, newStatus: $newStatus) {
+    id
+    name
+    status
+    plannedStartTime
+    actualStartTime
+    actualEndTime
+    totalDistanceKm
+    totalParcelCount
+    vehicleId
+    vehiclePlate
+    createdAt
+  }
+}

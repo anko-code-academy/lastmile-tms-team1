@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RouteForm } from "@/components/routes/route-form";
-import { useRoute, useUpdateRoute } from "@/lib/hooks/use-routes";
+import { useRoute, useUpdateRoute } from "@/hooks/use-routes";
 import { useParams } from "next/navigation";
 
 export default function EditRoutePage() {

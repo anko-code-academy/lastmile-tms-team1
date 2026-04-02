@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { UserList } from './user-list';
-import type { UserDto } from '@/types/user';
+import type { User } from '@/types/user';
 
-const mockUsers: UserDto[] = [
+const mockUsers: User[] = [
   {
     id: '1',
     firstName: 'John',
@@ -12,10 +12,12 @@ const mockUsers: UserDto[] = [
     email: 'john@example.com',
     phoneNumber: '1234567890',
     status: 'ACTIVE',
-    roleName: 'Admin',
     roleId: 'role-1',
+    role: { id: 'role-1', name: 'Admin' },
     zoneId: null,
+    zone: null,
     depotId: null,
+    depot: null,
     createdAt: '2024-01-01T00:00:00Z',
   },
   {
@@ -25,16 +27,19 @@ const mockUsers: UserDto[] = [
     email: 'jane@example.com',
     phoneNumber: '0987654321',
     status: 'INACTIVE',
-    roleName: 'Dispatcher',
     roleId: 'role-2',
+    role: { id: 'role-2', name: 'Dispatcher' },
     zoneId: null,
+    zone: null,
     depotId: null,
+    depot: null,
     createdAt: '2024-01-02T00:00:00Z',
   },
 ];
 
 const mockOnEdit = vi.fn();
 const mockOnDeactivate = vi.fn();
+const mockOnActivate = vi.fn();
 
 describe('UserList', () => {
   beforeEach(() => {
@@ -48,6 +53,7 @@ describe('UserList', () => {
         isLoading={false}
         onEdit={mockOnEdit}
         onDeactivate={mockOnDeactivate}
+        onActivate={mockOnActivate}
       />
     );
 
@@ -64,6 +70,7 @@ describe('UserList', () => {
         isLoading={true}
         onEdit={mockOnEdit}
         onDeactivate={mockOnDeactivate}
+        onActivate={mockOnActivate}
       />
     );
 
@@ -78,6 +85,7 @@ describe('UserList', () => {
         isLoading={false}
         onEdit={mockOnEdit}
         onDeactivate={mockOnDeactivate}
+        onActivate={mockOnActivate}
       />
     );
 
@@ -91,6 +99,7 @@ describe('UserList', () => {
         isLoading={false}
         onEdit={mockOnEdit}
         onDeactivate={mockOnDeactivate}
+        onActivate={mockOnActivate}
       />
     );
 
@@ -107,6 +116,7 @@ describe('UserList', () => {
         isLoading={false}
         onEdit={mockOnEdit}
         onDeactivate={mockOnDeactivate}
+        onActivate={mockOnActivate}
       />
     );
 
@@ -123,6 +133,7 @@ describe('UserList', () => {
         isLoading={false}
         onEdit={mockOnEdit}
         onDeactivate={mockOnDeactivate}
+        onActivate={mockOnActivate}
       />
     );
 

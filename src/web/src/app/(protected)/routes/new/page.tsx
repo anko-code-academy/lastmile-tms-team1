@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RouteForm } from "@/components/routes/route-form";
-import { useCreateRoute } from "@/lib/hooks/use-routes";
+import { useCreateRoute } from "@/hooks/use-routes";
 
 export default function NewRoutePage() {
   const router = useRouter();
