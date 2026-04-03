@@ -51,6 +51,9 @@ public class DbSeeder : IDbSeeder
         // Seed parcels
         await SeedParcelsAsync();
 
+        // Seed driver profile — must run after SeedTestUsersAsync (depends on driver user)
+        await SeedDriverAsync();
+
         _logger.LogInformation("Database seeding completed.");
     }
 
@@ -374,6 +377,7 @@ public class DbSeeder : IDbSeeder
             empireStateDepotName, zoneName);
     }
 
+<<<<<<< HEAD
     private async Task SeedParcelsAsync()
     {
         // Skip if parcels already exist
@@ -547,5 +551,58 @@ public class DbSeeder : IDbSeeder
         await _context.SaveChangesAsync(CancellationToken.None);
 
         _logger.LogInformation("Seeded {Count} parcels", parcels.Count);
+    }
+
+    private async Task SeedDriverAsync()
+    {
+        const string driverEmail = "driver@lastmile.com";
+        const string driverLicenseNumber = "DL-2026-001";
+
+        // Check if driver already exists by license number
+        var existingDriver = _context.Drivers.FirstOrDefault(d => d.LicenseNumber == driverLicenseNumber);
+        if (existingDriver != null)
+        {
+            _logger.LogDebug("Driver with license {LicenseNumber} already exists, skipping seed", driverLicenseNumber);
+            return;
+        }
+
+        // Find the test driver user
+        var driverUser = await _userManager.FindByEmailAsync(driverEmail);
+        if (driverUser == null)
+        {
+            _logger.LogWarning("Driver user {Email} not found, skipping driver seed", driverEmail);
+            return;
+        }
+
+        // Create driver profile
+        var driver = new Driver
+        {
+            LicenseNumber = driverLicenseNumber,
+            LicenseExpiryDate = DateTimeOffset.UtcNow.AddYears(2),
+            UserId = driverUser.Id
+        };
+
+        // Add a workday shift schedule (Monday, 8:00–17:00)
+        driver.ShiftSchedules.Add(new ShiftSchedule
+        {
+            DayOfWeek = DayOfWeek.Monday,
+            OpenTime = new TimeOnly(8, 0),
+            CloseTime = new TimeOnly(17, 0),
+            Driver = driver
+        });
+
+        // Add a day off (next Sunday)
+        var nextSunday = DateTimeOffset.UtcNow.AddDays(DayOfWeek.Sunday - DateTimeOffset.UtcNow.DayOfWeek);
+        driver.DaysOff.Add(new DayOff
+        {
+            Date = nextSunday,
+            Driver = driver
+        });
+
+        _context.Drivers.Add(driver);
+        await _context.SaveChangesAsync(CancellationToken.None);
+
+        _logger.LogInformation("Seeded driver {LicenseNumber} for user {Email} with 1 shift schedule and 1 day off",
+            driverLicenseNumber, driverEmail);
     }
 }
