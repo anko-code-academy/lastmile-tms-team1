@@ -11,7 +11,9 @@ public interface IAppDbContext
     DbSet<Role> Roles { get; }
     DbSet<Parcel> Parcels { get; }
     DbSet<Route> Routes { get; }
+    DbSet<ParcelAuditLog> ParcelAuditLogs { get; }
     DbSet<ShiftSchedule> ShiftSchedules { get; }
+    DbSet<TrackingEvent> TrackingEvents { get; }
     DbSet<User> Users { get; }
     DbSet<Vehicle> Vehicles { get; }
     DbSet<VehicleJourney> VehicleJourneys { get; }

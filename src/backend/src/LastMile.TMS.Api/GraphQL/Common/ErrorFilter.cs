@@ -20,7 +20,14 @@ public class ErrorFilter : IErrorFilter
                 exceptionType,
                 error.Exception.Message);
 
-            return error.WithMessage($"An error occurred. Reference: {traceId}");
+            // For errors already formatted by DomainExceptionErrorFilter, append the reference
+            if (!string.IsNullOrEmpty(error.Code))
+            {
+                return error.WithMessage($"{error.Message}. Reference: {traceId}");
+            }
+
+            // For unhandled exceptions, use the generic message with reference
+            return error.WithMessage($"An error occurred. Reference: {traceId}").WithCode("INTERNAL_ERROR");
         }
 
         return error;

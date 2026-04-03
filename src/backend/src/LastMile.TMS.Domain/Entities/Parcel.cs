@@ -46,6 +46,7 @@ public class Parcel : BaseAuditableEntity
     public ICollection<ParcelContentItem> ContentItems { get; set; } = new List<ParcelContentItem>();
     public ICollection<TrackingEvent> TrackingEvents { get; set; } = new List<TrackingEvent>();
     public ICollection<ParcelWatcher> ParcelWatchers { get; set; } = new List<ParcelWatcher>();
+    public ICollection<ParcelAuditLog> AuditLogs { get; set; } = new List<ParcelAuditLog>();
 
     // Factory method for tracking number generation
     public static string GenerateTrackingNumber()
@@ -84,7 +85,10 @@ public class Parcel : BaseAuditableEntity
             ParcelStatus.Delivered => Status == ParcelStatus.OutForDelivery,
             ParcelStatus.FailedAttempt => Status == ParcelStatus.OutForDelivery,
             ParcelStatus.ReturnedToDepot => Status == ParcelStatus.FailedAttempt || Status == ParcelStatus.Exception,
-            ParcelStatus.Cancelled => Status == ParcelStatus.Registered || Status == ParcelStatus.ReceivedAtDepot,
+            ParcelStatus.Cancelled => Status == ParcelStatus.Registered
+                                   || Status == ParcelStatus.ReceivedAtDepot
+                                   || Status == ParcelStatus.Sorted
+                                   || Status == ParcelStatus.Staged,
             ParcelStatus.Exception => Status != ParcelStatus.Delivered, // Can exception from any non-delivered status
 
             _ => false
