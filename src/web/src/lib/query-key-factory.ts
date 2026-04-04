@@ -40,3 +40,11 @@ export const zoneKeys = {
   details: () => [...zoneKeys.all, 'detail'] as const,
   detail: (id: string) => [...zoneKeys.details(), id] as const,
 };
+
+export const parcelKeys = {
+  all: ['parcels'] as const,
+  lists: () => [...parcelKeys.all, 'list'] as const,
+  list: () => [...parcelKeys.lists()] as const,
+  details: () => [...parcelKeys.all, 'detail'] as const,
+  detail: (id: string) => [...parcelKeys.details(), id] as const,
+};

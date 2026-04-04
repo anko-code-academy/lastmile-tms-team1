@@ -133,6 +133,128 @@ export interface UpdateDepotInput {
   isActive: boolean;
 }
 
+// ============================================
+// Parcel
+// ============================================
+
+export interface ParcelAddressDto {
+  street1: string;
+  street2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  countryCode: string;
+  isResidential: boolean;
+  contactName?: string;
+  companyName?: string;
+  phone?: string;
+  email?: string;
+  geoLocation?: {
+    coordinates?: [number, number];
+  };
+}
+
+export enum WeightUnit {
+  Kg = "Kg",
+  Lb = "Lb",
+}
+
+export enum DimensionUnit {
+  Cm = "Cm",
+  In = "In",
+}
+
+export enum ParcelStatus {
+  REGISTERED = "REGISTERED",
+  RECEIVED_AT_DEPOT = "RECEIVED_AT_DEPOT",
+  SORTED = "SORTED",
+  STAGED = "STAGED",
+  LOADED = "LOADED",
+  OUT_FOR_DELIVERY = "OUT_FOR_DELIVERY",
+  DELIVERED = "DELIVERED",
+  FAILED_ATTEMPT = "FAILED_ATTEMPT",
+  RETURNED_TO_DEPOT = "RETURNED_TO_DEPOT",
+  CANCELLED = "CANCELLED",
+  EXCEPTION = "EXCEPTION",
+}
+
+export enum ServiceType {
+  ECONOMY = "ECONOMY",
+  STANDARD = "STANDARD",
+  EXPRESS = "EXPRESS",
+  OVERNIGHT = "OVERNIGHT",
+}
+
+export interface ParcelDto {
+  id: string;
+  trackingNumber: string;
+  description?: string;
+  serviceType: ServiceType;
+  status: ParcelStatus;
+  weight: number;
+  weightUnit: WeightUnit;
+  length: number;
+  width: number;
+  height: number;
+  dimensionUnit: DimensionUnit;
+  declaredValue: number;
+  currency: string;
+  estimatedDeliveryDate?: string;
+  actualDeliveryDate?: string;
+  deliveryAttempts: number;
+  parcelType?: string;
+  notes?: string;
+  shipperAddress: ParcelAddressDto;
+  recipientAddress: ParcelAddressDto;
+  zone?: { id: string; name: string };
+  createdAt: string;
+  lastModifiedAt?: string;
+}
+
+export interface ParcelSummaryDto {
+  id: string;
+  trackingNumber: string;
+  serviceType: ServiceType;
+  status: ParcelStatus;
+  createdAt: string;
+}
+
+export interface ParcelAddressInput {
+  street1: string;
+  street2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  countryCode?: string;
+  isResidential?: boolean;
+  contactName?: string;
+  companyName?: string;
+  phone?: string;
+  email?: string;
+}
+
+export interface CreateParcelInput {
+  description?: string;
+  serviceType: ServiceType;
+  shipperAddress: ParcelAddressInput;
+  recipientAddress: ParcelAddressInput;
+  weight: number;
+  weightUnit: WeightUnit;
+  length: number;
+  width: number;
+  height: number;
+  dimensionUnit: DimensionUnit;
+  declaredValue: number;
+  currency?: string;
+  parcelType?: string;
+  notes?: string;
+  estimatedDeliveryDate?: string;
+}
+
+// ============================================
+// Zone
+// ============================================
+
 export interface CreateZoneInput {
   name: string;
   geoJson: string;
