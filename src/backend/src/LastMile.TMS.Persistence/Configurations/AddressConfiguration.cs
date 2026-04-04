@@ -8,6 +8,8 @@ public class AddressConfiguration : IEntityTypeConfiguration<Address>
 {
     public void Configure(EntityTypeBuilder<Address> builder)
     {
+        builder.ToTable("Addresses");
+
         builder.Property(a => a.Street1).HasMaxLength(200).IsRequired();
         builder.Property(a => a.Street2).HasMaxLength(200);
         builder.Property(a => a.City).HasMaxLength(100).IsRequired();

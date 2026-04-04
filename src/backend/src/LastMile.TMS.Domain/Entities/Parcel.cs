@@ -36,6 +36,7 @@ public class Parcel : BaseAuditableEntity
     // Delivery
     public int DeliveryAttempts { get; set; }
     public string? ParcelType { get; set; }
+    public string? Notes { get; set; }
 
     // Zone (auto-assigned via geocoding)
     public Guid? ZoneId { get; set; }
