@@ -1,4 +1,2 @@
 {
-  "DockerEndpoint": "npipe://./pipe/docker_engine",
-  "DockerHostOverride": "npipe://./pipe/docker_engine"
 }

@@ -36,7 +36,7 @@ public class UpdateParcelCommandHandler(
 
         // Track changes for audit
         var auditLogs = new List<ParcelAuditLog>();
-        var userId = currentUserService.UserId ?? "unknown";
+        var userId = currentUserService.UserId ?? throw new InvalidOperationException("User not authenticated");
 
         if (request.Description != null && parcel.Description != request.Description)
         {

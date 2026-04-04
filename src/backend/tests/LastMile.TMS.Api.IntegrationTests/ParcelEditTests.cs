@@ -376,6 +376,59 @@ public class ParcelEditTests : IAsyncLifetime
         errorMessage.Should().Match("*eason*"); // Matches "Reason" or "reason"
     }
 
+    [Fact]
+    public async Task CancelParcel_ShouldCreateAuditLogWithReason()
+    {
+        // Arrange
+        var parcelId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+        var reason = "Customer requested cancellation";
+        var mutation = $@"mutation {{
+            cancelParcel(input: {{
+                id: ""{parcelId}"",
+                reason: ""{reason}""
+            }}) {{
+                id
+                status
+            }}
+        }}";
+
+        // Act - Cancel the parcel
+        await GraphQLRequestAsync(mutation);
+
+        // Query audit logs
+        var query = $@"query {{
+            parcelAuditLogs(parcelId: ""{parcelId}"") {{
+                nodes {{
+                    propertyName
+                    oldValue
+                    newValue
+                    changedBy
+                    createdAt
+                }}
+            }}
+        }}";
+
+        var jsonResponse = await GraphQLRequestAsync(query);
+
+        // Assert
+        if (jsonResponse.TryGetProperty("errors", out var errors))
+        {
+            throw new Exception($"Query failed: {errors.GetRawText()}");
+        }
+
+        var auditLogs = jsonResponse.GetProperty("data").GetProperty("parcelAuditLogs").GetProperty("nodes");
+        auditLogs.GetArrayLength().Should().BeGreaterThan(0);
+
+        // Find the status change audit log
+        var statusAuditLog = auditLogs.EnumerateArray()
+            .FirstOrDefault(log => log.GetProperty("propertyName").GetString() == "Status");
+
+        statusAuditLog.Should().NotBeNull();
+        statusAuditLog.GetProperty("oldValue").GetString().Should().Be("Registered");
+        statusAuditLog.GetProperty("newValue").GetString().Should().Be($"Cancelled - {reason}");
+        statusAuditLog.GetProperty("changedBy").GetString().Should().NotBeNullOrEmpty();
+    }
+
     #endregion
 
     #region Audit Log Tests
