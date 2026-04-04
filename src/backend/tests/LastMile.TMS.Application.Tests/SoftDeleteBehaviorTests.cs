@@ -18,8 +18,8 @@ public class TestDbContext : AppDbContext
         base.OnModelCreating(modelBuilder);
 
         // Ignore Npgsql-specific shadow properties not supported by in-memory provider
-        modelBuilder.Entity<Address>().Ignore("SearchVector");
-        modelBuilder.Entity<Parcel>().Ignore("SearchVector");
+        modelBuilder.Entity<Address>().Ignore("RecipientNameSearchVector");
+        modelBuilder.Entity<Address>().Ignore("AddressSearchVector");
     }
 }
 
