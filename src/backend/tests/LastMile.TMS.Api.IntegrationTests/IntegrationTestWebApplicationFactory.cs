@@ -1,3 +1,4 @@
+using LastMile.TMS.Application.Common.Interfaces;
 using LastMile.TMS.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -53,6 +54,13 @@ public class IntegrationTestWebApplicationFactory : WebApplicationFactory<Progra
                 services.Remove(currentUserDescriptor);
 
             services.AddSingleton<LastMile.TMS.Application.Common.Interfaces.ICurrentUserService, StubCurrentUserService>();
+
+            // Replace real geocoding service with stub for tests
+            var geocodingDescriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(IGeocodingService));
+            if (geocodingDescriptor != null)
+                services.Remove(geocodingDescriptor);
+            services.AddSingleton<IGeocodingService, StubGeocodingService>();
 
             // Remove all EF Core / DbContext registrations
             var toRemove = services.Where(d =>

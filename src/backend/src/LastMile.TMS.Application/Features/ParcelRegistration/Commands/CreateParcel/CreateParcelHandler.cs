@@ -19,6 +19,16 @@ public class CreateParcelHandler(IAppDbContext dbContext, IGeocodingService geoc
         var shipperGeoPoint = await geocodingService.GeocodeAsync(shipperFullAddress, cancellationToken);
         var recipientGeoPoint = await geocodingService.GeocodeAsync(recipientFullAddress, cancellationToken);
 
+        if (recipientGeoPoint == null)
+        {
+            throw new InvalidOperationException("Recipient address could not be geocoded. Please provide a valid address.");
+        }
+
+        if (shipperGeoPoint == null)
+        {
+            throw new InvalidOperationException("Shipper address could not be geocoded. Please provide a valid address.");
+        }
+
         // 3. Create address entities
         var shipperAddress = new Address
         {
