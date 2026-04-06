@@ -13,6 +13,7 @@ public class AppDbContext(
     : IdentityDbContext<User, Role, Guid>(options), IAppDbContext
 {
     public DbSet<Address> Addresses => Set<Address>();
+    public DbSet<Bin> Bins => Set<Bin>();
     public DbSet<Depot> Depots => Set<Depot>();
     public DbSet<DayOff> DaysOff => Set<DayOff>();
     public DbSet<Driver> Drivers => Set<Driver>();

@@ -9,4 +9,8 @@ public interface ILabelService
     string GenerateZplLabel(Parcel parcel);
     byte[] GeneratePdfLabel(Parcel parcel);
     byte[] GenerateBulkPdfLabels(List<Parcel> parcels);
+
+    byte[] GenerateBinLabelPng(string binLabel, int width, int height);
+    string GenerateBinZplLabel(Bin bin);
+    byte[] GenerateBinLabelPdf(Bin bin);
 }

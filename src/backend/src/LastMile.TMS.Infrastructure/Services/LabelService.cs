@@ -204,4 +204,79 @@ public class LabelService : ILabelService
 
         return document.GeneratePdf();
     }
+
+    public byte[] GenerateBinLabelPng(string binLabel, int width, int height)
+    {
+        var writer = new ZXing.SkiaSharp.BarcodeWriter
+        {
+            Format = BarcodeFormat.CODE_128,
+            Options = new EncodingOptions
+            {
+                Height = height,
+                Width = width,
+                Margin = 10,
+                PureBarcode = false
+            }
+        };
+
+        using var bitmap = writer.Write(binLabel);
+        using var image = SkiaSharp.SKImage.FromBitmap(bitmap);
+        using var data = image.Encode(SkiaSharp.SKEncodedImageFormat.Png, 100);
+        return data.ToArray();
+    }
+
+    public string GenerateBinZplLabel(Bin bin)
+    {
+        var zoneName = bin.Zone?.Name ?? "Unknown";
+        var depotName = bin.Zone?.Depot?.Name ?? "Unknown";
+
+        return $@"^XA
+^FO50,30^BY3^BCN,100,Y,N,N^FD{bin.Label}^FS
+^FO50,150^A0N,30,30^FDDepot: {depotName}^FS
+^FO50,190^A0N,25,25^FDZone: {zoneName}^FS
+^FO50,230^A0N,25,25^FDAisle: {bin.Aisle}  Slot: {bin.Slot}^FS
+^FO50,270^A0N,25,25^FDCapacity: {bin.Capacity} parcels^FS
+^XZ";
+    }
+
+    public byte[] GenerateBinLabelPdf(Bin bin)
+    {
+        QuestPDF.Settings.License = LicenseType.Community;
+
+        var zoneName = bin.Zone?.Name ?? "Unknown";
+        var depotName = bin.Zone?.Depot?.Name ?? "Unknown";
+        var barcodeImage = GenerateBinLabelPng(bin.Label, 300, 80);
+        var qrCodeImage = GenerateQrCodePng(bin.Label, 100);
+
+        var document = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(new PageSize(4, 2, Unit.Inch));
+                page.Margin(10);
+                page.DefaultTextStyle(x => x.FontSize(10));
+
+                page.Content().Column(column =>
+                {
+                    column.Item().Row(row =>
+                    {
+                        row.RelativeItem().Column(col =>
+                        {
+                            col.Item().Text($"Bin: {bin.Label}").Bold().FontSize(16);
+                            col.Item().Text($"Depot: {depotName}").FontSize(12);
+                            col.Item().Text($"Zone: {zoneName}").FontSize(12);
+                            col.Item().Text($"Aisle: {bin.Aisle}  Slot: {bin.Slot}").FontSize(10);
+                            col.Item().Text($"Capacity: {bin.Capacity} parcels").FontSize(10);
+                            col.Item().Text($"Status: {(bin.IsActive ? "Active" : "Inactive")}").FontSize(10);
+                        });
+                        row.ConstantItem(100).Image(qrCodeImage);
+                    });
+
+                    column.Item().PaddingTop(10).Image(barcodeImage);
+                });
+            });
+        });
+
+        return document.GeneratePdf();
+    }
 }

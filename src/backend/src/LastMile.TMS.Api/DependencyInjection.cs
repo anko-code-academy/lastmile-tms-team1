@@ -2,6 +2,7 @@ using HotChocolate;
 using HotChocolate.Types;
 using LastMile.TMS.Api.GraphQL;
 using LastMile.TMS.Api.GraphQL.Common;
+using LastMile.TMS.Api.GraphQL.Extensions.Bin;
 using LastMile.TMS.Api.GraphQL.Extensions.Depot;
 using LastMile.TMS.Api.GraphQL.Extensions.Driver;
 using LastMile.TMS.Api.GraphQL.Extensions.Parcel;
@@ -27,6 +28,8 @@ public static class DependencyInjection
             .AddSpatialTypes()
             .AddQueryType<Query>(d => d.Name("Query").Field("sentinel").Type<StringType>().Resolve(_ => "sentinel"))
             .AddMutationType<Mutation>(d => d.Name("Mutation").Field("sentinel").Type<StringType>().Resolve(_ => "sentinel"))
+            .AddType<BinQuery>()
+            .AddType<BinMutation>()
             .AddType<DepotQuery>()
             .AddType<DepotMutation>()
             .AddType<ParcelQuery>()
@@ -51,6 +54,8 @@ public static class DependencyInjection
             .AddType<UpdateDepotInput>()
             .AddType<UpdateAddressInputType>()
             .AddType<DailyOperatingHoursInputType>()
+            .AddType<CreateBinInput>()
+            .AddType<UpdateBinInput>()
             .AddType<CreateZoneInput>()
             .AddType<UpdateZoneInput>()
             .AddType<UpdateParcelInput>()
