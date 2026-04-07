@@ -28,9 +28,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { RouteStatus, type Route } from "@/graphql/generated/graphql";
+import { RouteStatus } from "@/graphql/generated/graphql";
+import { type RouteListItem } from "@/services/routes.service";
 
-const columnHelper = createColumnHelper<Route>();
+const columnHelper = createColumnHelper<RouteListItem>();
 
 function getStatusBadgeVariant(status: RouteStatus) {
   switch (status) {
@@ -46,7 +47,7 @@ function getStatusBadgeVariant(status: RouteStatus) {
 }
 
 interface RouteTableProps {
-  data: Route[];
+  data: RouteListItem[];
   onDelete: (id: string) => void;
   isDeleting?: boolean;
 }

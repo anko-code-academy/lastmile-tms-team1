@@ -38,11 +38,7 @@ public class CreateRouteCommandHandler(IAppDbContext context) : IRequestHandler<
                 throw new InvalidOperationException($"Driver with ID {request.DriverId.Value} not found.");
             }
 
-            var routeDate = DateOnly.FromDateTime(request.PlannedStartTime);
-            if (driver.DaysOff.Any(d => DateOnly.FromDateTime(d.Date.DateTime) == routeDate))
-            {
-                throw new InvalidOperationException("Cannot assign driver who has a day off on the route date.");
-            }
+            DriverDayOffValidator.EnsureAvailableForDate(driver, request.PlannedStartTime);
 
             driverName = $"{driver.User.FirstName} {driver.User.LastName}";
         }

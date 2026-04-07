@@ -37,6 +37,8 @@ public class RouteQuery
     {
         var dayOfWeek = date.DayOfWeek;
         var dateOnly = DateOnly.FromDateTime(date);
+        var dayStart = new DateTimeOffset(dateOnly.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));
+        var dayEnd = dayStart.AddDays(1);
         var startOfDay = date.Date;
         var endOfDay = startOfDay.AddDays(1);
 
@@ -46,7 +48,7 @@ public class RouteQuery
             .Include(d => d.DaysOff)
             .Include(d => d.Routes)
             .Where(d => d.User.Status == UserStatus.Active)
-            .Where(d => !d.DaysOff.Any(dto => DateOnly.FromDateTime(dto.Date.DateTime) == dateOnly))
+            .Where(d => !d.DaysOff.Any(dto => dto.Date >= dayStart && dto.Date < dayEnd))
             .Where(d => d.ShiftSchedules.Any(s => s.DayOfWeek == dayOfWeek && s.DriverId == d.Id))
             .Select(d => new AvailableDriverDto(
                 d.Id,
