@@ -13,6 +13,7 @@ namespace LastMile.TMS.Api.GraphQL.Extensions.Route;
 public class RouteQuery
 {
     [Authorize(Roles = [Role.RoleNames.Admin, Role.RoleNames.OperationsManager, Role.RoleNames.Dispatcher])]
+    [UsePaging(IncludeTotalCount = true, MaxPageSize = 100)]
     [UseProjection]
     [UseFiltering]
     [UseSorting]

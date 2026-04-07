@@ -1,20 +1,29 @@
-query GetRoutes($where: RouteFilterInput) {
-  routes(where: $where) {
-    id
-    name
-    status
-    plannedStartTime
-    vehicleId
-    vehicle {
-      registrationPlate
-    }
-    driverId
-    driver {
-      user {
-        firstName
-        lastName
+query GetRoutes($where: RouteFilterInput, $order: [RouteSortInput!], $first: Int, $after: String) {
+  routes(where: $where, order: $order, first: $first, after: $after) {
+    nodes {
+      id
+      name
+      status
+      plannedStartTime
+      vehicleId
+      vehicle {
+        registrationPlate
+      }
+      driverId
+      driver {
+        user {
+          firstName
+          lastName
+        }
       }
     }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+    totalCount
   }
 }
 
@@ -59,22 +68,8 @@ query GetAvailableDrivers($date: DateTime!) {
   }
 }
 
-mutation CreateRoute(
-  $name: String!
-  $plannedStartTime: DateTime!
-  $totalDistanceKm: Decimal!
-  $totalParcelCount: Int!
-  $vehicleId: UUID
-  $driverId: UUID
-) {
-  createRoute(
-    name: $name
-    plannedStartTime: $plannedStartTime
-    totalDistanceKm: $totalDistanceKm
-    totalParcelCount: $totalParcelCount
-    vehicleId: $vehicleId
-    driverId: $driverId
-  ) {
+mutation CreateRoute($input: CreateRouteCommandInput!) {
+  createRoute(input: $input) {
     id
     name
     status
@@ -89,24 +84,8 @@ mutation CreateRoute(
   }
 }
 
-mutation UpdateRoute(
-  $id: UUID!
-  $name: String!
-  $plannedStartTime: DateTime!
-  $totalDistanceKm: Decimal!
-  $totalParcelCount: Int!
-  $vehicleId: UUID
-  $driverId: UUID
-) {
-  updateRoute(
-    id: $id
-    name: $name
-    plannedStartTime: $plannedStartTime
-    totalDistanceKm: $totalDistanceKm
-    totalParcelCount: $totalParcelCount
-    vehicleId: $vehicleId
-    driverId: $driverId
-  ) {
+mutation UpdateRoute($input: UpdateRouteCommandInput!) {
+  updateRoute(input: $input) {
     id
     name
     status

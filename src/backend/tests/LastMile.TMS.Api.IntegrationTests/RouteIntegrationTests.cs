@@ -134,12 +134,12 @@ public class RouteIntegrationTests : IAsyncLifetime
         // Arrange
         var mutation = $@"
             mutation {{
-                createRoute(
+                createRoute(input: {{
                     name: ""Test Route 001"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(7):O}"",
                     totalDistanceKm: 50.5,
                     totalParcelCount: 25
-                ) {{
+                }}) {{
                     id
                     name
                     status
@@ -170,13 +170,13 @@ public class RouteIntegrationTests : IAsyncLifetime
         // Arrange
         var mutation = $@"
             mutation {{
-                createRoute(
+                createRoute(input: {{
                     name: ""Route With Vehicle"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(8):O}"",
                     totalDistanceKm: 100.0,
                     totalParcelCount: 50,
                     vehicleId: ""{_vehicleId}""
-                ) {{
+                }}) {{
                     id
                     name
                     vehicleId
@@ -202,12 +202,12 @@ public class RouteIntegrationTests : IAsyncLifetime
         // Arrange
         var mutation = $@"
             mutation {{
-                createRoute(
+                createRoute(input: {{
                     name: """",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(7):O}"",
                     totalDistanceKm: 50.0,
                     totalParcelCount: 25
-                ) {{
+                }}) {{
                     id
                 }}
             }}";
@@ -228,34 +228,36 @@ public class RouteIntegrationTests : IAsyncLifetime
         // Arrange - Create a couple of routes first
         var createMutation1 = $@"
             mutation {{
-                createRoute(
+                createRoute(input: {{
                     name: ""Route List 001"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(9):O}"",
                     totalDistanceKm: 30.0,
                     totalParcelCount: 15
-                ) {{ id }}
+                }}) {{ id }}
             }}";
         await ExecuteGraphQLAsync(createMutation1);
 
         var createMutation2 = $@"
             mutation {{
-                createRoute(
+                createRoute(input: {{
                     name: ""Route List 002"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(9):O}"",
                     totalDistanceKm: 40.0,
                     totalParcelCount: 20
-                ) {{ id }}
+                }}) {{ id }}
             }}";
         await ExecuteGraphQLAsync(createMutation2);
 
         // Act
         var query = @"
             query {
-                routes {
-                    id
-                    name
-                    status
-                    plannedStartTime
+                routes(first: 100) {
+                    nodes {
+                        id
+                        name
+                        status
+                        plannedStartTime
+                    }
                 }
             }";
         var response = await ExecuteGraphQLAsync(query);
@@ -264,7 +266,7 @@ public class RouteIntegrationTests : IAsyncLifetime
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var json = await ReadJsonAsync(response);
         json.RootElement.TryGetProperty("errors", out _).Should().BeFalse();
-        var routes = json.RootElement.GetProperty("data").GetProperty("routes").EnumerateArray().ToList();
+        var routes = json.RootElement.GetProperty("data").GetProperty("routes").GetProperty("nodes").EnumerateArray().ToList();
         routes.Should().Contain(r => r.GetProperty("name").GetString() == "Route List 001");
         routes.Should().Contain(r => r.GetProperty("name").GetString() == "Route List 002");
     }
@@ -275,12 +277,12 @@ public class RouteIntegrationTests : IAsyncLifetime
         // Arrange - Create a route
         var createMutation = $@"
             mutation {{
-                createRoute(
+                createRoute(input: {{
                     name: ""Get Route By ID"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(10):O}"",
                     totalDistanceKm: 60.0,
                     totalParcelCount: 30
-                ) {{ id }}
+                }}) {{ id }}
             }}";
         var createResponse = await ExecuteGraphQLAsync(createMutation);
         var createJson = await ReadJsonAsync(createResponse);
@@ -314,12 +316,12 @@ public class RouteIntegrationTests : IAsyncLifetime
         // Arrange - Create a route
         var createMutation = $@"
             mutation {{
-                createRoute(
+                createRoute(input: {{
                     name: ""Update Route Test"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(11):O}"",
                     totalDistanceKm: 25.0,
                     totalParcelCount: 10
-                ) {{ id }}
+                }}) {{ id }}
             }}";
         var createResponse = await ExecuteGraphQLAsync(createMutation);
         var createJson = await ReadJsonAsync(createResponse);
@@ -328,13 +330,13 @@ public class RouteIntegrationTests : IAsyncLifetime
         // Act - Update the route
         var updateMutation = $@"
             mutation {{
-                updateRoute(
+                updateRoute(input: {{
                     id: ""{routeId}"",
                     name: ""Updated Route Name"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(12):O}"",
                     totalDistanceKm: 75.0,
                     totalParcelCount: 35
-                ) {{
+                }}) {{
                     id
                     name
                     totalDistanceKm
@@ -359,12 +361,12 @@ public class RouteIntegrationTests : IAsyncLifetime
         // Arrange - Create a route without vehicle
         var createMutation = $@"
             mutation {{
-                createRoute(
+                createRoute(input: {{
                     name: ""Update Route Vehicle"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(13):O}"",
                     totalDistanceKm: 45.0,
                     totalParcelCount: 20
-                ) {{ id }}
+                }}) {{ id }}
             }}";
         var createResponse = await ExecuteGraphQLAsync(createMutation);
         var createJson = await ReadJsonAsync(createResponse);
@@ -373,14 +375,14 @@ public class RouteIntegrationTests : IAsyncLifetime
         // Act - Assign vehicle to route
         var updateMutation = $@"
             mutation {{
-                updateRoute(
+                updateRoute(input: {{
                     id: ""{routeId}"",
                     name: ""Update Route Vehicle"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(13):O}"",
                     totalDistanceKm: 45.0,
                     totalParcelCount: 20,
                     vehicleId: ""{_vehicleId}""
-                ) {{
+                }}) {{
                     id
                     vehicleId
                     vehiclePlate
@@ -403,12 +405,12 @@ public class RouteIntegrationTests : IAsyncLifetime
         // Arrange - Create a route
         var createMutation = $@"
             mutation {{
-                createRoute(
+                createRoute(input: {{
                     name: ""Delete Route Test"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(14):O}"",
                     totalDistanceKm: 55.0,
                     totalParcelCount: 25
-                ) {{ id }}
+                }}) {{ id }}
             }}";
         var createResponse = await ExecuteGraphQLAsync(createMutation);
         var createJson = await ReadJsonAsync(createResponse);
@@ -450,13 +452,13 @@ public class RouteIntegrationTests : IAsyncLifetime
         // Arrange - Create a route with vehicle
         var createMutation = $@"
             mutation {{
-                createRoute(
+                createRoute(input: {{
                     name: ""Delete Route With Vehicle"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(15):O}"",
                     totalDistanceKm: 35.0,
                     totalParcelCount: 15,
                     vehicleId: ""{_vehicleId}""
-                ) {{ id }}
+                }}) {{ id }}
             }}";
         var createResponse = await ExecuteGraphQLAsync(createMutation);
         var createJson = await ReadJsonAsync(createResponse);
@@ -482,12 +484,12 @@ public class RouteIntegrationTests : IAsyncLifetime
         // Arrange - Create a route
         var createMutation = $@"
             mutation {{
-                createRoute(
+                createRoute(input: {{
                     name: ""Status Change Test"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(12):O}"",
                     totalDistanceKm: 40.0,
                     totalParcelCount: 20
-                ) {{ id }}
+                }}) {{ id }}
             }}";
         var createResponse = await ExecuteGraphQLAsync(createMutation);
         var createJson = await ReadJsonAsync(createResponse);
@@ -519,13 +521,13 @@ public class RouteIntegrationTests : IAsyncLifetime
         // Arrange - Create a route with vehicle
         var createMutation = $@"
             mutation {{
-                createRoute(
+                createRoute(input: {{
                     name: ""Complete With Vehicle"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(13):O}"",
                     totalDistanceKm: 50.0,
                     totalParcelCount: 25,
                     vehicleId: ""{_vehicleId}""
-                ) {{ id }}
+                }}) {{ id }}
             }}";
         var createResponse = await ExecuteGraphQLAsync(createMutation);
         var createJson = await ReadJsonAsync(createResponse);
@@ -570,13 +572,13 @@ public class RouteIntegrationTests : IAsyncLifetime
         // Arrange - Create a route with vehicle
         var createMutation = $@"
             mutation {{
-                createRoute(
+                createRoute(input: {{
                     name: ""History Test Route"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(17):O}"",
                     totalDistanceKm: 60.0,
                     totalParcelCount: 30,
                     vehicleId: ""{_vehicleId}""
-                ) {{ id }}
+                }}) {{ id }}
             }}";
         var createResponse = await ExecuteGraphQLAsync(createMutation);
         var createJson = await ReadJsonAsync(createResponse);
@@ -656,13 +658,13 @@ public class RouteIntegrationTests : IAsyncLifetime
         // Act - Try to create a route with the retired vehicle
         var createRouteMutation = $@"
             mutation {{
-                createRoute(
+                createRoute(input: {{
                     name: ""Route With Retired Vehicle"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(27):O}"",
                     totalDistanceKm: 30.0,
                     totalParcelCount: 15,
                     vehicleId: ""{vehicleId}""
-                ) {{ id }}
+                }}) {{ id }}
             }}";
         var routeResponse = await ExecuteGraphQLAsync(createRouteMutation);
 
@@ -681,13 +683,13 @@ public class RouteIntegrationTests : IAsyncLifetime
         var plannedDate = DateTime.UtcNow.AddDays(7);
         var mutation = $@"
             mutation {{
-                createRoute(
+                createRoute(input: {{
                     name: ""Route With Driver"",
                     plannedStartTime: ""{plannedDate:O}"",
                     totalDistanceKm: 50.0,
                     totalParcelCount: 25,
                     driverId: ""{_driverId}""
-                ) {{
+                }}) {{
                     id
                     name
                     driverId
@@ -713,12 +715,12 @@ public class RouteIntegrationTests : IAsyncLifetime
         // Arrange - Create a route without driver
         var createMutation = $@"
             mutation {{
-                createRoute(
+                createRoute(input: {{
                     name: ""Assign Driver Test"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(8):O}"",
                     totalDistanceKm: 40.0,
                     totalParcelCount: 20
-                ) {{ id }}
+                }}) {{ id }}
             }}";
         var createResponse = await ExecuteGraphQLAsync(createMutation);
         var createJson = await ReadJsonAsync(createResponse);
@@ -753,13 +755,13 @@ public class RouteIntegrationTests : IAsyncLifetime
         // Arrange - Create route with first driver
         var createMutation = $@"
             mutation {{
-                createRoute(
+                createRoute(input: {{
                     name: ""Reassign Driver Test"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(9):O}"",
                     totalDistanceKm: 30.0,
                     totalParcelCount: 15,
                     driverId: ""{_driverId}""
-                ) {{ id }}
+                }}) {{ id }}
             }}";
         var createResponse = await ExecuteGraphQLAsync(createMutation);
         var createJson = await ReadJsonAsync(createResponse);
@@ -810,13 +812,13 @@ public class RouteIntegrationTests : IAsyncLifetime
         // Arrange - Create route with driver
         var createMutation = $@"
             mutation {{
-                createRoute(
+                createRoute(input: {{
                     name: ""Unassign Driver Test"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(10):O}"",
                     totalDistanceKm: 25.0,
                     totalParcelCount: 10,
                     driverId: ""{_driverId}""
-                ) {{ id }}
+                }}) {{ id }}
             }}";
         var createResponse = await ExecuteGraphQLAsync(createMutation);
         var createJson = await ReadJsonAsync(createResponse);
@@ -849,12 +851,12 @@ public class RouteIntegrationTests : IAsyncLifetime
         // Arrange - Create route, start and complete it
         var createMutation = $@"
             mutation {{
-                createRoute(
+                createRoute(input: {{
                     name: ""Completed Route Driver"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(11):O}"",
                     totalDistanceKm: 35.0,
                     totalParcelCount: 15
-                ) {{ id }}
+                }}) {{ id }}
             }}";
         var createResponse = await ExecuteGraphQLAsync(createMutation);
         var createJson = await ReadJsonAsync(createResponse);

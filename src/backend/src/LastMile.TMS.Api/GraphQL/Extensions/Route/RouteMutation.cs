@@ -11,37 +11,12 @@ namespace LastMile.TMS.Api.GraphQL.Extensions.Route;
 public class RouteMutation
 {
     [Authorize(Roles = [Role.RoleNames.Admin, Role.RoleNames.OperationsManager, Role.RoleNames.Dispatcher])]
-    public async Task<RouteDto> CreateRoute(
-        [Service] IMediator mediator,
-        string name,
-        DateTime plannedStartTime,
-        decimal totalDistanceKm,
-        int totalParcelCount,
-        Guid? vehicleId = null,
-        Guid? driverId = null,
-        CancellationToken cancellationToken = default)
-    {
-        return await mediator.Send(
-            new CreateRouteCommand(name, plannedStartTime, totalDistanceKm, totalParcelCount, vehicleId, driverId),
-            cancellationToken);
-    }
+    public async Task<RouteDto> CreateRoute(CreateRouteCommand input, [Service] IMediator mediator)
+        => await mediator.Send(input);
 
     [Authorize(Roles = [Role.RoleNames.Admin, Role.RoleNames.OperationsManager, Role.RoleNames.Dispatcher])]
-    public async Task<RouteDto> UpdateRoute(
-        [Service] IMediator mediator,
-        Guid id,
-        string name,
-        DateTime plannedStartTime,
-        decimal totalDistanceKm,
-        int totalParcelCount,
-        Guid? vehicleId = null,
-        Guid? driverId = null,
-        CancellationToken cancellationToken = default)
-    {
-        return await mediator.Send(
-            new UpdateRouteCommand(id, name, plannedStartTime, totalDistanceKm, totalParcelCount, vehicleId, driverId),
-            cancellationToken);
-    }
+    public async Task<RouteDto> UpdateRoute(UpdateRouteCommand input, [Service] IMediator mediator)
+        => await mediator.Send(input);
 
     [Authorize(Roles = [Role.RoleNames.Admin, Role.RoleNames.OperationsManager, Role.RoleNames.Dispatcher])]
     public async Task<bool> DeleteRoute(

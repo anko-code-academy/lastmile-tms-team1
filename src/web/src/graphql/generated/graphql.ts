@@ -129,6 +129,14 @@ export enum ApplyPolicy {
   Validation = 'VALIDATION'
 }
 
+export type AvailableDriverDto = {
+  __typename?: 'AvailableDriverDto';
+  assignedRoutes: Array<DriverRouteSummaryDto>;
+  id: Scalars['UUID']['output'];
+  name: Scalars['String']['output'];
+  shift?: Maybe<ShiftInfoDto>;
+};
+
 export type BooleanOperationFilterInput = {
   eq?: InputMaybe<Scalars['Boolean']['input']>;
   neq?: InputMaybe<Scalars['Boolean']['input']>;
@@ -230,6 +238,15 @@ export type CreateParcelCommandInput = {
   weight: Scalars['Decimal']['input'];
   weightUnit: Scalars['String']['input'];
   width: Scalars['Decimal']['input'];
+};
+
+export type CreateRouteCommandInput = {
+  driverId?: InputMaybe<Scalars['UUID']['input']>;
+  name: Scalars['String']['input'];
+  plannedStartTime: Scalars['DateTime']['input'];
+  totalDistanceKm: Scalars['Decimal']['input'];
+  totalParcelCount: Scalars['Int']['input'];
+  vehicleId?: InputMaybe<Scalars['UUID']['input']>;
 };
 
 export type CreateZoneCommandInput = {
@@ -537,6 +554,7 @@ export type Driver = {
   licenseExpiryDate: Scalars['DateTime']['output'];
   licenseNumber: Scalars['String']['output'];
   photo?: Maybe<Scalars['String']['output']>;
+  routes: Array<Route>;
   shiftSchedules: Array<ShiftSchedule>;
   user: User;
   userId: Scalars['UUID']['output'];
@@ -557,6 +575,7 @@ export type DriverFilterInput = {
   licenseNumber?: InputMaybe<StringOperationFilterInput>;
   or?: InputMaybe<Array<DriverFilterInput>>;
   photo?: InputMaybe<StringOperationFilterInput>;
+  routes?: InputMaybe<ListFilterInputTypeOfRouteFilterInput>;
   shiftSchedules?: InputMaybe<ListFilterInputTypeOfShiftScheduleFilterInput>;
   user?: InputMaybe<UserFilterInput>;
   userId?: InputMaybe<UuidOperationFilterInput>;
@@ -572,6 +591,13 @@ export type DriverResult = {
   photo?: Maybe<Scalars['String']['output']>;
   shiftSchedules?: Maybe<Array<ShiftScheduleResult>>;
   userId: Scalars['UUID']['output'];
+};
+
+export type DriverRouteSummaryDto = {
+  __typename?: 'DriverRouteSummaryDto';
+  id: Scalars['UUID']['output'];
+  name: Scalars['String']['output'];
+  status: RouteStatus;
 };
 
 export type DriverSortInput = {
@@ -987,6 +1013,13 @@ export type ListFilterInputTypeOfRolePermissionFilterInput = {
   some?: InputMaybe<RolePermissionFilterInput>;
 };
 
+export type ListFilterInputTypeOfRouteFilterInput = {
+  all?: InputMaybe<RouteFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<RouteFilterInput>;
+  some?: InputMaybe<RouteFilterInput>;
+};
+
 export type ListFilterInputTypeOfShiftScheduleFilterInput = {
   all?: InputMaybe<ShiftScheduleFilterInput>;
   any?: InputMaybe<Scalars['Boolean']['input']>;
@@ -1040,6 +1073,7 @@ export type LocalTimeOperationFilterInput = {
 export type Mutation = {
   __typename?: 'Mutation';
   activateUser: UserDto;
+  assignDriverToRoute: RouteDto;
   changeRouteStatus: RouteDto;
   changeVehicleStatus: VehicleDto;
   completePasswordReset: Scalars['Boolean']['output'];
@@ -1069,6 +1103,12 @@ export type Mutation = {
 
 export type MutationActivateUserArgs = {
   userId: Scalars['UUID']['input'];
+};
+
+
+export type MutationAssignDriverToRouteArgs = {
+  driverId?: InputMaybe<Scalars['UUID']['input']>;
+  routeId: Scalars['UUID']['input'];
 };
 
 
@@ -1107,11 +1147,7 @@ export type MutationCreateParcelArgs = {
 
 
 export type MutationCreateRouteArgs = {
-  name: Scalars['String']['input'];
-  plannedStartTime: Scalars['DateTime']['input'];
-  totalDistanceKm: Scalars['Decimal']['input'];
-  totalParcelCount: Scalars['Int']['input'];
-  vehicleId?: InputMaybe<Scalars['UUID']['input']>;
+  input: CreateRouteCommandInput;
 };
 
 
@@ -1187,12 +1223,7 @@ export type MutationUpdateDriverArgs = {
 
 
 export type MutationUpdateRouteArgs = {
-  id: Scalars['UUID']['input'];
-  name: Scalars['String']['input'];
-  plannedStartTime: Scalars['DateTime']['input'];
-  totalDistanceKm: Scalars['Decimal']['input'];
-  totalParcelCount: Scalars['Int']['input'];
-  vehicleId?: InputMaybe<Scalars['UUID']['input']>;
+  input: UpdateRouteCommandInput;
 };
 
 
@@ -1779,6 +1810,7 @@ export type PrecisionModelsOperationFilterInput = {
 
 export type Query = {
   __typename?: 'Query';
+  availableDrivers: Array<AvailableDriverDto>;
   depot?: Maybe<Depot>;
   depots?: Maybe<DepotsConnection>;
   driver?: Maybe<Driver>;
@@ -1787,7 +1819,7 @@ export type Query = {
   parcelByTrackingNumber?: Maybe<Parcel>;
   parcels?: Maybe<ParcelsConnection>;
   route?: Maybe<Route>;
-  routes: Array<Route>;
+  routes?: Maybe<RoutesConnection>;
   sentinel?: Maybe<Scalars['String']['output']>;
   user?: Maybe<User>;
   userManagementLookups: UserManagementLookupsDto;
@@ -1797,6 +1829,11 @@ export type Query = {
   vehicles: Array<Vehicle>;
   zone?: Maybe<Zone>;
   zones?: Maybe<ZonesConnection>;
+};
+
+
+export type QueryAvailableDriversArgs = {
+  date: Scalars['DateTime']['input'];
 };
 
 
@@ -1858,6 +1895,10 @@ export type QueryRouteArgs = {
 
 
 export type QueryRoutesArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  before?: InputMaybe<Scalars['String']['input']>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
   order?: InputMaybe<Array<RouteSortInput>>;
   where?: InputMaybe<RouteFilterInput>;
 };
@@ -1995,6 +2036,8 @@ export type Route = {
   createdBy?: Maybe<Scalars['String']['output']>;
   deletedAt?: Maybe<Scalars['DateTime']['output']>;
   deletedBy?: Maybe<Scalars['String']['output']>;
+  driver?: Maybe<Driver>;
+  driverId?: Maybe<Scalars['UUID']['output']>;
   id: Scalars['UUID']['output'];
   isDeleted: Scalars['Boolean']['output'];
   lastModifiedAt?: Maybe<Scalars['DateTime']['output']>;
@@ -2019,6 +2062,8 @@ export type RouteDto = {
   actualEndTime?: Maybe<Scalars['DateTime']['output']>;
   actualStartTime?: Maybe<Scalars['DateTime']['output']>;
   createdAt: Scalars['DateTime']['output'];
+  driverId?: Maybe<Scalars['UUID']['output']>;
+  driverName?: Maybe<Scalars['String']['output']>;
   id: Scalars['UUID']['output'];
   name: Scalars['String']['output'];
   plannedStartTime: Scalars['DateTime']['output'];
@@ -2037,6 +2082,8 @@ export type RouteFilterInput = {
   createdBy?: InputMaybe<StringOperationFilterInput>;
   deletedAt?: InputMaybe<DateTimeOperationFilterInput>;
   deletedBy?: InputMaybe<StringOperationFilterInput>;
+  driver?: InputMaybe<DriverFilterInput>;
+  driverId?: InputMaybe<UuidOperationFilterInput>;
   id?: InputMaybe<UuidOperationFilterInput>;
   isDeleted?: InputMaybe<BooleanOperationFilterInput>;
   lastModifiedAt?: InputMaybe<DateTimeOperationFilterInput>;
@@ -2068,6 +2115,8 @@ export type RouteSortInput = {
   createdBy?: InputMaybe<SortEnumType>;
   deletedAt?: InputMaybe<SortEnumType>;
   deletedBy?: InputMaybe<SortEnumType>;
+  driver?: InputMaybe<DriverSortInput>;
+  driverId?: InputMaybe<SortEnumType>;
   id?: InputMaybe<SortEnumType>;
   isDeleted?: InputMaybe<SortEnumType>;
   lastModifiedAt?: InputMaybe<SortEnumType>;
@@ -2094,6 +2143,28 @@ export type RouteStatusOperationFilterInput = {
   nin?: InputMaybe<Array<RouteStatus>>;
 };
 
+/** A connection to a list of items. */
+export type RoutesConnection = {
+  __typename?: 'RoutesConnection';
+  /** A list of edges. */
+  edges?: Maybe<Array<RoutesEdge>>;
+  /** A flattened list of the nodes. */
+  nodes?: Maybe<Array<Route>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** Identifies the total count of items in the connection. */
+  totalCount: Scalars['Int']['output'];
+};
+
+/** An edge in a connection. */
+export type RoutesEdge = {
+  __typename?: 'RoutesEdge';
+  /** A cursor for use in pagination. */
+  cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  node: Route;
+};
+
 export enum ServiceType {
   Economy = 'ECONOMY',
   Express = 'EXPRESS',
@@ -2106,6 +2177,12 @@ export type ServiceTypeOperationFilterInput = {
   in?: InputMaybe<Array<ServiceType>>;
   neq?: InputMaybe<ServiceType>;
   nin?: InputMaybe<Array<ServiceType>>;
+};
+
+export type ShiftInfoDto = {
+  __typename?: 'ShiftInfoDto';
+  closeTime: Scalars['LocalTime']['output'];
+  openTime: Scalars['LocalTime']['output'];
 };
 
 export type ShiftSchedule = {
@@ -2254,6 +2331,16 @@ export type UpdateDriverCommandInput = {
   licenseNumber: Scalars['String']['input'];
   photo?: InputMaybe<Scalars['String']['input']>;
   shiftSchedules?: InputMaybe<Array<InputMaybe<ShiftScheduleInput>>>;
+};
+
+export type UpdateRouteCommandInput = {
+  driverId?: InputMaybe<Scalars['UUID']['input']>;
+  id: Scalars['UUID']['input'];
+  name: Scalars['String']['input'];
+  plannedStartTime: Scalars['DateTime']['input'];
+  totalDistanceKm: Scalars['Decimal']['input'];
+  totalParcelCount: Scalars['Int']['input'];
+  vehicleId?: InputMaybe<Scalars['UUID']['input']>;
 };
 
 export type UpdateZoneCommandInput = {
@@ -2777,40 +2864,41 @@ export type DeleteDriverMutation = { __typename?: 'Mutation', deleteDriver: bool
 
 export type GetRoutesQueryVariables = Exact<{
   where?: InputMaybe<RouteFilterInput>;
+  order?: InputMaybe<Array<RouteSortInput> | RouteSortInput>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  after?: InputMaybe<Scalars['String']['input']>;
 }>;
 
 
-export type GetRoutesQuery = { __typename?: 'Query', routes: Array<{ __typename?: 'Route', id: any, name: string, status: RouteStatus, plannedStartTime: any, vehicleId?: any | null, vehicle?: { __typename?: 'Vehicle', registrationPlate: string } | null }> };
+export type GetRoutesQuery = { __typename?: 'Query', routes?: { __typename?: 'RoutesConnection', totalCount: number, nodes?: Array<{ __typename?: 'Route', id: any, name: string, status: RouteStatus, plannedStartTime: any, vehicleId?: any | null, driverId?: any | null, vehicle?: { __typename?: 'Vehicle', registrationPlate: string } | null, driver?: { __typename?: 'Driver', user: { __typename?: 'User', firstName: string, lastName: string } } | null }> | null, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, hasPreviousPage: boolean, startCursor?: string | null, endCursor?: string | null } } | null };
 
 export type GetRouteQueryVariables = Exact<{
   id: Scalars['UUID']['input'];
 }>;
 
 
-export type GetRouteQuery = { __typename?: 'Query', route?: { __typename?: 'Route', id: any, name: string, status: RouteStatus, plannedStartTime: any, actualStartTime?: any | null, actualEndTime?: any | null, totalDistanceKm: any, totalParcelCount: number, vehicleId?: any | null, createdAt: any, vehicle?: { __typename?: 'Vehicle', registrationPlate: string } | null } | null };
+export type GetRouteQuery = { __typename?: 'Query', route?: { __typename?: 'Route', id: any, name: string, status: RouteStatus, plannedStartTime: any, actualStartTime?: any | null, actualEndTime?: any | null, totalDistanceKm: any, totalParcelCount: number, vehicleId?: any | null, driverId?: any | null, createdAt: any, vehicle?: { __typename?: 'Vehicle', registrationPlate: string } | null, driver?: { __typename?: 'Driver', user: { __typename?: 'User', firstName: string, lastName: string } } | null } | null };
+
+export type GetAvailableDriversQueryVariables = Exact<{
+  date: Scalars['DateTime']['input'];
+}>;
+
+
+export type GetAvailableDriversQuery = { __typename?: 'Query', availableDrivers: Array<{ __typename?: 'AvailableDriverDto', id: any, name: string, shift?: { __typename?: 'ShiftInfoDto', openTime: any, closeTime: any } | null, assignedRoutes: Array<{ __typename?: 'DriverRouteSummaryDto', id: any, name: string, status: RouteStatus }> }> };
 
 export type CreateRouteMutationVariables = Exact<{
-  name: Scalars['String']['input'];
-  plannedStartTime: Scalars['DateTime']['input'];
-  totalDistanceKm: Scalars['Decimal']['input'];
-  totalParcelCount: Scalars['Int']['input'];
-  vehicleId?: InputMaybe<Scalars['UUID']['input']>;
+  input: CreateRouteCommandInput;
 }>;
 
 
-export type CreateRouteMutation = { __typename?: 'Mutation', createRoute: { __typename?: 'RouteDto', id: any, name: string, status: RouteStatus, plannedStartTime: any, totalDistanceKm: any, totalParcelCount: number, vehicleId?: any | null, vehiclePlate?: string | null, createdAt: any } };
+export type CreateRouteMutation = { __typename?: 'Mutation', createRoute: { __typename?: 'RouteDto', id: any, name: string, status: RouteStatus, plannedStartTime: any, totalDistanceKm: any, totalParcelCount: number, vehicleId?: any | null, vehiclePlate?: string | null, driverId?: any | null, driverName?: string | null, createdAt: any } };
 
 export type UpdateRouteMutationVariables = Exact<{
-  id: Scalars['UUID']['input'];
-  name: Scalars['String']['input'];
-  plannedStartTime: Scalars['DateTime']['input'];
-  totalDistanceKm: Scalars['Decimal']['input'];
-  totalParcelCount: Scalars['Int']['input'];
-  vehicleId?: InputMaybe<Scalars['UUID']['input']>;
+  input: UpdateRouteCommandInput;
 }>;
 
 
-export type UpdateRouteMutation = { __typename?: 'Mutation', updateRoute: { __typename?: 'RouteDto', id: any, name: string, status: RouteStatus, plannedStartTime: any, totalDistanceKm: any, totalParcelCount: number, vehicleId?: any | null, vehiclePlate?: string | null, createdAt: any } };
+export type UpdateRouteMutation = { __typename?: 'Mutation', updateRoute: { __typename?: 'RouteDto', id: any, name: string, status: RouteStatus, plannedStartTime: any, totalDistanceKm: any, totalParcelCount: number, vehicleId?: any | null, vehiclePlate?: string | null, driverId?: any | null, driverName?: string | null, createdAt: any } };
 
 export type DeleteRouteMutationVariables = Exact<{
   id: Scalars['UUID']['input'];
@@ -2825,7 +2913,15 @@ export type ChangeRouteStatusMutationVariables = Exact<{
 }>;
 
 
-export type ChangeRouteStatusMutation = { __typename?: 'Mutation', changeRouteStatus: { __typename?: 'RouteDto', id: any, name: string, status: RouteStatus, plannedStartTime: any, actualStartTime?: any | null, actualEndTime?: any | null, totalDistanceKm: any, totalParcelCount: number, vehicleId?: any | null, vehiclePlate?: string | null, createdAt: any } };
+export type ChangeRouteStatusMutation = { __typename?: 'Mutation', changeRouteStatus: { __typename?: 'RouteDto', id: any, name: string, status: RouteStatus, plannedStartTime: any, actualStartTime?: any | null, actualEndTime?: any | null, totalDistanceKm: any, totalParcelCount: number, vehicleId?: any | null, vehiclePlate?: string | null, driverId?: any | null, driverName?: string | null, createdAt: any } };
+
+export type AssignDriverToRouteMutationVariables = Exact<{
+  routeId: Scalars['UUID']['input'];
+  driverId?: InputMaybe<Scalars['UUID']['input']>;
+}>;
+
+
+export type AssignDriverToRouteMutation = { __typename?: 'Mutation', assignDriverToRoute: { __typename?: 'RouteDto', id: any, name: string, status: RouteStatus, driverId?: any | null, driverName?: string | null, vehicleId?: any | null, vehiclePlate?: string | null } };
 
 export type GetUsersQueryVariables = Exact<{
   first?: InputMaybe<Scalars['Int']['input']>;
@@ -3001,12 +3097,14 @@ export const GetDriverDocument = {"kind":"Document","definitions":[{"kind":"Oper
 export const CreateDriverDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateDriver"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateDriverCommandInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createDriver"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"licenseNumber"}},{"kind":"Field","name":{"kind":"Name","value":"licenseExpiryDate"}},{"kind":"Field","name":{"kind":"Name","value":"photo"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<CreateDriverMutation, CreateDriverMutationVariables>;
 export const UpdateDriverDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateDriver"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateDriverCommandInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateDriver"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"licenseNumber"}},{"kind":"Field","name":{"kind":"Name","value":"licenseExpiryDate"}},{"kind":"Field","name":{"kind":"Name","value":"photo"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<UpdateDriverMutation, UpdateDriverMutationVariables>;
 export const DeleteDriverDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteDriver"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UUID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteDriver"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteDriverMutation, DeleteDriverMutationVariables>;
-export const GetRoutesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetRoutes"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"where"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"RouteFilterInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"routes"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"Variable","name":{"kind":"Name","value":"where"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"plannedStartTime"}},{"kind":"Field","name":{"kind":"Name","value":"vehicleId"}},{"kind":"Field","name":{"kind":"Name","value":"vehicle"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"registrationPlate"}}]}}]}}]}}]} as unknown as DocumentNode<GetRoutesQuery, GetRoutesQueryVariables>;
-export const GetRouteDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetRoute"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UUID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"route"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"plannedStartTime"}},{"kind":"Field","name":{"kind":"Name","value":"actualStartTime"}},{"kind":"Field","name":{"kind":"Name","value":"actualEndTime"}},{"kind":"Field","name":{"kind":"Name","value":"totalDistanceKm"}},{"kind":"Field","name":{"kind":"Name","value":"totalParcelCount"}},{"kind":"Field","name":{"kind":"Name","value":"vehicleId"}},{"kind":"Field","name":{"kind":"Name","value":"vehicle"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"registrationPlate"}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<GetRouteQuery, GetRouteQueryVariables>;
-export const CreateRouteDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateRoute"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"plannedStartTime"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"DateTime"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"totalDistanceKm"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Decimal"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"totalParcelCount"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"vehicleId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"UUID"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createRoute"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}},{"kind":"Argument","name":{"kind":"Name","value":"plannedStartTime"},"value":{"kind":"Variable","name":{"kind":"Name","value":"plannedStartTime"}}},{"kind":"Argument","name":{"kind":"Name","value":"totalDistanceKm"},"value":{"kind":"Variable","name":{"kind":"Name","value":"totalDistanceKm"}}},{"kind":"Argument","name":{"kind":"Name","value":"totalParcelCount"},"value":{"kind":"Variable","name":{"kind":"Name","value":"totalParcelCount"}}},{"kind":"Argument","name":{"kind":"Name","value":"vehicleId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"vehicleId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"plannedStartTime"}},{"kind":"Field","name":{"kind":"Name","value":"totalDistanceKm"}},{"kind":"Field","name":{"kind":"Name","value":"totalParcelCount"}},{"kind":"Field","name":{"kind":"Name","value":"vehicleId"}},{"kind":"Field","name":{"kind":"Name","value":"vehiclePlate"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<CreateRouteMutation, CreateRouteMutationVariables>;
-export const UpdateRouteDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateRoute"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UUID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"plannedStartTime"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"DateTime"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"totalDistanceKm"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Decimal"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"totalParcelCount"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"vehicleId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"UUID"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateRoute"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}},{"kind":"Argument","name":{"kind":"Name","value":"plannedStartTime"},"value":{"kind":"Variable","name":{"kind":"Name","value":"plannedStartTime"}}},{"kind":"Argument","name":{"kind":"Name","value":"totalDistanceKm"},"value":{"kind":"Variable","name":{"kind":"Name","value":"totalDistanceKm"}}},{"kind":"Argument","name":{"kind":"Name","value":"totalParcelCount"},"value":{"kind":"Variable","name":{"kind":"Name","value":"totalParcelCount"}}},{"kind":"Argument","name":{"kind":"Name","value":"vehicleId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"vehicleId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"plannedStartTime"}},{"kind":"Field","name":{"kind":"Name","value":"totalDistanceKm"}},{"kind":"Field","name":{"kind":"Name","value":"totalParcelCount"}},{"kind":"Field","name":{"kind":"Name","value":"vehicleId"}},{"kind":"Field","name":{"kind":"Name","value":"vehiclePlate"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<UpdateRouteMutation, UpdateRouteMutationVariables>;
+export const GetRoutesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetRoutes"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"where"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"RouteFilterInput"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"order"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RouteSortInput"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"after"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"routes"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"Variable","name":{"kind":"Name","value":"where"}}},{"kind":"Argument","name":{"kind":"Name","value":"order"},"value":{"kind":"Variable","name":{"kind":"Name","value":"order"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}},{"kind":"Argument","name":{"kind":"Name","value":"after"},"value":{"kind":"Variable","name":{"kind":"Name","value":"after"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"nodes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"plannedStartTime"}},{"kind":"Field","name":{"kind":"Name","value":"vehicleId"}},{"kind":"Field","name":{"kind":"Name","value":"vehicle"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"registrationPlate"}}]}},{"kind":"Field","name":{"kind":"Name","value":"driverId"}},{"kind":"Field","name":{"kind":"Name","value":"driver"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"pageInfo"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"hasNextPage"}},{"kind":"Field","name":{"kind":"Name","value":"hasPreviousPage"}},{"kind":"Field","name":{"kind":"Name","value":"startCursor"}},{"kind":"Field","name":{"kind":"Name","value":"endCursor"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}}]}}]} as unknown as DocumentNode<GetRoutesQuery, GetRoutesQueryVariables>;
+export const GetRouteDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetRoute"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UUID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"route"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"plannedStartTime"}},{"kind":"Field","name":{"kind":"Name","value":"actualStartTime"}},{"kind":"Field","name":{"kind":"Name","value":"actualEndTime"}},{"kind":"Field","name":{"kind":"Name","value":"totalDistanceKm"}},{"kind":"Field","name":{"kind":"Name","value":"totalParcelCount"}},{"kind":"Field","name":{"kind":"Name","value":"vehicleId"}},{"kind":"Field","name":{"kind":"Name","value":"vehicle"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"registrationPlate"}}]}},{"kind":"Field","name":{"kind":"Name","value":"driverId"}},{"kind":"Field","name":{"kind":"Name","value":"driver"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<GetRouteQuery, GetRouteQueryVariables>;
+export const GetAvailableDriversDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAvailableDrivers"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"date"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"DateTime"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"availableDrivers"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"date"},"value":{"kind":"Variable","name":{"kind":"Name","value":"date"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"shift"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"openTime"}},{"kind":"Field","name":{"kind":"Name","value":"closeTime"}}]}},{"kind":"Field","name":{"kind":"Name","value":"assignedRoutes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]}}]} as unknown as DocumentNode<GetAvailableDriversQuery, GetAvailableDriversQueryVariables>;
+export const CreateRouteDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateRoute"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateRouteCommandInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createRoute"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"plannedStartTime"}},{"kind":"Field","name":{"kind":"Name","value":"totalDistanceKm"}},{"kind":"Field","name":{"kind":"Name","value":"totalParcelCount"}},{"kind":"Field","name":{"kind":"Name","value":"vehicleId"}},{"kind":"Field","name":{"kind":"Name","value":"vehiclePlate"}},{"kind":"Field","name":{"kind":"Name","value":"driverId"}},{"kind":"Field","name":{"kind":"Name","value":"driverName"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<CreateRouteMutation, CreateRouteMutationVariables>;
+export const UpdateRouteDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateRoute"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateRouteCommandInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateRoute"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"plannedStartTime"}},{"kind":"Field","name":{"kind":"Name","value":"totalDistanceKm"}},{"kind":"Field","name":{"kind":"Name","value":"totalParcelCount"}},{"kind":"Field","name":{"kind":"Name","value":"vehicleId"}},{"kind":"Field","name":{"kind":"Name","value":"vehiclePlate"}},{"kind":"Field","name":{"kind":"Name","value":"driverId"}},{"kind":"Field","name":{"kind":"Name","value":"driverName"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<UpdateRouteMutation, UpdateRouteMutationVariables>;
 export const DeleteRouteDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteRoute"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UUID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteRoute"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteRouteMutation, DeleteRouteMutationVariables>;
-export const ChangeRouteStatusDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ChangeRouteStatus"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UUID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"newStatus"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RouteStatus"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"changeRouteStatus"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"newStatus"},"value":{"kind":"Variable","name":{"kind":"Name","value":"newStatus"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"plannedStartTime"}},{"kind":"Field","name":{"kind":"Name","value":"actualStartTime"}},{"kind":"Field","name":{"kind":"Name","value":"actualEndTime"}},{"kind":"Field","name":{"kind":"Name","value":"totalDistanceKm"}},{"kind":"Field","name":{"kind":"Name","value":"totalParcelCount"}},{"kind":"Field","name":{"kind":"Name","value":"vehicleId"}},{"kind":"Field","name":{"kind":"Name","value":"vehiclePlate"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<ChangeRouteStatusMutation, ChangeRouteStatusMutationVariables>;
+export const ChangeRouteStatusDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ChangeRouteStatus"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UUID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"newStatus"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RouteStatus"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"changeRouteStatus"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"newStatus"},"value":{"kind":"Variable","name":{"kind":"Name","value":"newStatus"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"plannedStartTime"}},{"kind":"Field","name":{"kind":"Name","value":"actualStartTime"}},{"kind":"Field","name":{"kind":"Name","value":"actualEndTime"}},{"kind":"Field","name":{"kind":"Name","value":"totalDistanceKm"}},{"kind":"Field","name":{"kind":"Name","value":"totalParcelCount"}},{"kind":"Field","name":{"kind":"Name","value":"vehicleId"}},{"kind":"Field","name":{"kind":"Name","value":"vehiclePlate"}},{"kind":"Field","name":{"kind":"Name","value":"driverId"}},{"kind":"Field","name":{"kind":"Name","value":"driverName"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<ChangeRouteStatusMutation, ChangeRouteStatusMutationVariables>;
+export const AssignDriverToRouteDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"AssignDriverToRoute"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"routeId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UUID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"driverId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"UUID"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"assignDriverToRoute"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"routeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"routeId"}}},{"kind":"Argument","name":{"kind":"Name","value":"driverId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"driverId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"driverId"}},{"kind":"Field","name":{"kind":"Name","value":"driverName"}},{"kind":"Field","name":{"kind":"Name","value":"vehicleId"}},{"kind":"Field","name":{"kind":"Name","value":"vehiclePlate"}}]}}]}}]} as unknown as DocumentNode<AssignDriverToRouteMutation, AssignDriverToRouteMutationVariables>;
 export const GetUsersDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetUsers"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"after"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"where"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"UserFilterInput"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"order"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UserSortInput"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"users"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}},{"kind":"Argument","name":{"kind":"Name","value":"after"},"value":{"kind":"Variable","name":{"kind":"Name","value":"after"}}},{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"Variable","name":{"kind":"Name","value":"where"}}},{"kind":"Argument","name":{"kind":"Name","value":"order"},"value":{"kind":"Variable","name":{"kind":"Name","value":"order"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"nodes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"phoneNumber"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"roleId"}},{"kind":"Field","name":{"kind":"Name","value":"role"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"zoneId"}},{"kind":"Field","name":{"kind":"Name","value":"zone"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"depotId"}},{"kind":"Field","name":{"kind":"Name","value":"depot"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}},{"kind":"Field","name":{"kind":"Name","value":"pageInfo"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"hasNextPage"}},{"kind":"Field","name":{"kind":"Name","value":"hasPreviousPage"}},{"kind":"Field","name":{"kind":"Name","value":"startCursor"}},{"kind":"Field","name":{"kind":"Name","value":"endCursor"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}}]}}]} as unknown as DocumentNode<GetUsersQuery, GetUsersQueryVariables>;
 export const GetUserDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetUser"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UUID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"phoneNumber"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"roleId"}},{"kind":"Field","name":{"kind":"Name","value":"role"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"zoneId"}},{"kind":"Field","name":{"kind":"Name","value":"zone"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"depotId"}},{"kind":"Field","name":{"kind":"Name","value":"depot"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<GetUserQuery, GetUserQueryVariables>;
 export const GetUserManagementLookupsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetUserManagementLookups"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"userManagementLookups"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"roles"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}},{"kind":"Field","name":{"kind":"Name","value":"depots"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"zones"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"depotId"}}]}}]}}]}}]} as unknown as DocumentNode<GetUserManagementLookupsQuery, GetUserManagementLookupsQueryVariables>;

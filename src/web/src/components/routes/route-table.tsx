@@ -28,17 +28,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { RouteSummary, RouteStatus } from "@/types/route";
+import { RouteStatus, type Route } from "@/graphql/generated/graphql";
 
-const columnHelper = createColumnHelper<RouteSummary>();
+const columnHelper = createColumnHelper<Route>();
 
 function getStatusBadgeVariant(status: RouteStatus) {
   switch (status) {
-    case RouteStatus.DRAFT:
+    case RouteStatus.Draft:
       return "default";
-    case RouteStatus.IN_PROGRESS:
+    case RouteStatus.InProgress:
       return "warning";
-    case RouteStatus.COMPLETED:
+    case RouteStatus.Completed:
       return "success";
     default:
       return "outline";
@@ -46,7 +46,7 @@ function getStatusBadgeVariant(status: RouteStatus) {
 }
 
 interface RouteTableProps {
-  data: RouteSummary[];
+  data: Route[];
   onDelete: (id: string) => void;
   isDeleting?: boolean;
 }

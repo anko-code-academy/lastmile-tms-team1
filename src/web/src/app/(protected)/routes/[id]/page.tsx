@@ -6,18 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRoute, useChangeRouteStatus } from "@/hooks/use-routes";
-import { RouteStatus } from "@/types/route";
+import { RouteStatus } from "@/graphql/generated/graphql";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
 function getStatusBadgeVariant(status: RouteStatus) {
   switch (status) {
-    case RouteStatus.DRAFT:
+    case RouteStatus.Draft:
       return "default";
-    case RouteStatus.IN_PROGRESS:
+    case RouteStatus.InProgress:
       return "warning";
-    case RouteStatus.COMPLETED:
+    case RouteStatus.Completed:
       return "success";
     default:
       return "outline";

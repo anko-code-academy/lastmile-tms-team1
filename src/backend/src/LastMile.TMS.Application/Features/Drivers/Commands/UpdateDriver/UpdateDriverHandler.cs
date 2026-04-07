@@ -120,6 +120,32 @@ public class UpdateDriverHandler(IAppDbContext dbContext) : IRequestHandler<Upda
 
         if (request.DaysOff != null)
         {
+            // Validate: check if adding a day off that has assigned routes
+            var datesBeingAdded = request.DaysOff
+                .Where(d => !existingDaysOff.Any(e => e.Date.Date == d.Date.Date))
+                .Select(d => DateOnly.FromDateTime(d.Date.DateTime))
+                .ToList();
+
+            if (datesBeingAdded.Count != 0)
+            {
+                var conflictingRoutes = await dbContext.Routes
+                    .Where(r => r.DriverId == driver.Id
+                        && !r.IsDeleted
+                        && (r.Status == RouteStatus.Draft || r.Status == RouteStatus.InProgress)
+                        && datesBeingAdded.Contains(DateOnly.FromDateTime(r.PlannedStartTime)))
+                    .Select(r => new { r.Name, Date = r.PlannedStartTime })
+                    .ToListAsync(cancellationToken);
+
+                if (conflictingRoutes.Count != 0)
+                {
+                    var grouped = conflictingRoutes
+                        .GroupBy(r => r.Date)
+                        .Select(g => $"{g.Key:yyyy-MM-dd}: {string.Join(", ", g.Select(r => r.Name))}");
+                    throw new InvalidOperationException(
+                        $"Cannot add day off for date(s) with assigned route(s). Unassign the following route(s) first: {string.Join("; ", grouped)}");
+                }
+            }
+
             var requestedDates = request.DaysOff
                 .Select(d => d.Date.Date)
                 .ToHashSet();

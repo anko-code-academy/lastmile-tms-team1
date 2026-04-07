@@ -4,15 +4,19 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { routeKeys, vehicleKeys, driverKeys } from "@/lib/query-key-factory";
 import * as routesService from "@/services/routes.service";
-import type { RouteStatus } from "@/types/route";
+import {
+  RouteStatus,
+  type CreateRouteCommandInput,
+  type UpdateRouteCommandInput,
+} from "@/graphql/generated/graphql";
 import { toast } from "sonner";
 
-export function useRoutes(status?: RouteStatus) {
+export function useRoutes(filters?: routesService.FetchRoutesFilters) {
   const { data: session } = useSession();
 
   return useQuery({
-    queryKey: routeKeys.list(status ? { where: { status } } : undefined),
-    queryFn: () => routesService.fetchRoutes(session!.user.accessToken, status),
+    queryKey: routeKeys.list(filters),
+    queryFn: () => routesService.fetchRoutes(session!.user.accessToken, filters),
     enabled: !!session?.user?.accessToken,
   });
 }
@@ -42,14 +46,8 @@ export function useCreateRoute() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: {
-      name: string;
-      plannedStartTime: string;
-      totalDistanceKm: number;
-      totalParcelCount: number;
-      vehicleId?: string | null;
-      driverId?: string | null;
-    }) => routesService.createRoute(session!.user.accessToken, input),
+    mutationFn: (input: CreateRouteCommandInput) =>
+      routesService.createRoute(session!.user.accessToken, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: routeKeys.all });
       queryClient.invalidateQueries({ queryKey: vehicleKeys.all });
@@ -67,15 +65,8 @@ export function useUpdateRoute() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: {
-      id: string;
-      name: string;
-      plannedStartTime: string;
-      totalDistanceKm: number;
-      totalParcelCount: number;
-      vehicleId?: string | null;
-      driverId?: string | null;
-    }) => routesService.updateRoute(session!.user.accessToken, input),
+    mutationFn: (input: UpdateRouteCommandInput) =>
+      routesService.updateRoute(session!.user.accessToken, input),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: routeKeys.all });
       queryClient.invalidateQueries({ queryKey: routeKeys.detail(variables.id) });

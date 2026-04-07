@@ -1,24 +1,47 @@
 import { apiFetch } from "@/lib/api";
-import type { Route, RouteSummary, RouteStatus, AvailableDriver } from "@/types/route";
+import {
+  type CreateRouteCommandInput,
+  type UpdateRouteCommandInput,
+  type RouteDto,
+  type Route,
+  type RoutesConnection,
+  type AvailableDriverDto,
+  type RouteStatus,
+} from "@/graphql/generated/graphql";
+
+export interface FetchRoutesFilters {
+  status?: RouteStatus;
+  first?: number;
+  after?: string;
+}
 
 const GET_ROUTES_QUERY = `
-  query GetRoutes($where: RouteFilterInput) {
-    routes(where: $where) {
-      id
-      name
-      status
-      plannedStartTime
-      vehicleId
-      vehicle {
-        registrationPlate
-      }
-      driverId
-      driver {
-        user {
-          firstName
-          lastName
+  query GetRoutes($where: RouteFilterInput, $order: [RouteSortInput!], $first: Int, $after: String) {
+    routes(where: $where, order: $order, first: $first, after: $after) {
+      nodes {
+        id
+        name
+        status
+        plannedStartTime
+        vehicleId
+        vehicle {
+          registrationPlate
+        }
+        driverId
+        driver {
+          user {
+            firstName
+            lastName
+          }
         }
       }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+      totalCount
     }
   }
 `;
@@ -69,22 +92,8 @@ const GET_AVAILABLE_DRIVERS_QUERY = `
 `;
 
 const CREATE_ROUTE_MUTATION = `
-  mutation CreateRoute(
-    $name: String!
-    $plannedStartTime: DateTime!
-    $totalDistanceKm: Decimal!
-    $totalParcelCount: Int!
-    $vehicleId: UUID
-    $driverId: UUID
-  ) {
-    createRoute(
-      name: $name
-      plannedStartTime: $plannedStartTime
-      totalDistanceKm: $totalDistanceKm
-      totalParcelCount: $totalParcelCount
-      vehicleId: $vehicleId
-      driverId: $driverId
-    ) {
+  mutation CreateRoute($input: CreateRouteCommandInput!) {
+    createRoute(input: $input) {
       id
       name
       status
@@ -101,24 +110,8 @@ const CREATE_ROUTE_MUTATION = `
 `;
 
 const UPDATE_ROUTE_MUTATION = `
-  mutation UpdateRoute(
-    $id: UUID!
-    $name: String!
-    $plannedStartTime: DateTime!
-    $totalDistanceKm: Decimal!
-    $totalParcelCount: Int!
-    $vehicleId: UUID
-    $driverId: UUID
-  ) {
-    updateRoute(
-      id: $id
-      name: $name
-      plannedStartTime: $plannedStartTime
-      totalDistanceKm: $totalDistanceKm
-      totalParcelCount: $totalParcelCount
-      vehicleId: $vehicleId
-      driverId: $driverId
-    ) {
+  mutation UpdateRoute($input: UpdateRouteCommandInput!) {
+    updateRoute(input: $input) {
       id
       name
       status
@@ -175,7 +168,7 @@ const ASSIGN_DRIVER_TO_ROUTE_MUTATION = `
 `;
 
 interface RoutesResponse {
-  routes: RouteSummary[];
+  routes: RoutesConnection;
 }
 
 interface RouteResponse {
@@ -183,19 +176,23 @@ interface RouteResponse {
 }
 
 interface AvailableDriversResponse {
-  availableDrivers: AvailableDriver[];
+  availableDrivers: AvailableDriverDto[];
 }
 
 export async function fetchRoutes(
   token: string,
-  status?: RouteStatus
-): Promise<RouteSummary[]> {
+  filters?: FetchRoutesFilters
+): Promise<RoutesConnection> {
   const response = await apiFetch<{ data: RoutesResponse }>("/api/graphql", {
     method: "POST",
     token,
     body: JSON.stringify({
       query: GET_ROUTES_QUERY,
-      variables: status ? { where: { status } } : {},
+      variables: {
+        where: filters?.status ? { status: { eq: filters.status } } : undefined,
+        first: filters?.first ?? 25,
+        after: filters?.after || null,
+      },
     }),
   });
   return response.data.routes;
@@ -219,7 +216,7 @@ export async function fetchRoute(
 export async function fetchAvailableDrivers(
   token: string,
   date: string
-): Promise<AvailableDriver[]> {
+): Promise<AvailableDriverDto[]> {
   const response = await apiFetch<{ data: AvailableDriversResponse }>("/api/graphql", {
     method: "POST",
     token,
@@ -233,30 +230,16 @@ export async function fetchAvailableDrivers(
 
 export async function createRoute(
   token: string,
-  input: {
-    name: string;
-    plannedStartTime: string;
-    totalDistanceKm: number;
-    totalParcelCount: number;
-    vehicleId?: string | null;
-    driverId?: string | null;
-  }
-): Promise<Route> {
-  const response = await apiFetch<{ data: { createRoute: Route } }>(
+  input: CreateRouteCommandInput
+): Promise<RouteDto> {
+  const response = await apiFetch<{ data: { createRoute: RouteDto } }>(
     "/api/graphql",
     {
       method: "POST",
       token,
       body: JSON.stringify({
         query: CREATE_ROUTE_MUTATION,
-        variables: {
-          name: input.name,
-          plannedStartTime: input.plannedStartTime,
-          totalDistanceKm: input.totalDistanceKm,
-          totalParcelCount: input.totalParcelCount,
-          vehicleId: input.vehicleId || null,
-          driverId: input.driverId || null,
-        },
+        variables: { input },
       }),
     }
   );
@@ -265,32 +248,16 @@ export async function createRoute(
 
 export async function updateRoute(
   token: string,
-  input: {
-    id: string;
-    name: string;
-    plannedStartTime: string;
-    totalDistanceKm: number;
-    totalParcelCount: number;
-    vehicleId?: string | null;
-    driverId?: string | null;
-  }
-): Promise<Route> {
-  const response = await apiFetch<{ data: { updateRoute: Route } }>(
+  input: UpdateRouteCommandInput
+): Promise<RouteDto> {
+  const response = await apiFetch<{ data: { updateRoute: RouteDto } }>(
     "/api/graphql",
     {
       method: "POST",
       token,
       body: JSON.stringify({
         query: UPDATE_ROUTE_MUTATION,
-        variables: {
-          id: input.id,
-          name: input.name,
-          plannedStartTime: input.plannedStartTime,
-          totalDistanceKm: input.totalDistanceKm,
-          totalParcelCount: input.totalParcelCount,
-          vehicleId: input.vehicleId || null,
-          driverId: input.driverId || null,
-        },
+        variables: { input },
       }),
     }
   );
@@ -319,8 +286,8 @@ export async function changeRouteStatus(
   token: string,
   id: string,
   newStatus: RouteStatus
-): Promise<Route> {
-  const response = await apiFetch<{ data: { changeRouteStatus: Route } }>(
+): Promise<RouteDto> {
+  const response = await apiFetch<{ data: { changeRouteStatus: RouteDto } }>(
     "/api/graphql",
     {
       method: "POST",
@@ -338,8 +305,8 @@ export async function assignDriverToRoute(
   token: string,
   routeId: string,
   driverId: string | null
-): Promise<Route> {
-  const response = await apiFetch<{ data: { assignDriverToRoute: Route } }>(
+): Promise<RouteDto> {
+  const response = await apiFetch<{ data: { assignDriverToRoute: RouteDto } }>(
     "/api/graphql",
     {
       method: "POST",

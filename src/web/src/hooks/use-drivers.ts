@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { driverKeys, routeKeys } from "@/lib/query-key-factory";
 import * as driversService from "@/services/driver.service";
+import { toast } from "sonner";
 
 export function useDrivers() {
   const { data: session } = useSession();
@@ -50,6 +51,9 @@ export function useUpdateDriver() {
       queryClient.invalidateQueries({ queryKey: driverKeys.all });
       queryClient.invalidateQueries({ queryKey: driverKeys.detail(variables.id) });
       queryClient.invalidateQueries({ queryKey: routeKeys.all });
+    },
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
 }

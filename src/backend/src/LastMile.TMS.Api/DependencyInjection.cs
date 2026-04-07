@@ -19,7 +19,7 @@ public static class DependencyInjection
     public static IServiceCollection AddLastMileApi(this IServiceCollection services)
     {
         services.AddGraphQLServer()
-            .ModifyCostOptions(o => o.MaxFieldCost = 15000)
+            .ModifyCostOptions(o => o.MaxFieldCost = 25000)
             .AddProjections()
             .AddFiltering()
             .AddSorting()
@@ -52,6 +52,8 @@ public static class DependencyInjection
             .AddType<DailyOperatingHoursInputType>()
             .AddType<CreateZoneInput>()
             .AddType<UpdateZoneInput>()
+            .AddType<CreateRouteInput>()
+            .AddType<UpdateRouteInput>()
             .AddErrorFilter<DomainExceptionErrorFilter>()
             .AddErrorFilter<ErrorFilter>()
             .AddType<ShiftScheduleInputType>()
