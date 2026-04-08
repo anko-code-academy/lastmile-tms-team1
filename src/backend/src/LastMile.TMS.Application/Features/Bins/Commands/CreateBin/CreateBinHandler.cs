@@ -29,6 +29,14 @@ public class CreateBinHandler(IAppDbContext dbContext) : IRequestHandler<CreateB
         };
 
         bin.SetLabel(depotNumber, zoneLetter);
+        
+        var exists = await dbContext.Bins
+            .AnyAsync(b => b.Label == bin.Label, cancellationToken);
+            
+        if (exists)
+        {
+            throw new InvalidOperationException($"Bin with label {bin.Label} already exists.");
+        }
 
         dbContext.Bins.Add(bin);
         await dbContext.SaveChangesAsync(cancellationToken);

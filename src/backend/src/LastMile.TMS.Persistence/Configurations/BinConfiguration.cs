@@ -30,7 +30,7 @@ public class BinConfiguration : IEntityTypeConfiguration<Bin>
             .IsRequired()
             .HasDefaultValue(true);
 
-        builder.HasIndex(b => b.Label);
+        builder.HasIndex(b => b.Label).IsUnique();
         builder.HasIndex(b => b.ZoneId);
 
         builder.HasOne(b => b.Zone)

@@ -539,4 +539,48 @@ public class BinIntegrationTests : IAsyncLifetime
         var content = await response.Content.ReadAsStringAsync();
         content.Should().NotBeEmpty();
     }
+
+    [Fact]
+    public async Task CreateBin_DuplicateLabel_ReturnsError()
+    {
+        // Arrange - Create first bin
+        var createMutation1 = $@"mutation {{
+            createBin(input: {{
+                aisle: 10,
+                slot: 10,
+                capacity: 50,
+                zoneId: ""{_zoneId}""
+            }}) {{
+                id
+                label
+            }}
+        }}";
+        var firstJson = await GraphQLRequestAsync(createMutation1);
+        firstJson.GetProperty("data").GetProperty("createBin").GetProperty("id").GetString().Should().NotBeNull();
+
+        // Act - Attempt to create second bin with same aisle/slot in same zone (duplicate label)
+        var createMutation2 = $@"mutation {{
+            createBin(input: {{
+                aisle: 10,
+                slot: 10,
+                capacity: 100,
+                zoneId: ""{_zoneId}""
+            }}) {{
+                id
+            }}
+        }}";
+        
+        // Assert - GraphQL should return errors
+        var secondResponse = await _client.PostAsync("/api/graphql", new StringContent(
+            System.Text.Json.JsonSerializer.Serialize(new { query = createMutation2 }),
+            System.Text.Encoding.UTF8,
+            "application/json"));
+
+        secondResponse.StatusCode.Should().Be(HttpStatusCode.OK); // GraphQL usually returns 200 with errors array
+        var secondJsonString = await secondResponse.Content.ReadAsStringAsync();
+        var secondJson = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(secondJsonString);
+        
+        secondJson.TryGetProperty("errors", out var errors).Should().BeTrue();
+        errors[0].GetProperty("message").GetString().Should().Contain("already exists");
+    }
 }
