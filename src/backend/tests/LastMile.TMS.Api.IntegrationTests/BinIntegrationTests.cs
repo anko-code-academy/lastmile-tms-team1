@@ -420,4 +420,123 @@ public class BinIntegrationTests : IAsyncLifetime
             await cmd.ExecuteNonQueryAsync();
         }
     }
+
+    [Fact]
+    public async Task GetBinPdfLabel_ReturnsPdfFile()
+    {
+        // Arrange - Create a bin first
+        var createMutation = $@"mutation {{
+            createBin(input: {{
+                aisle: 1,
+                slot: 1,
+                capacity: 50,
+                zoneId: ""{_zoneId}""
+            }}) {{
+                id
+            }}
+        }}";
+        var createJson = await GraphQLRequestAsync(createMutation);
+        var binId = createJson.GetProperty("data").GetProperty("createBin").GetProperty("id").GetString();
+
+        // Act
+        var pdfResponse = await _client.GetAsync($"/labels/bin/{binId}/pdf");
+
+        // Assert - Check status and content type
+        pdfResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        pdfResponse.Content.Headers.ContentType?.MediaType.Should().Be("application/pdf");
+
+        var pdfBytes = await pdfResponse.Content.ReadAsByteArrayAsync();
+
+        // Assert - Verify it's a valid PDF
+        pdfBytes.Should().NotBeEmpty();
+        pdfBytes.Take(4).Should().Contain(new byte[] { 0x25, 0x50, 0x46, 0x25 }); // PDF magic number
+    }
+
+    [Fact]
+    public async Task GetBinPngLabel_ReturnsPngFile()
+    {
+        // Arrange - Create a bin first
+        var createMutation = $@"mutation {{
+            createBin(input: {{
+                aisle: 1,
+                slot: 1,
+                capacity: 50,
+                zoneId: ""{_zoneId}""
+            }}) {{
+                id
+            }}
+        }}";
+        var createJson = await GraphQLRequestAsync(createMutation);
+        var binId = createJson.GetProperty("data").GetProperty("createBin").GetProperty("id").GetString();
+
+        // Act
+        var pngResponse = await _client.GetAsync($"/labels/bin/{binId}/png");
+
+        // Assert - Check status and content type
+        pngResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        pngResponse.Content.Headers.ContentType?.MediaType.Should().Be("image/png");
+
+        var pngBytes = await pngResponse.Content.ReadAsByteArrayAsync();
+
+        // Assert - Verify it's a valid PNG image
+        pngBytes.Should().NotBeEmpty();
+        pngBytes.Take(8).Should().Contain(new byte[] { 0x89, 0x50, 0x4E, 0x47 }); // PNG magic number
+    }
+
+    [Fact]
+    public async Task GetBinZplLabel_InvalidBinId_ReturnsNotFound()
+    {
+        // Act
+        var response = await _client.GetAsync($"/labels/bin/{Guid.NewGuid()}/zpl");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetBinPdfLabel_InvalidBinId_ReturnsNotFound()
+    {
+        // Act
+        var response = await _client.GetAsync($"/labels/bin/{Guid.NewGuid()}/pdf");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetBinPngLabel_InvalidBinId_ReturnsNotFound()
+    {
+        // Act
+        var response = await _client.GetAsync($"/labels/bin/{Guid.NewGuid()}/png");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetBinZplLabel_ReturnsZplText()
+    {
+        // Arrange - Create a bin first
+        var createMutation = $@"mutation {{
+            createBin(input: {{
+                aisle: 1,
+                slot: 1,
+                capacity: 50,
+                zoneId: ""{_zoneId}""
+            }}) {{
+                id
+            }}
+        }}";
+        var createJson = await GraphQLRequestAsync(createMutation);
+        var binId = createJson.GetProperty("data").GetProperty("createBin").GetProperty("id").GetString();
+
+        // Act
+        var response = await _client.GetAsync($"/labels/bin/{binId}/zpl");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType?.MediaType.Should().Be("text/plain");
+        var content = await response.Content.ReadAsStringAsync();
+        content.Should().NotBeEmpty();
+    }
 }
