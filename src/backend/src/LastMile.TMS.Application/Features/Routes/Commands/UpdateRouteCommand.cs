@@ -9,5 +9,6 @@ public record UpdateRouteCommand(
     DateTime PlannedStartTime,
     decimal TotalDistanceKm,
     int TotalParcelCount,
-    Guid? VehicleId
+    Guid? VehicleId,
+    Guid? DriverId
 ) : IRequest<RouteDto>;

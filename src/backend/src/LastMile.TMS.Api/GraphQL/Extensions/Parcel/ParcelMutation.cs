@@ -1,5 +1,8 @@
 using HotChocolate;
 using HotChocolate.Authorization;
+using CreateParcelResult = LastMile.TMS.Application.Features.ParcelRegistration.Commands.CreateParcel.ParcelResult;
+using UpdateParcelResult = LastMile.TMS.Application.Features.Parcels.Commands.UpdateParcel.ParcelResult;
+using LastMile.TMS.Application.Features.ParcelRegistration.Commands.CreateParcel;
 using LastMile.TMS.Application.Features.Parcels.Commands.CancelParcel;
 using LastMile.TMS.Application.Features.Parcels.Commands.UpdateParcel;
 using LastMile.TMS.Domain.Entities;
@@ -11,10 +14,14 @@ namespace LastMile.TMS.Api.GraphQL.Extensions.Parcel;
 public class ParcelMutation
 {
     [Authorize(Roles = new[] { Role.RoleNames.Admin, Role.RoleNames.OperationsManager, Role.RoleNames.WarehouseOperator })]
-    public async Task<ParcelResult> UpdateParcel(UpdateParcelCommand input, [Service] IMediator mediator)
+    public async Task<UpdateParcelResult> UpdateParcel(UpdateParcelCommand input, [Service] IMediator mediator)
         => await mediator.Send(input);
 
     [Authorize(Roles = new[] { Role.RoleNames.Admin, Role.RoleNames.OperationsManager, Role.RoleNames.WarehouseOperator })]
     public async Task<CancelParcelResult> CancelParcel(CancelParcelCommand input, [Service] IMediator mediator)
+        => await mediator.Send(input);
+
+    [Authorize(Roles = new[] { Role.RoleNames.WarehouseOperator, Role.RoleNames.Admin })]
+    public async Task<CreateParcelResult> CreateParcel(CreateParcelCommand input, [Service] IMediator mediator)
         => await mediator.Send(input);
 }

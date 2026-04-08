@@ -12,12 +12,7 @@ public class DriverTests
         Driver driver = new();
 
         // Assert
-        driver.FirstName.Should().BeEmpty();
-        driver.LastName.Should().BeEmpty();
-        driver.Phone.Should().BeEmpty();
-        driver.Email.Should().BeEmpty();
         driver.LicenseNumber.Should().BeEmpty();
-        driver.IsActive.Should().BeTrue();
         driver.ShiftSchedules.Should().BeEmpty();
         driver.DaysOff.Should().BeEmpty();
     }
@@ -26,39 +21,23 @@ public class DriverTests
     public void Driver_ShouldAllowSettingProperties()
     {
         // Arrange
-        Guid zoneId = Guid.CreateVersion7();
-        Guid depotId = Guid.CreateVersion7();
         Guid userId = Guid.CreateVersion7();
         var licenseExpiry = DateTimeOffset.UtcNow.AddYears(1);
 
         // Act
         Driver driver = new()
         {
-            FirstName = "John",
-            LastName = "Doe",
-            Phone = "+1234567890",
-            Email = "john.doe@example.com",
+            UserId = userId,
             LicenseNumber = "DL123456",
             LicenseExpiryDate = licenseExpiry,
-            Photo = "https://example.com/photo.jpg",
-            ZoneId = zoneId,
-            DepotId = depotId,
-            UserId = userId,
-            IsActive = false
+            Photo = "https://example.com/photo.jpg"
         };
 
         // Assert
-        driver.FirstName.Should().Be("John");
-        driver.LastName.Should().Be("Doe");
-        driver.Phone.Should().Be("+1234567890");
-        driver.Email.Should().Be("john.doe@example.com");
+        driver.UserId.Should().Be(userId);
         driver.LicenseNumber.Should().Be("DL123456");
         driver.LicenseExpiryDate.Should().Be(licenseExpiry);
         driver.Photo.Should().Be("https://example.com/photo.jpg");
-        driver.ZoneId.Should().Be(zoneId);
-        driver.DepotId.Should().Be(depotId);
-        driver.UserId.Should().Be(userId);
-        driver.IsActive.Should().BeFalse();
     }
 
     [Fact]
@@ -122,16 +101,5 @@ public class DriverTests
 
         // Assert
         driver.Photo.Should().BeNull();
-    }
-
-    [Fact]
-    public void Driver_ZoneAndDepot_ShouldBeInitiallyNull()
-    {
-        // Arrange & Act
-        Driver driver = new();
-
-        // Assert
-        driver.Zone.Should().BeNull();
-        driver.Depot.Should().BeNull();
     }
 }

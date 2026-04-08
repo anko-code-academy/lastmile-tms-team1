@@ -3,6 +3,7 @@ using HotChocolate.Types;
 using LastMile.TMS.Api.GraphQL;
 using LastMile.TMS.Api.GraphQL.Common;
 using LastMile.TMS.Api.GraphQL.Extensions.Depot;
+using LastMile.TMS.Api.GraphQL.Extensions.Driver;
 using LastMile.TMS.Api.GraphQL.Extensions.Parcel;
 using LastMile.TMS.Api.GraphQL.Extensions.Route;
 using LastMile.TMS.Api.GraphQL.Extensions.UserManagement;
@@ -18,7 +19,7 @@ public static class DependencyInjection
     public static IServiceCollection AddLastMileApi(this IServiceCollection services)
     {
         services.AddGraphQLServer()
-            .ModifyCostOptions(o => o.MaxFieldCost = 15000)
+            .ModifyCostOptions(o => o.MaxFieldCost = 25000)
             .AddProjections()
             .AddFiltering()
             .AddSorting()
@@ -37,7 +38,15 @@ public static class DependencyInjection
             .AddType<RouteQuery>()
             .AddType<RouteMutation>()
             .AddType<CancelParcelInput>()
+            .AddType<DriverQuery>()
+            .AddType<DriverMutation>()
+            .AddType<UserManagementQuery>()
+            .AddType<UserManagementMutation>()
+            .AddType<CreateDriverInput>()
+            .AddType<UpdateDriverInput>()
             .AddType<CreateDepotInput>()
+            .AddType<CreateParcelInput>()
+            .AddType<ParcelAddressInputType>()
             .AddType<AddressInputType>()
             .AddType<UpdateDepotInput>()
             .AddType<UpdateAddressInputType>()
@@ -45,10 +54,12 @@ public static class DependencyInjection
             .AddType<CreateZoneInput>()
             .AddType<UpdateZoneInput>()
             .AddType<UpdateParcelInput>()
-            .AddType<UserManagementQuery>()
-            .AddType<UserManagementMutation>()
+            .AddType<CreateRouteInput>()
+            .AddType<UpdateRouteInput>()
             .AddErrorFilter<DomainExceptionErrorFilter>()
-            .AddErrorFilter<ErrorFilter>();
+            .AddErrorFilter<ErrorFilter>()
+            .AddType<ShiftScheduleInputType>()
+            .AddType<DayOffInputType>();
 
         return services;
     }

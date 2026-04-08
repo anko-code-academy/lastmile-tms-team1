@@ -39,7 +39,7 @@ public class LabelServiceTests
         parcel.RecipientAddress = address;
         parcel.RecipientAddressId = address.Id;
         parcel.Zone = zone;
-        parcel.ParcelType = "Standard";
+        parcel.ParcelType = ParcelType.Package;
 
         return parcel;
     }
@@ -59,7 +59,7 @@ public class LabelServiceTests
         zpl.Should().Contain("123 Main St");
         zpl.Should().Contain("Springfield");
         zpl.Should().Contain("Zone-A");
-        zpl.Should().Contain("Standard");
+        zpl.Should().Contain("Package");
     }
 
     [Fact]

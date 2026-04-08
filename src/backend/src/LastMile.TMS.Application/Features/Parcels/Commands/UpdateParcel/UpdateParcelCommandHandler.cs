@@ -80,11 +80,11 @@ public class UpdateParcelCommandHandler(
             parcel.ServiceType = request.ServiceType.Value;
         }
 
-        if (request.ParcelType != null && parcel.ParcelType != request.ParcelType)
+        if (request.ParcelType.HasValue && parcel.ParcelType != request.ParcelType.Value)
         {
             auditLogs.Add(ParcelAuditLog.Create(
-                parcel.Id, "ParcelType", parcel.ParcelType ?? string.Empty, request.ParcelType ?? string.Empty, userId));
-            parcel.ParcelType = request.ParcelType;
+                parcel.Id, "ParcelType", parcel.ParcelType?.ToString() ?? string.Empty, request.ParcelType.Value.ToString(), userId));
+            parcel.ParcelType = request.ParcelType.Value;
         }
 
         // Handle ShipperAddress update - create new address

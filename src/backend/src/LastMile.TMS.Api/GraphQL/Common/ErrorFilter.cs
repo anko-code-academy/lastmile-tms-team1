@@ -8,7 +8,8 @@ public class ErrorFilter : IErrorFilter
 {
     public IError OnError(IError error)
     {
-        if (error.Exception is not null)
+        // Skip errors already handled by a domain-specific filter (they have a custom code set)
+        if (error.Exception is not null && string.IsNullOrEmpty(error.Code))
         {
             var exceptionType = error.Exception.GetType().Name;
             var traceId = Guid.NewGuid().ToString("N")[..8];

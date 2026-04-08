@@ -89,7 +89,7 @@ public class LabelIntegrationTests : IAsyncLifetime
         parcel.ShipperAddress = address;
         parcel.ZoneId = zone.Id;
         parcel.Zone = zone;
-        parcel.ParcelType = "Standard";
+        parcel.ParcelType = ParcelType.Package;
         parcel.Weight = 1.5m;
         parcel.WeightUnit = WeightUnit.Kg;
         parcel.Length = 10m;

@@ -10,6 +10,8 @@ import {
   Building2,
   MapPin,
   Users,
+  Package,
+  CircleUser,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -21,7 +23,9 @@ const navItems = [
   { href: "/routes", label: "Routes", icon: Route },
   { href: "/depots", label: "Depots", icon: Building2 },
   { href: "/zones", label: "Zones", icon: MapPin },
-  { href: "/users", label: "Users", icon: Users, adminOnly: true },
+  { href: "/parcels", label: "Parcels", icon: Package },
+  { href: "/users", label: "Users", icon: Users, roles: ["Admin"] },
+  { href: "/drivers", label: "Drivers", icon: CircleUser },
 ];
 
 export default function ProtectedLayout({
@@ -31,7 +35,6 @@ export default function ProtectedLayout({
 }) {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const isAdmin = session?.user?.roles?.includes("Admin") ?? false;
 
   return (
     <div className="flex min-h-screen">
@@ -45,8 +48,8 @@ export default function ProtectedLayout({
 
         <nav className="p-4 space-y-1">
           {navItems.map((item) => {
-            // Skip admin-only items if not admin
-            if (item.adminOnly && !isAdmin) {
+            // Skip items if user lacks required roles
+            if (item.roles && !item.roles.some((role) => session?.user?.roles?.includes(role))) {
               return null;
             }
 

@@ -13,6 +13,5 @@ public class Depot : BaseAuditableEntity
 
     // Navigation properties
     public ICollection<Zone> Zones { get; set; } = [];
-    public ICollection<Driver> Drivers { get; set; } = [];
     public ICollection<ShiftSchedule> ShiftSchedules { get; set; } = new List<ShiftSchedule>();
 }

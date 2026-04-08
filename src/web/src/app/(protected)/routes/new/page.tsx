@@ -19,6 +19,7 @@ export default function NewRoutePage() {
     totalDistanceKm: number;
     totalParcelCount: number;
     vehicleId?: string | null;
+    driverId?: string | null;
   }) => {
     try {
       // Convert datetime-local format to ISO 8601 with UTC timezone

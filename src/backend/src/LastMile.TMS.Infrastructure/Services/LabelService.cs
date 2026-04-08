@@ -72,7 +72,7 @@ public class LabelService : ILabelService
 ^FO50,190^A0N,25,25^FD{addressLine}^FS
 ^FO50,220^A0N,25,25^FD{cityStateZip}^FS
 ^FO50,260^A0N,25,25^FDSort Zone: {zoneName}^FS
-^FO50,300^A0N,25,25^FD{{Parcel Type: {parcel.ParcelType ?? "N/A"}}}^FS
+^FO50,300^A0N,25,25^FD{{Parcel Type: {parcel.ParcelType?.ToString() ?? "N/A"}}}^FS
 ^XZ";
     }
 
@@ -127,7 +127,7 @@ public class LabelService : ILabelService
                     column.Item().Row(row =>
                     {
                         row.RelativeItem().Text($"Sort Zone: {zoneName}").FontSize(10);
-                        row.RelativeItem().Text($"Parcel Type: {parcel.ParcelType ?? "N/A"}").FontSize(10);
+                        row.RelativeItem().Text($"Parcel Type: {parcel.ParcelType?.ToString() ?? "N/A"}").FontSize(10);
                         row.RelativeItem().Text($"Service: {parcel.ServiceType}").FontSize(10);
                     });
 
@@ -192,7 +192,7 @@ public class LabelService : ILabelService
                         column.Item().Row(row =>
                         {
                             row.RelativeItem().Text($"Sort Zone: {zoneName}").FontSize(10);
-                            row.RelativeItem().Text($"Parcel Type: {parcel.ParcelType ?? "N/A"}").FontSize(10);
+                            row.RelativeItem().Text($"Parcel Type: {parcel.ParcelType?.ToString() ?? "N/A"}").FontSize(10);
                             row.RelativeItem().Text($"Service: {parcel.ServiceType}").FontSize(10);
                         });
 

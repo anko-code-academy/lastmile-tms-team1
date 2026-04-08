@@ -35,7 +35,8 @@ public class ParcelConfiguration : IEntityTypeConfiguration<Parcel>
 
         // Delivery
         builder.Property(p => p.DeliveryAttempts).HasDefaultValue(0);
-        builder.Property(p => p.ParcelType).HasMaxLength(100);
+        builder.Property(p => p.ParcelType).HasConversion<string>().HasMaxLength(20);
+        builder.Property(p => p.Notes).HasMaxLength(2000);
 
         // Indexes
         builder.HasIndex(p => p.Status);

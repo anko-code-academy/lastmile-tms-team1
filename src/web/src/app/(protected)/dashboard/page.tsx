@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import Link from "next/link";
-import { Truck, Route, Building2, MapPin } from "lucide-react";
+import { Truck, Route, Building2, MapPin, CircleUser } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -69,6 +69,20 @@ export default async function DashboardPage() {
             <p className="text-xs text-muted-foreground">Delivery zones</p>
             <Button variant="link" className="p-0 h-auto mt-2" asChild>
               <Link href="/zones">View zones</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Drivers</CardTitle>
+            <CircleUser className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">-</div>
+            <p className="text-xs text-muted-foreground">Fleet drivers</p>
+            <Button variant="link" className="p-0 h-auto mt-2" asChild>
+              <Link href="/drivers">View drivers</Link>
             </Button>
           </CardContent>
         </Card>

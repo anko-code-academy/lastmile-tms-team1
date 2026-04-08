@@ -12,7 +12,7 @@ public record UpdateParcelCommand(
     decimal? Width,
     decimal? Height,
     ServiceType? ServiceType,
-    string? ParcelType,
+    ParcelType? ParcelType,
     AddressInput? ShipperAddress,
     AddressInput? RecipientAddress) : IRequest<ParcelResult>;
 

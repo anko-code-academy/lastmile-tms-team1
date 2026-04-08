@@ -14,6 +14,7 @@ public class AppDbContext(
 {
     public DbSet<Address> Addresses => Set<Address>();
     public DbSet<Depot> Depots => Set<Depot>();
+    public DbSet<DayOff> DaysOff => Set<DayOff>();
     public DbSet<Driver> Drivers => Set<Driver>();
     public DbSet<Parcel> Parcels => Set<Parcel>();
     public DbSet<Route> Routes => Set<Route>();

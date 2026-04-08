@@ -1,3 +1,5 @@
+import type { FetchParcelsFilters } from "@/services/parcels.service";
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const userKeys = {
   all: ['users'] as const,
@@ -23,6 +25,7 @@ export const routeKeys = {
   list: (filters?: any) => [...routeKeys.lists(), filters] as const,
   details: () => [...routeKeys.all, 'detail'] as const,
   detail: (id: string) => [...routeKeys.details(), id] as const,
+  availableDrivers: (date: string) => [...routeKeys.all, 'availableDrivers', date] as const,
 };
 
 export const depotKeys = {
@@ -39,4 +42,20 @@ export const zoneKeys = {
   list: () => [...zoneKeys.lists()] as const,
   details: () => [...zoneKeys.all, 'detail'] as const,
   detail: (id: string) => [...zoneKeys.details(), id] as const,
+};
+
+export const parcelKeys = {
+  all: ['parcels'] as const,
+  lists: () => [...parcelKeys.all, 'list'] as const,
+  list: (filters?: FetchParcelsFilters) => [...parcelKeys.lists(), filters] as const,
+  details: () => [...parcelKeys.all, 'detail'] as const,
+  detail: (id: string) => [...parcelKeys.details(), id] as const,
+};
+
+export const driverKeys = {
+  all: ['drivers'] as const,
+  lists: () => [...driverKeys.all, 'list'] as const,
+  list: () => [...driverKeys.lists()] as const,
+  details: () => [...driverKeys.all, 'detail'] as const,
+  detail: (id: string) => [...driverKeys.details(), id] as const,
 };

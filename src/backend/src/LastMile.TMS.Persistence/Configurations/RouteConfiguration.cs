@@ -35,6 +35,13 @@ public class RouteConfiguration : IEntityTypeConfiguration<Route>
             .HasForeignKey(r => r.VehicleId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        builder.HasOne(r => r.Driver)
+            .WithMany(d => d.Routes)
+            .HasForeignKey(r => r.DriverId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasIndex(r => r.DriverId);
+
         builder.Navigation(r => r.VehicleJourneys)
             .UsePropertyAccessMode(PropertyAccessMode.Field);
     }

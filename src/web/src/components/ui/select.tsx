@@ -81,7 +81,6 @@ function SelectContent({
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
   return (
     <SelectPrimitive.Portal>
-      <SelectScrollUp />
       <SelectPrimitive.Content
         data-slot="select-content"
         data-position={props.position}
@@ -103,7 +102,6 @@ function SelectContent({
         </SelectPrimitive.Viewport>
         <SelectScrollDown />
       </SelectPrimitive.Content>
-      <SelectScrollDown />
     </SelectPrimitive.Portal>
   )
 }

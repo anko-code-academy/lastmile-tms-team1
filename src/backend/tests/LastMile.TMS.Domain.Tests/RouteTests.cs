@@ -18,12 +18,12 @@ public class RouteTests
         {
             Name = name,
             PlannedStartTime = plannedStartTime,
-            Status = RouteStatus.Planned
+            Status = RouteStatus.Draft
         };
 
         // Assert
         route.Name.Should().Be(name);
-        route.Status.Should().Be(RouteStatus.Planned);
+        route.Status.Should().Be(RouteStatus.Draft);
         route.PlannedStartTime.Should().Be(plannedStartTime);
         route.ActualStartTime.Should().BeNull();
         route.ActualEndTime.Should().BeNull();
@@ -34,16 +34,12 @@ public class RouteTests
     }
 
     [Theory]
-    [InlineData(RouteStatus.Planned, RouteStatus.InProgress, true)]
+    [InlineData(RouteStatus.Draft, RouteStatus.InProgress, true)]
     [InlineData(RouteStatus.InProgress, RouteStatus.Completed, true)]
-    [InlineData(RouteStatus.Planned, RouteStatus.Cancelled, true)]
-    [InlineData(RouteStatus.InProgress, RouteStatus.Cancelled, true)]
     [InlineData(RouteStatus.Completed, RouteStatus.InProgress, false)]
-    [InlineData(RouteStatus.Completed, RouteStatus.Cancelled, false)]
-    [InlineData(RouteStatus.Cancelled, RouteStatus.Completed, false)]
-    [InlineData(RouteStatus.Cancelled, RouteStatus.InProgress, false)]
-    [InlineData(RouteStatus.Planned, RouteStatus.Completed, false)]
-    [InlineData(RouteStatus.Completed, RouteStatus.Planned, false)]
+    [InlineData(RouteStatus.Draft, RouteStatus.Completed, false)]
+    [InlineData(RouteStatus.Completed, RouteStatus.Draft, false)]
+    [InlineData(RouteStatus.InProgress, RouteStatus.Draft, false)]
     public void CanTransitionTo_ValidatesStatusTransitions(RouteStatus from, RouteStatus to, bool expected)
     {
         // Arrange
@@ -62,14 +58,14 @@ public class RouteTests
     }
 
     [Fact]
-    public void TransitionTo_FromPlannedToInProgress_SetsActualStartTime()
+    public void TransitionTo_FromDraftToInProgress_SetsActualStartTime()
     {
         // Arrange
         var route = new Route
         {
             Name = "Test Route",
             PlannedStartTime = DateTime.UtcNow,
-            Status = RouteStatus.Planned
+            Status = RouteStatus.Draft
         };
 
         // Act
@@ -121,22 +117,80 @@ public class RouteTests
     }
 
     [Fact]
-    public void TransitionTo_FromPlannedToCancelled_Succeeds()
+    public void AssignDriver_OnDraftRoute_SetsDriverId()
+    {
+        // Arrange
+        var driverId = Guid.NewGuid();
+        var route = new Route
+        {
+            Name = "Test Route",
+            PlannedStartTime = DateTime.UtcNow,
+            Status = RouteStatus.Draft
+        };
+
+        // Act
+        route.AssignDriver(driverId);
+
+        // Assert
+        route.DriverId.Should().Be(driverId);
+    }
+
+    [Fact]
+    public void AssignDriver_OnCompletedRoute_ThrowsException()
     {
         // Arrange
         var route = new Route
         {
             Name = "Test Route",
             PlannedStartTime = DateTime.UtcNow,
-            Status = RouteStatus.Planned
+            Status = RouteStatus.Completed
         };
 
         // Act
-        route.TransitionTo(RouteStatus.Cancelled);
+        var act = () => route.AssignDriver(Guid.NewGuid());
 
         // Assert
-        route.Status.Should().Be(RouteStatus.Cancelled);
-        route.ActualStartTime.Should().BeNull();
-        route.ActualEndTime.Should().BeNull();
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*Draft*");
+    }
+
+    [Fact]
+    public void ReassignDriver_OnDraftRoute_Succeeds()
+    {
+        // Arrange
+        var driverA = Guid.NewGuid();
+        var driverB = Guid.NewGuid();
+        var route = new Route
+        {
+            Name = "Test Route",
+            PlannedStartTime = DateTime.UtcNow,
+            Status = RouteStatus.Draft
+        };
+        route.AssignDriver(driverA);
+
+        // Act
+        route.AssignDriver(driverB);
+
+        // Assert
+        route.DriverId.Should().Be(driverB);
+    }
+
+    [Fact]
+    public void RemoveDriver_SetsDriverIdToNull()
+    {
+        // Arrange
+        var route = new Route
+        {
+            Name = "Test Route",
+            PlannedStartTime = DateTime.UtcNow,
+            Status = RouteStatus.Draft
+        };
+        route.AssignDriver(Guid.NewGuid());
+
+        // Act
+        route.AssignDriver(null);
+
+        // Assert
+        route.DriverId.Should().BeNull();
     }
 }

@@ -24,6 +24,7 @@ export default function EditRoutePage() {
     totalDistanceKm: number;
     totalParcelCount: number;
     vehicleId?: string | null;
+    driverId?: string | null;
   }) => {
     try {
       // Convert datetime-local format to ISO 8601 with UTC timezone
@@ -83,6 +84,7 @@ export default function EditRoutePage() {
               totalDistanceKm: route.totalDistanceKm,
               totalParcelCount: route.totalParcelCount,
               vehicleId: route.vehicleId,
+              driverId: route.driverId,
             }}
             onSubmit={handleSubmit}
             isSubmitting={updateRoute.isPending}
