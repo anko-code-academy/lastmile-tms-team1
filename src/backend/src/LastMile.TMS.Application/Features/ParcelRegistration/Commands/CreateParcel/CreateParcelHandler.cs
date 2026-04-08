@@ -10,9 +10,9 @@ public class CreateParcelHandler(
     IAppDbContext dbContext,
     IGeocodingService geocodingService,
     Domain.Services.IDeliveryDateCalculator deliveryDateCalculator)
-    : IRequestHandler<CreateParcelCommand, ParcelResult>
+    : IRequestHandler<CreateParcelCommand, CreateParcelResult>
 {
-    public async Task<ParcelResult> Handle(CreateParcelCommand request, CancellationToken cancellationToken)
+    public async Task<CreateParcelResult> Handle(CreateParcelCommand request, CancellationToken cancellationToken)
     {
         // 1. Build full address strings for geocoding
         var shipperFullAddress = BuildFullAddress(request.ShipperAddress);
@@ -101,7 +101,7 @@ public class CreateParcelHandler(
         await dbContext.SaveChangesAsync(cancellationToken);
 
         // 9. Return result
-        return new ParcelResult(
+        return new CreateParcelResult(
             parcel.Id,
             parcel.TrackingNumber,
             parcel.Status,

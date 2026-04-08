@@ -8,7 +8,7 @@ namespace LastMile.TMS.Application.Features.Parcels.Commands.UpdateParcel;
 
 public class UpdateParcelCommandHandler(
     IAppDbContext dbContext,
-    ICurrentUserService currentUserService) : IRequestHandler<UpdateParcelCommand, ParcelResult>
+    ICurrentUserService currentUserService) : IRequestHandler<UpdateParcelCommand, UpdateParcelResult>
 {
     private static readonly ParcelStatus[] EditableStatuses = new[]
     {
@@ -18,7 +18,7 @@ public class UpdateParcelCommandHandler(
         ParcelStatus.Staged
     };
 
-    public async Task<ParcelResult> Handle(UpdateParcelCommand request, CancellationToken cancellationToken)
+    public async Task<UpdateParcelResult> Handle(UpdateParcelCommand request, CancellationToken cancellationToken)
     {
         var parcel = await dbContext.Parcels
             .Include(p => p.ShipperAddress)
@@ -87,98 +87,84 @@ public class UpdateParcelCommandHandler(
             parcel.ParcelType = request.ParcelType.Value;
         }
 
-        // Handle ShipperAddress update - create new address
+        // Handle ShipperAddress update - update in place
         AddressResult? shipperAddressResult = null;
-        if (request.ShipperAddress != null)
+        if (request.ShipperAddress != null && parcel.ShipperAddress is not null)
         {
-            var oldAddress = parcel.ShipperAddress;
-            var newAddress = new Address
-            {
-                Id = Guid.NewGuid(),
-                Street1 = request.ShipperAddress.Street1,
-                Street2 = request.ShipperAddress.Street2,
-                City = request.ShipperAddress.City,
-                State = request.ShipperAddress.State,
-                PostalCode = request.ShipperAddress.PostalCode,
-                CountryCode = request.ShipperAddress.CountryCode,
-                IsResidential = request.ShipperAddress.IsResidential,
-                ContactName = request.ShipperAddress.ContactName,
-                CompanyName = request.ShipperAddress.CompanyName,
-                Phone = request.ShipperAddress.Phone,
-                Email = request.ShipperAddress.Email,
-                CreatedAt = DateTimeOffset.UtcNow,
-                CreatedBy = userId
-            };
+            var address = parcel.ShipperAddress;
+            var oldSummary = $"{address.Street1}, {address.City}";
 
-            dbContext.Addresses.Add(newAddress);
-            parcel.ShipperAddressId = newAddress.Id;
+            address.Street1 = request.ShipperAddress.Street1;
+            address.Street2 = request.ShipperAddress.Street2;
+            address.City = request.ShipperAddress.City;
+            address.State = request.ShipperAddress.State;
+            address.PostalCode = request.ShipperAddress.PostalCode;
+            address.CountryCode = request.ShipperAddress.CountryCode;
+            address.IsResidential = request.ShipperAddress.IsResidential;
+            address.ContactName = request.ShipperAddress.ContactName;
+            address.CompanyName = request.ShipperAddress.CompanyName;
+            address.Phone = request.ShipperAddress.Phone;
+            address.Email = request.ShipperAddress.Email;
 
             auditLogs.Add(ParcelAuditLog.Create(
                 parcel.Id,
                 "ShipperAddress",
-                oldAddress != null ? $"{oldAddress.Street1}, {oldAddress.City}" : "N/A",
-                $"{newAddress.Street1}, {newAddress.City}",
+                oldSummary,
+                $"{address.Street1}, {address.City}",
                 userId));
 
             shipperAddressResult = new AddressResult(
-                newAddress.Id,
-                newAddress.Street1,
-                newAddress.Street2,
-                newAddress.City,
-                newAddress.State,
-                newAddress.PostalCode,
-                newAddress.CountryCode,
-                newAddress.ContactName,
-                newAddress.CompanyName,
-                newAddress.Phone,
-                newAddress.Email);
+                address.Id,
+                address.Street1,
+                address.Street2,
+                address.City,
+                address.State,
+                address.PostalCode,
+                address.CountryCode,
+                address.ContactName,
+                address.CompanyName,
+                address.Phone,
+                address.Email);
         }
 
-        // Handle RecipientAddress update - create new address
+        // Handle RecipientAddress update - update in place
         AddressResult? recipientAddressResult = null;
-        if (request.RecipientAddress != null)
+        if (request.RecipientAddress != null && parcel.RecipientAddress is not null)
         {
-            var oldAddress = parcel.RecipientAddress;
-            var newAddress = new Address
-            {
-                Id = Guid.NewGuid(),
-                Street1 = request.RecipientAddress.Street1,
-                Street2 = request.RecipientAddress.Street2,
-                City = request.RecipientAddress.City,
-                State = request.RecipientAddress.State,
-                PostalCode = request.RecipientAddress.PostalCode,
-                CountryCode = request.RecipientAddress.CountryCode,
-                IsResidential = request.RecipientAddress.IsResidential,
-                ContactName = request.RecipientAddress.ContactName,
-                CompanyName = request.RecipientAddress.CompanyName,
-                Phone = request.RecipientAddress.Phone,
-                Email = request.RecipientAddress.Email,
-                CreatedAt = DateTimeOffset.UtcNow,
-                CreatedBy = userId
-            };
+            var address = parcel.RecipientAddress;
+            var oldSummary = $"{address.Street1}, {address.City}";
 
-            dbContext.Addresses.Add(newAddress);
-            parcel.RecipientAddressId = newAddress.Id;
+            address.Street1 = request.RecipientAddress.Street1;
+            address.Street2 = request.RecipientAddress.Street2;
+            address.City = request.RecipientAddress.City;
+            address.State = request.RecipientAddress.State;
+            address.PostalCode = request.RecipientAddress.PostalCode;
+            address.CountryCode = request.RecipientAddress.CountryCode;
+            address.IsResidential = request.RecipientAddress.IsResidential;
+            address.ContactName = request.RecipientAddress.ContactName;
+            address.CompanyName = request.RecipientAddress.CompanyName;
+            address.Phone = request.RecipientAddress.Phone;
+            address.Email = request.RecipientAddress.Email;
 
             auditLogs.Add(ParcelAuditLog.Create(
                 parcel.Id,
                 "RecipientAddress",
-                oldAddress != null ? $"{oldAddress.Street1}, {oldAddress.City}" : "N/A",
-                $"{newAddress.Street1}, {newAddress.City}",
+                oldSummary,
+                $"{address.Street1}, {address.City}",
                 userId));
 
             recipientAddressResult = new AddressResult(
-                newAddress.Id,
-                newAddress.Street1,
-                newAddress.Street2,
-                newAddress.City,
-                newAddress.State,
-                newAddress.PostalCode,
-                newAddress.CountryCode,
-                newAddress.ContactName,
-                newAddress.CompanyName,
-                newAddress.Phone,
-                newAddress.Email);
+                address.Id,
+                address.Street1,
+                address.Street2,
+                address.City,
+                address.State,
+                address.PostalCode,
+                address.CountryCode,
+                address.ContactName,
+                address.CompanyName,
+                address.Phone,
+                address.Email);
         }
 
         if (auditLogs.Count > 0)
@@ -186,9 +172,15 @@ public class UpdateParcelCommandHandler(
             dbContext.ParcelAuditLogs.AddRange(auditLogs);
         }
 
+        // Ensure parcel is marked as modified so audit fields get updated
+        if (auditLogs.Count > 0 && !parcel.LastModifiedAt.HasValue)
+        {
+            parcel.LastModifiedAt = DateTimeOffset.UtcNow;
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return new ParcelResult(
+        return new UpdateParcelResult(
             parcel.Id,
             parcel.TrackingNumber,
             parcel.Status,

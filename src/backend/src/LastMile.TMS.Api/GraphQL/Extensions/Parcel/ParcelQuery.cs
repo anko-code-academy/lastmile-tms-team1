@@ -13,7 +13,7 @@ namespace LastMile.TMS.Api.GraphQL.Extensions.Parcel;
 [ExtendObjectType(typeof(Query))]
 public class ParcelQuery
 {
-    [Authorize(Roles = new[] { Role.RoleNames.Admin, Role.RoleNames.OperationsManager, Role.RoleNames.WarehouseOperator, Role.RoleNames.Dispatcher })]
+    [Authorize]
     [UsePaging(IncludeTotalCount = true, MaxPageSize = 100)]
     [UseProjection]
     [UseFiltering]
@@ -56,7 +56,7 @@ public class ParcelQuery
     public IQueryable<DomainParcelAuditLog> GetParcelAuditLogs(Guid parcelId, [Service] AppDbContext context)
         => context.ParcelAuditLogs.AsNoTracking().Where(al => al.ParcelId == parcelId);
 
-    [Authorize(Roles = new[] { Role.RoleNames.Admin, Role.RoleNames.OperationsManager, Role.RoleNames.WarehouseOperator })]
+    [Authorize(Roles = new[] { Role.RoleNames.WarehouseOperator, Role.RoleNames.Admin })]
     [UseSingleOrDefault]
     [UseProjection]
     public IQueryable<DomainParcel> GetParcelByTrackingNumber(string trackingNumber, [Service] AppDbContext context)

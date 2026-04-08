@@ -14,7 +14,7 @@ public record UpdateParcelCommand(
     ServiceType? ServiceType,
     ParcelType? ParcelType,
     AddressInput? ShipperAddress,
-    AddressInput? RecipientAddress) : IRequest<ParcelResult>;
+    AddressInput? RecipientAddress) : IRequest<UpdateParcelResult>;
 
 public record AddressResult(
     Guid Id,
@@ -29,7 +29,7 @@ public record AddressResult(
     string? Phone,
     string? Email);
 
-public record ParcelResult(
+public record UpdateParcelResult(
     Guid Id,
     string TrackingNumber,
     ParcelStatus Status,

@@ -110,7 +110,7 @@ public class ParcelEditTests : IAsyncLifetime
     #region UpdateParcel Tests
 
     [Fact]
-    public async Task UpdateParcel_ShipperAddress_ShouldCreateNewAddressAndLinkToParcel()
+    public async Task UpdateParcel_ShipperAddress_ShouldUpdateAddressInPlace()
     {
         // Arrange
         var mutation = @"mutation {
@@ -157,7 +157,7 @@ public class ParcelEditTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task UpdateParcel_RecipientAddress_ShouldCreateNewAddressAndLinkToParcel()
+    public async Task UpdateParcel_RecipientAddress_ShouldUpdateAddressInPlace()
     {
         // Arrange
         var mutation = @"mutation {
@@ -211,7 +211,7 @@ public class ParcelEditTests : IAsyncLifetime
                 length: 35,
                 width: 25,
                 height: 20,
-                parcelType: ""Fragile""
+                parcelType: PACKAGE
             }) {
                 id
                 trackingNumber
@@ -249,7 +249,7 @@ public class ParcelEditTests : IAsyncLifetime
                 length: 35,
                 width: 25,
                 height: 20,
-                parcelType: ""Fragile""
+                parcelType: PACKAGE
             }}) {{
                 id
                 description
@@ -447,7 +447,7 @@ public class ParcelEditTests : IAsyncLifetime
                 width: 30,
                 height: 25,
                 serviceType: EXPRESS,
-                parcelType: ""Electronics""
+                parcelType: ENVELOPE
             }}) {{
                 id
             }}

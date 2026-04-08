@@ -595,7 +595,7 @@ public class ParcelIntegrationTests : IAsyncLifetime
         {
             await cmd.ExecuteNonQueryAsync();
         }
-        await using (var cmd = new NpgsqlCommand("DELETE FROM \"TrackingEvent\";", connection))
+        await using (var cmd = new NpgsqlCommand("DELETE FROM \"TrackingEvents\";", connection))
         {
             await cmd.ExecuteNonQueryAsync();
         }

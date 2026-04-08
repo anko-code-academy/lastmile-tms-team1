@@ -31,4 +31,4 @@ public record CreateParcelCommand(
     string Currency = "USD",
     ParcelType? ParcelType = null,
     string? Notes = null
-) : IRequest<ParcelResult>;
+) : IRequest<CreateParcelResult>;
