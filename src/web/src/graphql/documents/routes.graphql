@@ -5,6 +5,7 @@ query GetRoutes($where: RouteFilterInput, $order: [RouteSortInput!], $first: Int
       name
       status
       plannedStartTime
+      zoneId
       vehicleId
       vehicle {
         registrationPlate
@@ -37,6 +38,10 @@ query GetRoute($id: UUID!) {
     actualEndTime
     totalDistanceKm
     totalParcelCount
+    zoneId
+    zone {
+      name
+    }
     vehicleId
     vehicle {
       registrationPlate
@@ -46,6 +51,21 @@ query GetRoute($id: UUID!) {
       user {
         firstName
         lastName
+      }
+    }
+    routeStops {
+      id
+      sequenceNumber
+      status
+      arrivalTime
+      departureTime
+      estimatedServiceMinutes
+      accessInstructions
+      street1
+      parcels {
+        id
+        trackingNumber
+        status
       }
     }
     createdAt
@@ -74,8 +94,9 @@ mutation CreateRoute($input: CreateRouteCommandInput!) {
     name
     status
     plannedStartTime
-    totalDistanceKm
-    totalParcelCount
+    zoneId
+    zoneName
+    estimatedStopCount
     vehicleId
     vehiclePlate
     driverId
@@ -90,8 +111,9 @@ mutation UpdateRoute($input: UpdateRouteCommandInput!) {
     name
     status
     plannedStartTime
-    totalDistanceKm
-    totalParcelCount
+    zoneId
+    zoneName
+    estimatedStopCount
     vehicleId
     vehiclePlate
     driverId
@@ -131,5 +153,82 @@ mutation AssignDriverToRoute($routeId: UUID!, $driverId: UUID) {
     driverName
     vehicleId
     vehiclePlate
+  }
+}
+
+mutation AddParcelsToRoute($input: AddParcelsToRouteCommandInput!) {
+  addParcelsToRoute(input: $input) {
+    id
+    name
+    status
+    totalParcelCount
+    estimatedStopCount
+    stops {
+      id
+      sequenceNumber
+      street1
+      parcelCount
+      parcels {
+        id
+        trackingNumber
+        status
+      }
+    }
+  }
+}
+
+mutation AutoAssignParcelsByZone($input: AutoAssignParcelsByZoneCommandInput!) {
+  autoAssignParcelsByZone(input: $input) {
+    id
+    name
+    status
+    totalParcelCount
+    estimatedStopCount
+    stops {
+      id
+      sequenceNumber
+      street1
+      parcelCount
+      parcels {
+        id
+        trackingNumber
+        status
+      }
+    }
+  }
+}
+
+mutation RemoveParcelsFromRoute($input: RemoveParcelsFromRouteCommandInput!) {
+  removeParcelsFromRoute(input: $input) {
+    id
+    name
+    status
+    totalParcelCount
+    estimatedStopCount
+    stops {
+      id
+      sequenceNumber
+      street1
+      parcelCount
+      parcels {
+        id
+        trackingNumber
+        status
+      }
+    }
+  }
+}
+
+mutation ReorderRouteStops($input: ReorderRouteStopsCommandInput!) {
+  reorderRouteStops(input: $input) {
+    id
+    name
+    status
+    stops {
+      id
+      sequenceNumber
+      street1
+      parcelCount
+    }
   }
 }

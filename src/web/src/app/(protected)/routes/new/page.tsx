@@ -16,16 +16,13 @@ export default function NewRoutePage() {
   const handleSubmit = async (values: {
     name: string;
     plannedStartTime: string;
-    totalDistanceKm: number;
-    totalParcelCount: number;
+    zoneId?: string | null;
     vehicleId?: string | null;
     driverId?: string | null;
   }) => {
     try {
-      // Convert datetime-local format to ISO 8601 with UTC timezone
       const plannedStartTime = new Date(values.plannedStartTime).toISOString();
       await createRoute.mutateAsync({ ...values, plannedStartTime });
-      toast.success("Route created successfully");
       router.push("/routes");
     } catch {
       toast.error("Failed to create route");

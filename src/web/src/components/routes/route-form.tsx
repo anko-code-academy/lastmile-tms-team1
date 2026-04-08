@@ -16,14 +16,14 @@ import {
 } from "@/components/ui/form";
 import Link from "next/link";
 import { useVehicles } from "@/hooks/use-vehicles";
+import { useZones } from "@/hooks/use-zones";
 import { useAvailableDrivers } from "@/hooks/use-routes";
 import { VehicleStatus } from "@/types/vehicle";
 
 const routeSchema = z.object({
   name: z.string().min(1, "Route name is required").max(100),
   plannedStartTime: z.string().min(1, "Planned start time is required"),
-  totalDistanceKm: z.coerce.number().min(0.1, "Must be at least 0.1 km"),
-  totalParcelCount: z.coerce.number().int().min(1, "Must be at least 1 parcel"),
+  zoneId: z.string().optional().nullable(),
   vehicleId: z.string().optional().nullable(),
   driverId: z.string().optional().nullable(),
 });
@@ -42,6 +42,7 @@ export function RouteForm({
   isSubmitting,
 }: RouteFormProps) {
   const { data: vehicles = [] } = useVehicles();
+  const { data: zones = [] } = useZones();
 
   const form = useForm<RouteFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -49,8 +50,7 @@ export function RouteForm({
     defaultValues: {
       name: "",
       plannedStartTime: "",
-      totalDistanceKm: 0,
-      totalParcelCount: 0,
+      zoneId: null,
       vehicleId: null,
       driverId: null,
       ...defaultValues,
@@ -84,42 +84,17 @@ export function RouteForm({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="plannedStartTime"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Planned Start Time</FormLabel>
-              <FormControl>
-                <Input type="datetime-local" {...field} />
-              </FormControl>
-              <FormDescription>When the route is scheduled to start</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="totalDistanceKm"
+            name="plannedStartTime"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Total Distance (km)</FormLabel>
+                <FormLabel>Planned Start Time</FormLabel>
                 <FormControl>
-                  <Input
-                    type="number"
-                    min={0.1}
-                    step={0.1}
-                    placeholder="50.5"
-                    value={field.value}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                    name={field.name}
-                    ref={field.ref}
-                  />
+                  <Input type="datetime-local" {...field} />
                 </FormControl>
-                <FormDescription>Estimated route distance</FormDescription>
+                <FormDescription>When the route is scheduled to start</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -127,23 +102,25 @@ export function RouteForm({
 
           <FormField
             control={form.control}
-            name="totalParcelCount"
+            name="zoneId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Total Parcels</FormLabel>
+                <FormLabel>Zone (Optional)</FormLabel>
                 <FormControl>
-                  <Input
-                    type="number"
-                    min={1}
-                    placeholder="25"
-                    value={field.value}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                    name={field.name}
-                    ref={field.ref}
-                  />
+                  <select
+                    className="flex w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    value={field.value ?? ""}
+                    onChange={(e) => field.onChange(e.target.value || null)}
+                  >
+                    <option value="">No zone assigned</option>
+                    {zones.map((zone) => (
+                      <option key={zone.id} value={zone.id}>
+                        {zone.name}
+                      </option>
+                    ))}
+                  </select>
                 </FormControl>
-                <FormDescription>Number of parcels to deliver</FormDescription>
+                <FormDescription>Zone for auto-assigning parcels</FormDescription>
                 <FormMessage />
               </FormItem>
             )}

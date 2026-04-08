@@ -3,6 +3,7 @@ using System;
 using LastMile.TMS.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -13,9 +14,11 @@ using NpgsqlTypes;
 namespace LastMile.TMS.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260408155037_AddRouteStopAndRouteZone")]
+    partial class AddRouteStopAndRouteZone
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -133,133 +136,6 @@ namespace LastMile.TMS.Persistence.Migrations
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("RecipientNameSearchVector"), "GIN");
 
                     b.ToTable("Addresses", (string)null);
-                });
-
-            modelBuilder.Entity("LastMile.TMS.Domain.Entities.Aisle", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DeletedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.Property<string>("Label")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<DateTimeOffset?>("LastModifiedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("LastModifiedBy")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<int>("Order")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<Guid>("ZoneId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Label");
-
-                    b.HasIndex("ZoneId");
-
-                    b.ToTable("Aisles", (string)null);
-                });
-
-            modelBuilder.Entity("LastMile.TMS.Domain.Entities.Bin", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AisleId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Capacity")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DeletedBy")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Label")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<DateTimeOffset?>("LastModifiedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("LastModifiedBy")
-                        .HasColumnType("text");
-
-                    b.Property<int>("Slot")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("ZoneId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AisleId");
-
-                    b.HasIndex("Label")
-                        .IsUnique();
-
-                    b.HasIndex("ZoneId");
-
-                    b.ToTable("Bins", (string)null);
                 });
 
             modelBuilder.Entity("LastMile.TMS.Domain.Entities.DayOff", b =>
@@ -480,9 +356,6 @@ namespace LastMile.TMS.Persistence.Migrations
                     b.Property<DateTimeOffset?>("ActualDeliveryDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("BinId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -591,8 +464,6 @@ namespace LastMile.TMS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BinId");
-
                     b.HasIndex("EstimatedDeliveryDate");
 
                     b.HasIndex("RecipientAddressId");
@@ -609,64 +480,6 @@ namespace LastMile.TMS.Persistence.Migrations
                     b.HasIndex("ZoneId");
 
                     b.ToTable("Parcel", (string)null);
-                });
-
-            modelBuilder.Entity("LastMile.TMS.Domain.Entities.ParcelAuditLog", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ChangedBy")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DeletedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.Property<DateTimeOffset?>("LastModifiedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("LastModifiedBy")
-                        .HasColumnType("text");
-
-                    b.Property<string>("NewValue")
-                        .HasColumnType("text");
-
-                    b.Property<string>("OldValue")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("ParcelId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("PropertyName")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ParcelId");
-
-                    b.HasIndex("ParcelId", "CreatedAt");
-
-                    b.ToTable("ParcelAuditLogs");
                 });
 
             modelBuilder.Entity("LastMile.TMS.Domain.Entities.ParcelContentItem", b =>
@@ -1209,7 +1022,7 @@ namespace LastMile.TMS.Persistence.Migrations
 
                     b.HasIndex("ParcelId", "Timestamp");
 
-                    b.ToTable("TrackingEvents");
+                    b.ToTable("TrackingEvent");
                 });
 
             modelBuilder.Entity("LastMile.TMS.Domain.Entities.User", b =>
@@ -1861,36 +1674,6 @@ namespace LastMile.TMS.Persistence.Migrations
                     b.ToTable("ParcelWatcherParcels");
                 });
 
-            modelBuilder.Entity("LastMile.TMS.Domain.Entities.Aisle", b =>
-                {
-                    b.HasOne("LastMile.TMS.Domain.Entities.Zone", "Zone")
-                        .WithMany("Aisles")
-                        .HasForeignKey("ZoneId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Zone");
-                });
-
-            modelBuilder.Entity("LastMile.TMS.Domain.Entities.Bin", b =>
-                {
-                    b.HasOne("LastMile.TMS.Domain.Entities.Aisle", "Aisle")
-                        .WithMany("Bins")
-                        .HasForeignKey("AisleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("LastMile.TMS.Domain.Entities.Zone", "Zone")
-                        .WithMany()
-                        .HasForeignKey("ZoneId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Aisle");
-
-                    b.Navigation("Zone");
-                });
-
             modelBuilder.Entity("LastMile.TMS.Domain.Entities.DayOff", b =>
                 {
                     b.HasOne("LastMile.TMS.Domain.Entities.Driver", "Driver")
@@ -1937,11 +1720,6 @@ namespace LastMile.TMS.Persistence.Migrations
 
             modelBuilder.Entity("LastMile.TMS.Domain.Entities.Parcel", b =>
                 {
-                    b.HasOne("LastMile.TMS.Domain.Entities.Bin", "Bin")
-                        .WithMany()
-                        .HasForeignKey("BinId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("LastMile.TMS.Domain.Entities.Address", "RecipientAddress")
                         .WithMany("RecipientParcels")
                         .HasForeignKey("RecipientAddressId")
@@ -1964,8 +1742,6 @@ namespace LastMile.TMS.Persistence.Migrations
                         .HasForeignKey("ZoneId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.Navigation("Bin");
-
                     b.Navigation("RecipientAddress");
 
                     b.Navigation("RouteStop");
@@ -1973,17 +1749,6 @@ namespace LastMile.TMS.Persistence.Migrations
                     b.Navigation("ShipperAddress");
 
                     b.Navigation("Zone");
-                });
-
-            modelBuilder.Entity("LastMile.TMS.Domain.Entities.ParcelAuditLog", b =>
-                {
-                    b.HasOne("LastMile.TMS.Domain.Entities.Parcel", "Parcel")
-                        .WithMany("AuditLogs")
-                        .HasForeignKey("ParcelId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Parcel");
                 });
 
             modelBuilder.Entity("LastMile.TMS.Domain.Entities.ParcelContentItem", b =>
@@ -2240,11 +2005,6 @@ namespace LastMile.TMS.Persistence.Migrations
                     b.Navigation("ShipperParcels");
                 });
 
-            modelBuilder.Entity("LastMile.TMS.Domain.Entities.Aisle", b =>
-                {
-                    b.Navigation("Bins");
-                });
-
             modelBuilder.Entity("LastMile.TMS.Domain.Entities.Depot", b =>
                 {
                     b.Navigation("ShiftSchedules");
@@ -2263,8 +2023,6 @@ namespace LastMile.TMS.Persistence.Migrations
 
             modelBuilder.Entity("LastMile.TMS.Domain.Entities.Parcel", b =>
                 {
-                    b.Navigation("AuditLogs");
-
                     b.Navigation("ContentItems");
 
                     b.Navigation("DeliveryConfirmation");
@@ -2294,11 +2052,6 @@ namespace LastMile.TMS.Persistence.Migrations
             modelBuilder.Entity("LastMile.TMS.Domain.Entities.RouteStop", b =>
                 {
                     b.Navigation("Parcels");
-                });
-
-            modelBuilder.Entity("LastMile.TMS.Domain.Entities.Zone", b =>
-                {
-                    b.Navigation("Aisles");
                 });
 
             modelBuilder.Entity("OpenIddict.EntityFrameworkCore.Models.OpenIddictEntityFrameworkCoreApplication", b =>

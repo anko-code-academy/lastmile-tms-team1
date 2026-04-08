@@ -9,6 +9,10 @@ import {
   DeleteRouteDocument,
   ChangeRouteStatusDocument,
   AssignDriverToRouteDocument,
+  AddParcelsToRouteDocument,
+  AutoAssignParcelsByZoneDocument,
+  RemoveParcelsFromRouteDocument,
+  ReorderRouteStopsDocument,
   type GetRoutesQuery,
   type GetRouteQuery,
   type GetAvailableDriversQuery,
@@ -16,8 +20,16 @@ import {
   type UpdateRouteMutation,
   type ChangeRouteStatusMutation,
   type AssignDriverToRouteMutation,
+  type AddParcelsToRouteMutation,
+  type AutoAssignParcelsByZoneMutation,
+  type RemoveParcelsFromRouteMutation,
+  type ReorderRouteStopsMutation,
   type CreateRouteCommandInput,
   type UpdateRouteCommandInput,
+  type AddParcelsToRouteCommandInput,
+  type AutoAssignParcelsByZoneCommandInput,
+  type RemoveParcelsFromRouteCommandInput,
+  type ReorderRouteStopsCommandInput,
   type RouteStatus,
 } from "@/graphql/generated/graphql";
 
@@ -153,4 +165,64 @@ export async function assignDriverToRoute(
     }),
   });
   return response.data.assignDriverToRoute;
+}
+
+export async function addParcelsToRoute(
+  token: string,
+  input: AddParcelsToRouteCommandInput
+): Promise<AddParcelsToRouteMutation["addParcelsToRoute"]> {
+  const response = await apiFetch<{ data: AddParcelsToRouteMutation }>("/api/graphql", {
+    method: "POST",
+    token,
+    body: JSON.stringify({
+      query: print(AddParcelsToRouteDocument),
+      variables: { input },
+    }),
+  });
+  return response.data.addParcelsToRoute;
+}
+
+export async function autoAssignParcelsByZone(
+  token: string,
+  input: AutoAssignParcelsByZoneCommandInput
+): Promise<AutoAssignParcelsByZoneMutation["autoAssignParcelsByZone"]> {
+  const response = await apiFetch<{ data: AutoAssignParcelsByZoneMutation }>("/api/graphql", {
+    method: "POST",
+    token,
+    body: JSON.stringify({
+      query: print(AutoAssignParcelsByZoneDocument),
+      variables: { input },
+    }),
+  });
+  return response.data.autoAssignParcelsByZone;
+}
+
+export async function removeParcelsFromRoute(
+  token: string,
+  input: RemoveParcelsFromRouteCommandInput
+): Promise<RemoveParcelsFromRouteMutation["removeParcelsFromRoute"]> {
+  const response = await apiFetch<{ data: RemoveParcelsFromRouteMutation }>("/api/graphql", {
+    method: "POST",
+    token,
+    body: JSON.stringify({
+      query: print(RemoveParcelsFromRouteDocument),
+      variables: { input },
+    }),
+  });
+  return response.data.removeParcelsFromRoute;
+}
+
+export async function reorderRouteStops(
+  token: string,
+  input: ReorderRouteStopsCommandInput
+): Promise<ReorderRouteStopsMutation["reorderRouteStops"]> {
+  const response = await apiFetch<{ data: ReorderRouteStopsMutation }>("/api/graphql", {
+    method: "POST",
+    token,
+    body: JSON.stringify({
+      query: print(ReorderRouteStopsDocument),
+      variables: { input },
+    }),
+  });
+  return response.data.reorderRouteStops;
 }

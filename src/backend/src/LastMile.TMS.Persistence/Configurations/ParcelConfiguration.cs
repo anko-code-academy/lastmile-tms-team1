@@ -67,6 +67,9 @@ public class ParcelConfiguration : IEntityTypeConfiguration<Parcel>
 
         builder.HasIndex(p => p.BinId);
 
+        // RouteStop relationship (configured from RouteStop side, index here)
+        builder.HasIndex(p => p.RouteStopId);
+
         // Soft delete
         builder.Property(p => p.IsDeleted).HasDefaultValue(false);
         builder.Property(p => p.DeletedAt);

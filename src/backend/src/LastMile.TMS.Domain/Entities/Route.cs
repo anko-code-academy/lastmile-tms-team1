@@ -19,7 +19,11 @@ public class Route : BaseAuditableEntity
     public Guid? DriverId { get; set; }
     public Driver? Driver { get; set; }
 
+    public Guid? ZoneId { get; set; }
+    public Zone? Zone { get; set; }
+
     public ICollection<VehicleJourney> VehicleJourneys { get; set; } = [];
+    public ICollection<RouteStop> RouteStops { get; set; } = [];
 
     // Status transition validation
     public bool CanTransitionTo(RouteStatus newStatus)
@@ -61,5 +65,10 @@ public class Route : BaseAuditableEntity
         }
 
         DriverId = driverId;
+    }
+
+    public void RecalculateTotals()
+    {
+        TotalParcelCount = RouteStops.Sum(s => s.Parcels.Count);
     }
 }

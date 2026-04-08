@@ -48,4 +48,20 @@ public class RouteMutation
             new AssignDriverToRouteCommand(routeId, driverId),
             cancellationToken);
     }
+
+    [Authorize(Roles = [Role.RoleNames.Admin, Role.RoleNames.OperationsManager, Role.RoleNames.Dispatcher])]
+    public async Task<RouteDto> AddParcelsToRoute(AddParcelsToRouteCommand input, [Service] IMediator mediator)
+        => await mediator.Send(input);
+
+    [Authorize(Roles = [Role.RoleNames.Admin, Role.RoleNames.OperationsManager, Role.RoleNames.Dispatcher])]
+    public async Task<RouteDto> AutoAssignParcelsByZone(AutoAssignParcelsByZoneCommand input, [Service] IMediator mediator)
+        => await mediator.Send(input);
+
+    [Authorize(Roles = [Role.RoleNames.Admin, Role.RoleNames.OperationsManager, Role.RoleNames.Dispatcher])]
+    public async Task<RouteDto> RemoveParcelsFromRoute(RemoveParcelsFromRouteCommand input, [Service] IMediator mediator)
+        => await mediator.Send(input);
+
+    [Authorize(Roles = [Role.RoleNames.Admin, Role.RoleNames.OperationsManager, Role.RoleNames.Dispatcher])]
+    public async Task<RouteDto> ReorderRouteStops(ReorderRouteStopsCommand input, [Service] IMediator mediator)
+        => await mediator.Send(input);
 }

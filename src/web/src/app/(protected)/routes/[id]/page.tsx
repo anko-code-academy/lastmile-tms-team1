@@ -1,12 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, Pencil, Plus, Trash2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useRoute, useChangeRouteStatus } from "@/hooks/use-routes";
-import { RouteStatus } from "@/graphql/generated/graphql";
+import {
+  useRoute,
+  useChangeRouteStatus,
+  useAutoAssignParcelsByZone,
+  useRemoveParcelsFromRoute,
+} from "@/hooks/use-routes";
+import { RouteStatus, RouteStopStatus } from "@/graphql/generated/graphql";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -24,6 +29,21 @@ function getStatusBadgeVariant(status: RouteStatus) {
   }
 }
 
+function getStopStatusBadgeVariant(status: RouteStopStatus) {
+  switch (status) {
+    case RouteStopStatus.Pending:
+      return "outline";
+    case RouteStopStatus.Arrived:
+      return "warning";
+    case RouteStopStatus.Completed:
+      return "success";
+    case RouteStopStatus.Skipped:
+      return "secondary";
+    default:
+      return "outline";
+  }
+}
+
 export default function RouteDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -32,6 +52,8 @@ export default function RouteDetailPage() {
 
   const { data: route, isLoading } = useRoute(id);
   const changeStatus = useChangeRouteStatus();
+  const autoAssign = useAutoAssignParcelsByZone();
+  const removeParcels = useRemoveParcelsFromRoute();
 
   const handleStatusChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,11 +61,26 @@ export default function RouteDetailPage() {
 
     try {
       await changeStatus.mutateAsync({ id, newStatus: newStatus as RouteStatus });
-      toast.success("Route status updated");
       setNewStatus("");
       router.refresh();
     } catch {
       toast.error("Failed to update route status");
+    }
+  };
+
+  const handleAutoAssign = async () => {
+    try {
+      await autoAssign.mutateAsync(id);
+    } catch {
+      // error toast handled by hook
+    }
+  };
+
+  const handleRemoveParcel = async (parcelId: string) => {
+    try {
+      await removeParcels.mutateAsync({ routeId: id, parcelIds: [parcelId] });
+    } catch {
+      // error toast handled by hook
     }
   };
 
@@ -58,6 +95,7 @@ export default function RouteDetailPage() {
   const plannedStart = new Date(route.plannedStartTime);
   const actualStart = route.actualStartTime ? new Date(route.actualStartTime) : null;
   const actualEnd = route.actualEndTime ? new Date(route.actualEndTime) : null;
+  const isDraft = route.status === RouteStatus.Draft;
 
   return (
     <div className="p-6">
@@ -117,7 +155,15 @@ export default function RouteDetailPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Parcels</p>
-                <p>{route.totalParcelCount}</p>
+                <p className="text-2xl font-bold">{route.totalParcelCount}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Stops</p>
+                <p className="text-2xl font-bold">{route.routeStops.length}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Zone</p>
+                <p>{route.zone?.name ?? "Not assigned"}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Distance</p>
@@ -160,6 +206,104 @@ export default function RouteDetailPage() {
               </p>
               <p>{new Date(route.createdAt).toLocaleDateString()}</p>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Stops ({route.routeStops.length})</CardTitle>
+            {isDraft && (
+              <div className="flex gap-2">
+                {route.zoneId && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAutoAssign}
+                    disabled={autoAssign.isPending}
+                  >
+                    <Zap className="h-4 w-4 mr-1" />
+                    {autoAssign.isPending ? "Assigning..." : "Auto-Assign by Zone"}
+                  </Button>
+                )}
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/routes/${id}/edit`}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Parcels
+                  </Link>
+                </Button>
+              </div>
+            )}
+          </CardHeader>
+          <CardContent>
+            {route.routeStops.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No stops yet.</p>
+                {isDraft && (
+                  <p className="text-sm mt-1">
+                    Add parcels to create stops, or auto-assign by zone.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {route.routeStops
+                  .sort((a, b) => a.sequenceNumber - b.sequenceNumber)
+                  .map((stop) => (
+                    <div
+                      key={stop.id}
+                      className="rounded-lg border p-4 space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                            {stop.sequenceNumber}
+                          </span>
+                          <span className="font-medium">{stop.street1}</span>
+                        </div>
+                        <Badge variant={getStopStatusBadgeVariant(stop.status)}>
+                          {stop.status.replace("_", " ")}
+                        </Badge>
+                      </div>
+
+                      {stop.parcels.length > 0 && (
+                        <div className="ml-8 space-y-1">
+                          {stop.parcels.map((parcel) => (
+                            <div
+                              key={parcel.id}
+                              className="flex items-center justify-between text-sm py-1 px-2 rounded bg-muted/50"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-xs">
+                                  {parcel.trackingNumber}
+                                </span>
+                                <Badge variant="outline" className="text-xs">
+                                  {parcel.status.replace("_", " ")}
+                                </Badge>
+                              </div>
+                              {isDraft && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  onClick={() => handleRemoveParcel(parcel.id)}
+                                  disabled={removeParcels.isPending}
+                                >
+                                  <Trash2 className="h-3 w-3 text-destructive" />
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {stop.estimatedServiceMinutes > 0 && (
+                        <p className="ml-8 text-xs text-muted-foreground">
+                          Est. service: {stop.estimatedServiceMinutes} min
+                        </p>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

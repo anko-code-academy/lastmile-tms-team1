@@ -12,7 +12,5 @@ public class UpdateRouteInput : InputObjectType<UpdateRouteCommand>
         descriptor.Field(r => r.Id).Type<NonNullType<UuidType>>();
         descriptor.Field(r => r.Name).Type<NonNullType<StringType>>();
         descriptor.Field(r => r.PlannedStartTime).Type<NonNullType<DateTimeType>>();
-        descriptor.Field(r => r.TotalDistanceKm).Type<NonNullType<DecimalType>>();
-        descriptor.Field(r => r.TotalParcelCount).Type<NonNullType<IntType>>();
     }
 }

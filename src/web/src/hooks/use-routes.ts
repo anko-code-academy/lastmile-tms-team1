@@ -2,12 +2,16 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
-import { routeKeys, vehicleKeys, driverKeys } from "@/lib/query-key-factory";
+import { routeKeys, vehicleKeys, driverKeys, parcelKeys } from "@/lib/query-key-factory";
 import * as routesService from "@/services/routes.service";
 import {
   RouteStatus,
   type CreateRouteCommandInput,
   type UpdateRouteCommandInput,
+  type AddParcelsToRouteCommandInput,
+  type AutoAssignParcelsByZoneCommandInput,
+  type RemoveParcelsFromRouteCommandInput,
+  type ReorderRouteStopsCommandInput,
 } from "@/graphql/generated/graphql";
 import { toast } from "sonner";
 
@@ -136,6 +140,77 @@ export function useAssignDriverToRoute() {
     },
     onError: () => {
       toast.error("Failed to assign driver");
+    },
+  });
+}
+
+export function useAddParcelsToRoute() {
+  const { data: session } = useSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ routeId, parcelIds }: { routeId: string; parcelIds: string[] }) =>
+      routesService.addParcelsToRoute(session!.user.accessToken, { routeId, parcelIds }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: routeKeys.detail(variables.routeId) });
+      queryClient.invalidateQueries({ queryKey: parcelKeys.all });
+      toast.success("Parcels added to route");
+    },
+    onError: () => {
+      toast.error("Failed to add parcels to route");
+    },
+  });
+}
+
+export function useAutoAssignParcelsByZone() {
+  const { data: session } = useSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (routeId: string) =>
+      routesService.autoAssignParcelsByZone(session!.user.accessToken, { routeId }),
+    onSuccess: (_, routeId) => {
+      queryClient.invalidateQueries({ queryKey: routeKeys.detail(routeId) });
+      queryClient.invalidateQueries({ queryKey: parcelKeys.all });
+      toast.success("Parcels auto-assigned by zone");
+    },
+    onError: () => {
+      toast.error("Failed to auto-assign parcels");
+    },
+  });
+}
+
+export function useRemoveParcelsFromRoute() {
+  const { data: session } = useSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ routeId, parcelIds }: { routeId: string; parcelIds: string[] }) =>
+      routesService.removeParcelsFromRoute(session!.user.accessToken, { routeId, parcelIds }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: routeKeys.detail(variables.routeId) });
+      queryClient.invalidateQueries({ queryKey: parcelKeys.all });
+      toast.success("Parcels removed from route");
+    },
+    onError: () => {
+      toast.error("Failed to remove parcels from route");
+    },
+  });
+}
+
+export function useReorderRouteStops() {
+  const { data: session } = useSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ routeId, stopIdsInOrder }: { routeId: string; stopIdsInOrder: string[] }) =>
+      routesService.reorderRouteStops(session!.user.accessToken, { routeId, stopIdsInOrder }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: routeKeys.detail(variables.routeId) });
+      toast.success("Stops reordered");
+    },
+    onError: () => {
+      toast.error("Failed to reorder stops");
     },
   });
 }

@@ -11,7 +11,6 @@ public class CreateRouteCommandHandler(IAppDbContext context) : IRequestHandler<
 {
     public async Task<RouteDto> Handle(CreateRouteCommand request, CancellationToken cancellationToken)
     {
-        // Validate vehicle exists and is not retired (but don't assign it yet - assignment happens when route starts)
         if (request.VehicleId.HasValue)
         {
             var vehicle = await context.Vehicles.FirstOrDefaultAsync(v => v.Id == request.VehicleId.Value, cancellationToken);
@@ -43,13 +42,25 @@ public class CreateRouteCommandHandler(IAppDbContext context) : IRequestHandler<
             driverName = $"{driver.User.FirstName} {driver.User.LastName}";
         }
 
+        string? zoneName = null;
+        if (request.ZoneId.HasValue)
+        {
+            var zone = await context.Zones.FirstOrDefaultAsync(z => z.Id == request.ZoneId.Value, cancellationToken);
+            if (zone == null)
+            {
+                throw new InvalidOperationException($"Zone with ID {request.ZoneId.Value} not found.");
+            }
+            zoneName = zone.Name;
+        }
+
         var route = new Route
         {
             Name = request.Name,
             Status = RouteStatus.Draft,
             PlannedStartTime = request.PlannedStartTime,
-            TotalDistanceKm = request.TotalDistanceKm,
-            TotalParcelCount = request.TotalParcelCount,
+            TotalDistanceKm = 0,
+            TotalParcelCount = 0,
+            ZoneId = request.ZoneId,
             VehicleId = request.VehicleId,
             DriverId = request.DriverId
         };
@@ -75,6 +86,9 @@ public class CreateRouteCommandHandler(IAppDbContext context) : IRequestHandler<
             VehiclePlate = vehiclePlate,
             DriverId = route.DriverId,
             DriverName = driverName,
+            ZoneId = route.ZoneId,
+            ZoneName = zoneName,
+            EstimatedStopCount = 0,
             CreatedAt = route.CreatedAt
         };
     }

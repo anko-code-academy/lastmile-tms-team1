@@ -193,4 +193,78 @@ public class RouteTests
         // Assert
         route.DriverId.Should().BeNull();
     }
+
+    [Fact]
+    public void RecalculateTotals_ShouldCountParcelsAcrossStops()
+    {
+        // Arrange
+        var route = new Route
+        {
+            Name = "Test Route",
+            PlannedStartTime = DateTime.UtcNow
+        };
+
+        var stop1 = new RouteStop
+        {
+            Parcels =
+            [
+                new Parcel { ServiceType = ServiceType.Standard },
+                new Parcel { ServiceType = ServiceType.Standard }
+            ]
+        };
+
+        var stop2 = new RouteStop
+        {
+            Parcels =
+            [
+                new Parcel { ServiceType = ServiceType.Standard },
+                new Parcel { ServiceType = ServiceType.Standard },
+                new Parcel { ServiceType = ServiceType.Standard }
+            ]
+        };
+
+        route.RouteStops.Add(stop1);
+        route.RouteStops.Add(stop2);
+
+        // Act
+        route.RecalculateTotals();
+
+        // Assert
+        route.TotalParcelCount.Should().Be(5);
+    }
+
+    [Fact]
+    public void RecalculateTotals_WithNoStops_ShouldSetZeroCounts()
+    {
+        // Arrange
+        var route = new Route
+        {
+            Name = "Test Route",
+            PlannedStartTime = DateTime.UtcNow
+        };
+
+        // Act
+        route.RecalculateTotals();
+
+        // Assert
+        route.TotalParcelCount.Should().Be(0);
+    }
+
+    [Fact]
+    public void RouteWithZone_SetsZoneId()
+    {
+        // Arrange
+        var zoneId = Guid.NewGuid();
+
+        // Act
+        var route = new Route
+        {
+            Name = "Test Route",
+            PlannedStartTime = DateTime.UtcNow,
+            ZoneId = zoneId
+        };
+
+        // Assert
+        route.ZoneId.Should().Be(zoneId);
+    }
 }

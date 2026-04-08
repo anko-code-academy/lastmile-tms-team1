@@ -46,6 +46,10 @@ public class Parcel : BaseAuditableEntity
     public Guid? BinId { get; set; }
     public Bin? Bin { get; set; }
 
+    // Route assignment
+    public Guid? RouteStopId { get; set; }
+    public RouteStop? RouteStop { get; set; }
+
     // Navigation properties
     public DeliveryConfirmation? DeliveryConfirmation { get; set; }
     public ICollection<ParcelContentItem> ContentItems { get; set; } = new List<ParcelContentItem>();

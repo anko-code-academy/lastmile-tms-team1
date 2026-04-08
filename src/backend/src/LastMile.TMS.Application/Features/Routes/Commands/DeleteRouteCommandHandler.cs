@@ -11,6 +11,7 @@ public class DeleteRouteCommandHandler(IAppDbContext context) : IRequestHandler<
     {
         var route = await context.Routes
             .Include(r => r.Vehicle)
+            .Include(r => r.RouteStops).ThenInclude(s => s.Parcels)
             .FirstOrDefaultAsync(r => r.Id == request.Id, cancellationToken);
 
         if (route is null)
@@ -19,6 +20,15 @@ public class DeleteRouteCommandHandler(IAppDbContext context) : IRequestHandler<
         }
 
         var oldVehicleId = route.VehicleId;
+
+        // Clear parcel RouteStopIds before cascade delete removes the stops
+        foreach (var stop in route.RouteStops)
+        {
+            foreach (var parcel in stop.Parcels)
+            {
+                parcel.RouteStopId = null;
+            }
+        }
 
         context.Routes.Remove(route);
 

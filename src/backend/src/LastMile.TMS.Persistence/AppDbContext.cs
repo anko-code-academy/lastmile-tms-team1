@@ -21,6 +21,7 @@ public class AppDbContext(
     public DbSet<Parcel> Parcels => Set<Parcel>();
     public DbSet<Route> Routes => Set<Route>();
     public DbSet<ParcelAuditLog> ParcelAuditLogs => Set<ParcelAuditLog>();
+    public DbSet<RouteStop> RouteStops => Set<RouteStop>();
     public DbSet<ShiftSchedule> ShiftSchedules => Set<ShiftSchedule>();
     public DbSet<TrackingEvent> TrackingEvents => Set<TrackingEvent>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();

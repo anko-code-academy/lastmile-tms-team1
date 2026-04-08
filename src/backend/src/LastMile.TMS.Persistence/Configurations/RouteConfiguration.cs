@@ -42,7 +42,17 @@ public class RouteConfiguration : IEntityTypeConfiguration<Route>
 
         builder.HasIndex(r => r.DriverId);
 
+        builder.HasOne(r => r.Zone)
+            .WithMany()
+            .HasForeignKey(r => r.ZoneId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasIndex(r => r.ZoneId);
+
         builder.Navigation(r => r.VehicleJourneys)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.Navigation(r => r.RouteStops)
             .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

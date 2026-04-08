@@ -17,11 +17,5 @@ public class UpdateRouteCommandValidator : AbstractValidator<UpdateRouteCommand>
         RuleFor(x => x.PlannedStartTime)
             .NotEmpty().WithMessage("Planned start time is required")
             .Must(time => time > DateTime.UtcNow).WithMessage("Planned start time must be in the future");
-
-        RuleFor(x => x.TotalDistanceKm)
-            .GreaterThan(0).WithMessage("Total distance must be greater than 0");
-
-        RuleFor(x => x.TotalParcelCount)
-            .GreaterThanOrEqualTo(0).WithMessage("Total parcel count must be non-negative");
     }
 }
