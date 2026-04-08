@@ -14,6 +14,8 @@ public class RouteDto
     public int TotalParcelCount { get; set; }
     public Guid? VehicleId { get; set; }
     public string? VehiclePlate { get; set; }
+    public Guid? DriverId { get; set; }
+    public string? DriverName { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 }
 
@@ -25,4 +27,6 @@ public class RouteSummaryDto
     public DateTime PlannedStartTime { get; set; }
     public Guid? VehicleId { get; set; }
     public string? VehiclePlate { get; set; }
+    public Guid? DriverId { get; set; }
+    public string? DriverName { get; set; }
 }

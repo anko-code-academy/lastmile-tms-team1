@@ -462,6 +462,115 @@ public class DriverIntegrationTests : IAsyncLifetime
         drivers.GetArrayLength().Should().BeGreaterThan(0);
     }
 
+    [Fact]
+    public async Task UpdateDriver_AddDayOff_WhenDriverHasRouteOnThatDate_ReturnsError()
+    {
+        // Arrange - Create driver with shift schedule for next week
+        var (depotId, zoneId, userEmail) = await CreateDepotZoneAndUserAsync();
+
+        var nextWeek = DateTime.UtcNow.AddDays(7);
+        var dayOfWeek = nextWeek.DayOfWeek;
+
+        var createMutation = $@"mutation {{
+            createDriver(input: {{
+                email: ""{userEmail}"",
+                licenseNumber: ""DL_DAYOFF_CONFLICT"",
+                licenseExpiryDate: ""2027-12-31T00:00:00Z"",
+                shiftSchedules: [
+                    {{ dayOfWeek: {dayOfWeek.ToString().ToUpperInvariant()}, openTime: ""08:00:00"", closeTime: ""17:00:00"" }}
+                ]
+            }}) {{
+                id
+            }}
+        }}";
+
+        var createJson = await GraphQLRequestAsync(createMutation);
+        var driverId = createJson.GetProperty("data").GetProperty("createDriver").GetProperty("id").GetString();
+
+        // Create a route on the same date and assign the driver
+        var routeMutation = $@"mutation {{
+            createRoute(input: {{
+                name: ""DayOff Conflict Route"",
+                plannedStartTime: ""{nextWeek:O}"",
+                totalDistanceKm: 30.0,
+                totalParcelCount: 15,
+                driverId: ""{driverId}""
+            }}) {{ id }}
+        }}";
+        await GraphQLRequestAsync(routeMutation);
+
+        // Act - Try to add a day off for the route date
+        var dayOffDate = new DateTimeOffset(nextWeek.Year, nextWeek.Month, nextWeek.Day, 0, 0, 0, TimeSpan.Zero);
+        var updateMutation = $@"mutation {{
+            updateDriver(input: {{
+                id: ""{driverId}"",
+                licenseNumber: ""DL_DAYOFF_CONFLICT"",
+                licenseExpiryDate: ""2027-12-31T00:00:00Z"",
+                daysOff: [
+                    {{ date: ""{dayOffDate:O}"" }}
+                ]
+            }}) {{
+                id
+            }}
+        }}";
+
+        var updateJson = await GraphQLRequestAsync(updateMutation);
+
+        // Assert
+        updateJson.TryGetProperty("errors", out var errors).Should().BeTrue();
+        errors.GetArrayLength().Should().BeGreaterThan(0);
+        errors[0].GetProperty("message").GetString().Should().Contain("day off");
+    }
+
+    [Fact]
+    public async Task UpdateDriver_AddDayOff_WhenNoConflict_Succeeds()
+    {
+        // Arrange
+        var (depotId, zoneId, userEmail) = await CreateDepotZoneAndUserAsync();
+
+        var createMutation = $@"mutation {{
+            createDriver(input: {{
+                email: ""{userEmail}"",
+                licenseNumber: ""DL_DAYOFF_OK"",
+                licenseExpiryDate: ""2027-12-31T00:00:00Z""
+            }}) {{
+                id
+            }}
+        }}";
+
+        var createJson = await GraphQLRequestAsync(createMutation);
+        var driverId = createJson.GetProperty("data").GetProperty("createDriver").GetProperty("id").GetString();
+
+        // Act - Add a day off for a date with no assigned routes
+        var dayOffDate = new DateTimeOffset(2027, 6, 15, 0, 0, 0, TimeSpan.Zero);
+        var updateMutation = $@"mutation {{
+            updateDriver(input: {{
+                id: ""{driverId}"",
+                licenseNumber: ""DL_DAYOFF_OK"",
+                licenseExpiryDate: ""2027-12-31T00:00:00Z"",
+                daysOff: [
+                    {{ date: ""{dayOffDate:O}"" }}
+                ]
+            }}) {{
+                id
+                daysOff {{
+                    date
+                }}
+            }}
+        }}";
+
+        var updateJson = await GraphQLRequestAsync(updateMutation);
+
+        // Assert
+        if (updateJson.TryGetProperty("errors", out var errors))
+        {
+            throw new Exception($"GraphQL errors: {errors.GetRawText()}");
+        }
+
+        var daysOff = updateJson.GetProperty("data").GetProperty("updateDriver").GetProperty("daysOff");
+        daysOff.GetArrayLength().Should().Be(1);
+    }
+
     private static async Task CleanupTestDataAsync(string connectionString)
     {
         await using var connection = new NpgsqlConnection(connectionString);

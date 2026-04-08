@@ -171,7 +171,7 @@ Api/GraphQL/Common/
 | Admin | All domains, user management |
 | Operations Manager | Depots, Zones, Vehicles, Routes, Drivers |
 | Warehouse Operator | Parcels (create, view) |
-| Dispatcher | Routes (view) |
+| Dispatcher | Routes (full CRUD, assign driver) |
 
 **Rules:**
 - Query resolvers access `AppDbContext` directly, return `IQueryable<TEntity>`
@@ -270,7 +270,7 @@ IdentityRole<Guid> + IBaseAuditableEntity
 
 **Domain behavior:**
 - `Parcel` -- state machine (`CanTransitionTo`/`TransitionTo`), factory method `Create()`, tracking number generation (`LM-yyMMdd-XXXXXX`)
-- `Route` -- state machine (Planned -> InProgress -> Completed/Cancelled), timestamps `ActualStartTime`/`ActualEndTime`
+- `Route` -- state machine (Draft -> InProgress -> Completed), timestamps `ActualStartTime`/`ActualEndTime`, `AssignDriver(driverId)` (Draft only)
 - `Vehicle` -- state machine (Available -> InUse/Maintenance/Retired), `AssignToRoute(parcelCount)`, `ReleaseFromRoute()`, `Update()` factory
 - `User` -- `Activate()`/`Deactivate()`/`Suspend()`, `Create()` factory with email validation, `UpdateName/Phone/Email`, `IsSystemAdmin` protection
 - `Zone` -- `SetBoundaryFromGeoJson()` parses GeoJSON Polygon via NetTopologySuite
@@ -336,7 +336,7 @@ Infrastructure/
 | **APP** | `Commands/CreateDriver/*` | Command + Handler (resolves User by email, validates Driver role) + Validator |
 | **APP** | `Commands/UpdateDriver/*` | Command + Handler (syncs shift schedules + days off) + Validator |
 | **APP** | `Commands/DeleteDriver/*` | Command + Handler (soft delete) |
-| **DOM** | `Entities/Driver.cs` | LicenseNumber, LicenseExpiryDate, Photo, UserId (FK to User), ShiftSchedules, DaysOff |
+| **DOM** | `Entities/Driver.cs` | LicenseNumber, LicenseExpiryDate, Photo, UserId (FK to User), ShiftSchedules, DaysOff, Routes (inverse collection) |
 | **DOM** | `Entities/ShiftSchedule.cs` | DayOfWeek, OpenTime, CloseTime (linked to Depot or Driver) |
 | **DOM** | `Entities/DayOff.cs` | Date, Reason, Type (Full/Half) |
 | **PERS** | `DriverConfiguration.cs` | EF Core FluentAPI |
@@ -376,23 +376,25 @@ Registered -> ReceivedAtDepot -> Sorted -> Staged -> Loaded -> OutForDelivery ->
 
 | Layer | File | Purpose |
 |---|---|---|
-| **API** | `RouteQueries.cs` | `GetRoutes` (list, no paging), `GetRoute` (by ID) via AppDbContext |
-| **API** | `RouteMutations.cs` | `CreateRoute`, `UpdateRoute`, `DeleteRoute`, `ChangeRouteStatus` |
+| **API** | `RouteQueries.cs` | `GetRoutes` (paginated list), `GetRoute` (by ID), `GetAvailableDrivers` (by date) via AppDbContext |
+| **API** | `RouteMutations.cs` | `CreateRoute`, `UpdateRoute`, `DeleteRoute`, `ChangeRouteStatus`, `AssignDriverToRoute` |
+| **API** | `Inputs/CreateRouteInput.cs` | Input type for CreateRoute |
+| **API** | `Inputs/UpdateRouteInput.cs` | Input type for UpdateRoute |
 | **APP** | `Commands/CreateRoute/*` | Command + Handler (validates vehicle not retired) + Validator |
-| **APP** | `Commands/UpdateRoute/*` | Command + Handler (vehicle assignment for InProgress routes) + Validator |
+| **APP** | `Commands/UpdateRoute/*` | Command + Handler (vehicle + driver assignment, day-off conflict validation) + Validator |
 | **APP** | `Commands/DeleteRoute/*` | Command + Handler |
 | **APP** | `Commands/ChangeRouteStatus/*` | Command + Handler (manages VehicleJourney, assigns/releases vehicle) |
-| **DOM** | `Entities/Route.cs` | Name, Status (state machine), PlannedStartTime, ActualStartTime/EndTime, TotalDistanceKm, TotalParcelCount, VehicleId |
+| **APP** | `Commands/AssignDriverToRoute/*` | Command + Handler (validates Draft status, day-off conflict) |
+| **APP** | `Routes/DriverDayOffValidator.cs` | Shared day-off conflict validation (used by UpdateDriver and AssignDriverToRoute) |
+| **APP** | `Routes/AvailableDriverDto.cs` | DTO for available drivers query (shift info, assigned routes) |
+| **DOM** | `Entities/Route.cs` | Name, Status (state machine), PlannedStartTime, ActualStartTime/EndTime, TotalDistanceKm, TotalParcelCount, VehicleId, DriverId |
 | **DOM** | `Entities/VehicleJourney.cs` | VehicleId, RouteId, StartMileageKm, EndMileageKm, DistanceKm (computed) |
 | **PERS** | `RouteConfiguration.cs` | EF Core FluentAPI |
 
 **Route status state machine:**
 
 ```
-Planned -> InProgress -> Completed
-   |          |
-   v          v
-Cancelled  Cancelled
+Draft -> InProgress -> Completed
 ```
 
 #### Users
@@ -513,7 +515,7 @@ src/components/<feature>/*.tsx             -- React components
 | Depots | GetDepots, GetDepot | CreateDepot, UpdateDepot, DeleteDepot |
 | Drivers | GetDrivers, GetDriver | CreateDriver, UpdateDriver, DeleteDriver |
 | Parcels | GetParcels, GetParcel, GetParcelByTrackingNumber | CreateParcel |
-| Routes | GetRoutes, GetRoute | CreateRoute, UpdateRoute, DeleteRoute, ChangeRouteStatus |
+| Routes | GetRoutes, GetRoute, GetAvailableDrivers | CreateRoute, UpdateRoute, DeleteRoute, ChangeRouteStatus, AssignDriverToRoute |
 | Users | GetUsers, GetUser, GetUserManagementLookups | CreateUser, UpdateUser, ActivateUser, DeactivateUser, ResetPassword, CompletePasswordReset |
 | Vehicles | GetVehicles, GetVehicle, GetVehicleHistory | CreateVehicle, UpdateVehicle, DeleteVehicle, ChangeVehicleStatus |
 | Zones | GetZones, GetZone | CreateZone, UpdateZone, DeleteZone |
@@ -680,15 +682,15 @@ app/
 
 ---
 
-### 6.2 Missing `[UsePaging]` on `GetRoutes` and `GetVehicles`
+### 6.2 Missing `[UsePaging]` on `GetVehicles`
 
-**Location**: `RouteQuery.cs:13-19`, `VehicleQuery.cs:15-19`
+**Location**: `VehicleQuery.cs:15-19`
 
-Five other collection queries (Depots, Zones, Drivers, Parcels, Users) all have `[UsePaging(IncludeTotalCount = true)]`. Routes and Vehicles do not. This means:
+Six other collection queries (Depots, Zones, Drivers, Parcels, Users, Routes) all have `[UsePaging(IncludeTotalCount = true)]`. Vehicles does not. This means:
 - Unbounded result sets (performance risk at scale)
-- The frontend must handle different response shapes for Routes/Vehicles vs. other domains
+- The frontend must handle a different response shape for Vehicles vs. other domains
 
-**Fix**: Add `[UsePaging(IncludeTotalCount = true)]` to `GetRoutes` and `GetVehicles`. Note: this changes the GraphQL response shape from `[Route]` to a connection type `{ edges { node } pageInfo { ... } totalCount }` and will require corresponding frontend changes in the services and query hooks.
+**Fix**: Add `[UsePaging(IncludeTotalCount = true)]` to `GetVehicles`. Note: this changes the GraphQL response shape from `[Vehicle]` to a connection type `{ edges { node } pageInfo { ... } totalCount }` and will require corresponding frontend changes in the services and query hooks.
 
 ---
 
@@ -749,25 +751,25 @@ Both the interface and implementation live in `Domain/Services/DeliveryDateCalcu
 
 ---
 
-### 6.7 Inconsistent mutation parameter style
+### 6.7 Inconsistent mutation parameter style on Vehicles
 
-**Location**: `RouteMutation.cs`, `VehicleMutation.cs` vs. `DepotMutation.cs`, `ZoneMutation.cs`, `DriverMutation.cs`
+**Location**: `VehicleMutation.cs` vs. `DepotMutation.cs`, `ZoneMutation.cs`, `DriverMutation.cs`, `RouteMutation.cs`
 
-Routes and Vehicles accept individual scalar parameters in mutations:
+Vehicles accept individual scalar parameters in mutations:
 ```csharp
-public async Task<RouteDto> CreateRoute(string name, DateTime plannedStartTime, ...)
+public async Task<VehicleDto> CreateVehicle(string registrationPlate, VehicleType type, ...)
 ```
 
-Depots, Zones, and Drivers accept structured input types:
+All other domains accept structured input types:
 ```csharp
 public async Task<DepotResult> CreateDepot(CreateDepotInput input, ...)
 ```
 
 Both approaches work and HotChocolate handles them correctly, but the inconsistency means:
 - Different calling conventions in the GraphQL schema
-- `AddLastMileApi()` registers input types for some domains but not others
+- `AddLastMileApi()` registers input types for other domains but not Vehicles
 
-**Fix**: Add input types for Routes/Vehicles to match the rest of the codebase. The structured input-type pattern (`CreateDepotInput`) is preferred over positional scalar parameters because it eliminates argument-ordering mistakes -- callers identify fields by name, not position. This is especially important for mutations with 3+ parameters where similar-typed arguments (e.g., multiple `string` or `DateTime` fields) are easy to swap. Frontend updates required for Routes/Vehicles.
+**Fix**: Add input types for Vehicles to match the rest of the codebase. The structured input-type pattern (`CreateDepotInput`) is preferred over positional scalar parameters because it eliminates argument-ordering mistakes -- callers identify fields by name, not position. This is especially important for mutations with 3+ parameters where similar-typed arguments (e.g., multiple `string` or `DateTime` fields) are easy to swap. Frontend updates required for Vehicles.
 
 ---
 
@@ -781,22 +783,20 @@ Depots, Zones, and Drivers define explicit `EntityObjectType<T>` subclasses (e.g
 
 ---
 
-### 6.9 GraphQL codegen output is unused -- all types are hand-written
+### 6.9 GraphQL codegen partially adopted
 
-**Location**: `src/web/src/graphql/generated/` (4 generated files), `src/web/src/graphql/documents/` (6 `.graphql` files)
+**Location**: `src/web/src/graphql/generated/` (generated files), `src/web/src/graphql/documents/` (`.graphql` files)
 
-The project has a full GraphQL code-generation pipeline (`@graphql-codegen/cli` + `client-preset`) configured to produce TypeScript types from `.graphql` documents. The generated files exist in `src/graphql/generated/` and export `TypedDocumentNode`-based types. However, **nothing in the codebase imports from them** -- zero references across all `.ts`/`.tsx` files.
+The project has a full GraphQL code-generation pipeline (`@graphql-codegen/cli` + `client-preset`) configured to produce TypeScript types from `.graphql` documents. Routes now imports from generated types -- services use `TypedDocumentNode`-based queries and generated input types. Other domains still use hand-written types:
 
-Instead, every service and component uses hand-written types from three locations:
-- `src/web/src/lib/graphql/types.ts` -- Depots, Zones, Drivers, Parcels (DTOs, enums, inputs)
+- `src/web/src/lib/graphql/types.ts` -- Depots, Zones, Drivers (DTOs, enums, inputs)
 - `src/web/src/types/vehicle.ts` -- Vehicles
-- `src/web/src/types/route.ts` -- Routes
 - `src/web/src/types/user.ts` -- Users
 - `src/web/src/types/parcel.ts` -- Parcels
 
-Services also use raw template-string queries (not the `gql` tag or `TypedDocumentNode`) and call `apiFetch` directly rather than a generated GraphQL client. The `.graphql` document files in `src/graphql/documents/` are similarly disconnected from the runtime code.
+These services still use raw template-string queries (not the `gql` tag or `TypedDocumentNode`) and call `apiFetch` directly rather than a generated GraphQL client.
 
-**Fix**: Either wire up the codegen pipeline properly (use generated types, `gql` tag, and `TypedDocumentNode` in services + TanStack Query), or remove the dead codegen infrastructure (`generated/`, `documents/`, `@graphql-codegen` deps, `npm run codegen` script) and rely on the hand-written types consistently.
+**Fix**: Migrate remaining domains (Depots, Zones, Drivers, Vehicles, Users) to use the codegen pipeline, following the Routes pattern. Each domain needs: `.graphql` documents with operations, `npm run codegen`, then update services to import generated types.
 
 **Note on dynamic queries (parcels list)**: The parcels page has a column picker that lets users toggle ~28 columns on/off, producing a dynamic GraphQL selection set at runtime. This is handled by `build-parcels-query.ts` + `column-registry.ts`, which construct the query string from the selected column's `graphqlFields` mappings.
 

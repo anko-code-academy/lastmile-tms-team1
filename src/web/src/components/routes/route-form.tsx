@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/form";
 import Link from "next/link";
 import { useVehicles } from "@/hooks/use-vehicles";
+import { useAvailableDrivers } from "@/hooks/use-routes";
 import { VehicleStatus } from "@/types/vehicle";
 
 const routeSchema = z.object({
@@ -24,6 +25,7 @@ const routeSchema = z.object({
   totalDistanceKm: z.coerce.number().min(0.1, "Must be at least 0.1 km"),
   totalParcelCount: z.coerce.number().int().min(1, "Must be at least 1 parcel"),
   vehicleId: z.string().optional().nullable(),
+  driverId: z.string().optional().nullable(),
 });
 
 type RouteFormValues = z.infer<typeof routeSchema>;
@@ -50,9 +52,14 @@ export function RouteForm({
       totalDistanceKm: 0,
       totalParcelCount: 0,
       vehicleId: null,
+      driverId: null,
       ...defaultValues,
     },
   });
+
+  const plannedStartTime = form.watch("plannedStartTime");
+  const dateForDrivers = plannedStartTime ? plannedStartTime.split("T")[0] : undefined;
+  const { data: availableDrivers = [] } = useAvailableDrivers(dateForDrivers);
 
   // Filter out retired vehicles - they cannot be assigned to routes
   const availableVehicles = vehicles.filter(
@@ -169,6 +176,48 @@ export function RouteForm({
           )}
         />
 
+        <FormField
+          control={form.control}
+          name="driverId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Assign Driver (Optional)</FormLabel>
+              <FormControl>
+                <select
+                  className="flex w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  value={field.value ?? ""}
+                  onChange={(e) => field.onChange(e.target.value || null)}
+                  disabled={!plannedStartTime}
+                >
+                  <option value="">
+                    {!plannedStartTime ? "Select a date first" : "No driver assigned"}
+                  </option>
+                  {availableDrivers.map((driver) => (
+                    <option key={driver.id} value={driver.id}>
+                      {driver.name}
+                      {driver.assignedRoutes.length > 0
+                        ? ` (${driver.assignedRoutes.length} route${driver.assignedRoutes.length > 1 ? "s" : ""} assigned)`
+                        : ""}
+                    </option>
+                  ))}
+                </select>
+              </FormControl>
+              <FormDescription>
+                {!plannedStartTime
+                  ? "Select a planned start time to see available drivers"
+                  : "Available drivers for the selected date (excludes drivers on day off)"}
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {form.watch("driverId") && availableDrivers.length > 0 && (
+          <DriverWorkloadInfo
+            driver={availableDrivers.find((d) => d.id === form.watch("driverId"))}
+          />
+        )}
+
         <div className="flex justify-end gap-4">
           <Button type="button" variant="outline" asChild>
             <Link href="/routes">Cancel</Link>
@@ -179,5 +228,38 @@ export function RouteForm({
         </div>
       </form>
     </Form>
+  );
+}
+
+function DriverWorkloadInfo({
+  driver,
+}: {
+  driver: { name: string; shift?: { openTime: string; closeTime: string } | null; assignedRoutes: { id: string; name: string; status: string }[] } | undefined;
+}) {
+  if (!driver) return null;
+
+  return (
+    <div className="rounded-md border bg-muted/50 p-3 text-sm">
+      <p className="font-medium">{driver.name}</p>
+      {driver.shift && (
+        <p className="text-muted-foreground">
+          Shift: {driver.shift.openTime} - {driver.shift.closeTime}
+        </p>
+      )}
+      {driver.assignedRoutes.length > 0 ? (
+        <div className="mt-1">
+          <p className="text-muted-foreground">Assigned routes:</p>
+          <ul className="ml-4 list-disc text-muted-foreground">
+            {driver.assignedRoutes.map((route) => (
+              <li key={route.id}>
+                {route.name} ({route.status.replace("_", " ")})
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p className="text-muted-foreground">No other routes assigned this day</p>
+      )}
+    </div>
   );
 }

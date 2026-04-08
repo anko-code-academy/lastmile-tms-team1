@@ -1,6 +1,7 @@
 using LastMile.TMS.Application.Common.Interfaces;
 using LastMile.TMS.Application.Features.Drivers.Common;
 using LastMile.TMS.Domain.Entities;
+using LastMile.TMS.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,7 +26,47 @@ public class UpdateDriverHandler(IAppDbContext dbContext) : IRequestHandler<Upda
 
         if (request.ShiftSchedules != null)
         {
+            // Validate: check if removing a workday that has assigned routes
             var requestedDays = request.ShiftSchedules
+                .Where(h => h.OpenTime != null && h.CloseTime != null)
+                .Select(h => h.DayOfWeek)
+                .ToHashSet();
+
+            var daysBeingRemoved = existingSchedules
+                .Where(s => !requestedDays.Contains(s.DayOfWeek))
+                .Select(s => s.DayOfWeek)
+                .ToList();
+
+            var explicitlyRemovedDays = request.ShiftSchedules
+                .Where(h => h.OpenTime == null || h.CloseTime == null)
+                .Select(h => h.DayOfWeek)
+                .Where(d => existingSchedules.Any(s => s.DayOfWeek == d))
+                .ToList();
+
+            daysBeingRemoved.AddRange(explicitlyRemovedDays);
+            daysBeingRemoved = daysBeingRemoved.Distinct().ToList();
+
+            if (daysBeingRemoved.Count != 0)
+            {
+                var conflictingRoutes = await dbContext.Routes
+                    .Where(r => r.DriverId == driver.Id
+                        && !r.IsDeleted
+                        && (r.Status == RouteStatus.Draft || r.Status == RouteStatus.InProgress)
+                        && daysBeingRemoved.Contains(r.PlannedStartTime.DayOfWeek))
+                    .Select(r => new { r.Name, Day = r.PlannedStartTime.DayOfWeek })
+                    .ToListAsync(cancellationToken);
+
+                if (conflictingRoutes.Count != 0)
+                {
+                    var grouped = conflictingRoutes
+                        .GroupBy(r => r.Day)
+                        .Select(g => $"{g.Key}: {string.Join(", ", g.Select(r => r.Name))}");
+                    throw new InvalidOperationException(
+                        $"Cannot remove workday(s). Unassign the following route(s) first: {string.Join("; ", grouped)}");
+                }
+            }
+
+            var requestedDays2 = request.ShiftSchedules
                 .Select(h => h.DayOfWeek)
                 .ToHashSet();
 
@@ -79,6 +120,32 @@ public class UpdateDriverHandler(IAppDbContext dbContext) : IRequestHandler<Upda
 
         if (request.DaysOff != null)
         {
+            // Validate: check if adding a day off that has assigned routes
+            var datesBeingAdded = request.DaysOff
+                .Where(d => !existingDaysOff.Any(e => e.Date.Date == d.Date.Date))
+                .Select(d => DateOnly.FromDateTime(d.Date.DateTime))
+                .ToList();
+
+            if (datesBeingAdded.Count != 0)
+            {
+                var conflictingRoutes = await dbContext.Routes
+                    .Where(r => r.DriverId == driver.Id
+                        && !r.IsDeleted
+                        && (r.Status == RouteStatus.Draft || r.Status == RouteStatus.InProgress)
+                        && datesBeingAdded.Contains(DateOnly.FromDateTime(r.PlannedStartTime)))
+                    .Select(r => new { r.Name, Date = r.PlannedStartTime })
+                    .ToListAsync(cancellationToken);
+
+                if (conflictingRoutes.Count != 0)
+                {
+                    var grouped = conflictingRoutes
+                        .GroupBy(r => r.Date)
+                        .Select(g => $"{g.Key:yyyy-MM-dd}: {string.Join(", ", g.Select(r => r.Name))}");
+                    throw new InvalidOperationException(
+                        $"Cannot add day off for date(s) with assigned route(s). Unassign the following route(s) first: {string.Join("; ", grouped)}");
+                }
+            }
+
             var requestedDates = request.DaysOff
                 .Select(d => d.Date.Date)
                 .ToHashSet();

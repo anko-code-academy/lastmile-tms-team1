@@ -12,6 +12,7 @@ public class UpdateRouteCommandHandler(IAppDbContext context) : IRequestHandler<
     {
         var route = await context.Routes
             .Include(r => r.Vehicle)
+            .Include(r => r.Driver).ThenInclude(d => d.User)
             .FirstOrDefaultAsync(r => r.Id == request.Id, cancellationToken);
 
         if (route is null)
@@ -29,7 +30,7 @@ public class UpdateRouteCommandHandler(IAppDbContext context) : IRequestHandler<
         route.VehicleId = request.VehicleId;
 
         // Only update vehicle assignment when route is InProgress
-        // For Planned routes, just validate vehicle exists - assignment happens when route starts
+        // For Draft routes, just validate vehicle exists - assignment happens when route starts
         if (route.Status == RouteStatus.InProgress)
         {
             if (oldVehicleId != request.VehicleId)
@@ -71,7 +72,7 @@ public class UpdateRouteCommandHandler(IAppDbContext context) : IRequestHandler<
         }
         else if (oldVehicleId != request.VehicleId && request.VehicleId.HasValue)
         {
-            // For Planned routes, validate vehicle exists and load it for response
+            // For Draft routes, validate vehicle exists and load it for response
             var newVehicle = await context.Vehicles.FirstOrDefaultAsync(v => v.Id == request.VehicleId.Value, cancellationToken);
             if (newVehicle == null)
             {
@@ -82,6 +83,33 @@ public class UpdateRouteCommandHandler(IAppDbContext context) : IRequestHandler<
                 throw new InvalidOperationException("Cannot assign a retired vehicle to a route.");
             }
             route.Vehicle = newVehicle;
+        }
+
+        // Driver assignment — only allowed for Draft routes
+        if (route.DriverId != request.DriverId)
+        {
+            if (request.DriverId.HasValue)
+            {
+                var driver = await context.Drivers
+                    .Include(d => d.User)
+                    .Include(d => d.DaysOff)
+                    .FirstOrDefaultAsync(d => d.Id == request.DriverId!.Value, cancellationToken);
+
+                if (driver == null)
+                {
+                    throw new InvalidOperationException($"Driver with ID {request.DriverId.Value} not found.");
+                }
+
+                DriverDayOffValidator.EnsureAvailableForDate(driver, request.PlannedStartTime);
+
+                route.AssignDriver(request.DriverId);
+                route.Driver = driver;
+            }
+            else
+            {
+                route.AssignDriver(request.DriverId);
+                route.Driver = null;
+            }
         }
 
         await context.SaveChangesAsync(cancellationToken);
@@ -98,6 +126,10 @@ public class UpdateRouteCommandHandler(IAppDbContext context) : IRequestHandler<
             TotalParcelCount = route.TotalParcelCount,
             VehicleId = route.VehicleId,
             VehiclePlate = route.Vehicle?.RegistrationPlate,
+            DriverId = route.DriverId,
+            DriverName = route.Driver != null
+                ? $"{route.Driver.User.FirstName} {route.Driver.User.LastName}"
+                : null,
             CreatedAt = route.CreatedAt
         };
     }

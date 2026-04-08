@@ -25,6 +25,7 @@ export const routeKeys = {
   list: (filters?: any) => [...routeKeys.lists(), filters] as const,
   details: () => [...routeKeys.all, 'detail'] as const,
   detail: (id: string) => [...routeKeys.details(), id] as const,
+  availableDrivers: (date: string) => [...routeKeys.all, 'availableDrivers', date] as const,
 };
 
 export const depotKeys = {

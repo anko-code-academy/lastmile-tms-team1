@@ -28,27 +28,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { RouteSummary, RouteStatus } from "@/types/route";
+import { RouteStatus } from "@/graphql/generated/graphql";
+import { type RouteListItem } from "@/services/routes.service";
 
-const columnHelper = createColumnHelper<RouteSummary>();
+const columnHelper = createColumnHelper<RouteListItem>();
 
 function getStatusBadgeVariant(status: RouteStatus) {
   switch (status) {
-    case RouteStatus.PLANNED:
+    case RouteStatus.Draft:
       return "default";
-    case RouteStatus.IN_PROGRESS:
+    case RouteStatus.InProgress:
       return "warning";
-    case RouteStatus.COMPLETED:
+    case RouteStatus.Completed:
       return "success";
-    case RouteStatus.CANCELLED:
-      return "secondary";
     default:
       return "outline";
   }
 }
 
 interface RouteTableProps {
-  data: RouteSummary[];
+  data: RouteListItem[];
   onDelete: (id: string) => void;
   isDeleting?: boolean;
 }
@@ -89,6 +88,11 @@ export function RouteTable({ data, onDelete, isDeleting }: RouteTableProps) {
     columnHelper.accessor((row) => row.vehicle?.registrationPlate, {
       id: "vehiclePlate",
       header: "Vehicle",
+      cell: (info) => info.getValue() ?? <span className="text-muted-foreground">Unassigned</span>,
+    }),
+    columnHelper.accessor((row) => row.driver ? `${row.driver.user.firstName} ${row.driver.user.lastName}` : null, {
+      id: "driverName",
+      header: "Driver",
       cell: (info) => info.getValue() ?? <span className="text-muted-foreground">Unassigned</span>,
     }),
     columnHelper.display({
