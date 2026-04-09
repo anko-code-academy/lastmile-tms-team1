@@ -4,8 +4,10 @@ using System.Text;
 using System.Text.Json;
 using FluentAssertions;
 using LastMile.TMS.Domain.Entities;
+using LastMile.TMS.Domain.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using NetTopologySuite.Geometries;
 
 namespace LastMile.TMS.Api.IntegrationTests;
 
@@ -846,5 +848,108 @@ public class RouteIntegrationTests : IAsyncLifetime
             throw new InvalidOperationException($"Failed to create driver user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
 
         return email;
+    }
+
+    [Fact]
+    public async Task OptimizeRouteStopOrder_WithStops_ReturnsOptimizedRoute()
+    {
+        // Arrange - Create a route, then seed zone/depot/stops directly via DB
+        var createMutation = $@"
+            mutation {{
+                createRoute(input: {{
+                    name: ""Optimize Test Route"",
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(10):O}""
+                }}) {{ id }}
+            }}";
+        var createResponse = await _fx.ExecuteGraphQLAsync(createMutation);
+        var createJson = await IntegrationFixture.ReadJsonAsync(createResponse);
+        createJson.RootElement.TryGetProperty("errors", out _).Should().BeFalse();
+        var routeId = createJson.RootElement.GetProperty("data").GetProperty("createRoute").GetProperty("id").GetString();
+
+        // Seed depot, zone, and stops via DB context
+        using (var scope = _fx.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LastMile.TMS.Persistence.AppDbContext>();
+
+            var depot = new Depot
+            {
+                Name = "Optimize Test Depot",
+                Address = new Address
+                {
+                    Street1 = "1 Depot St",
+                    City = "Test City",
+                    GeoLocation = new Point(0, 0) { SRID = 4326 }
+                }
+            };
+            db.Depots.Add(depot);
+            await db.SaveChangesAsync();
+
+            var zone = new Zone
+            {
+                Name = "Optimize Test Zone",
+                DepotId = depot.Id
+            };
+            db.Zones.Add(zone);
+            await db.SaveChangesAsync();
+
+            // Assign zone to route
+            var route = db.Routes.First(r => r.Id == Guid.Parse(routeId!));
+            route.ZoneId = zone.Id;
+            await db.SaveChangesAsync();
+
+            // Add stops with varying distances from depot
+            var stops = new[]
+            {
+                new { Lat = 0.04, Lon = 0.04, Street = "Far Stop" },
+                new { Lat = 0.01, Lon = 0.01, Street = "Near Stop" },
+                new { Lat = 0.02, Lon = 0.02, Street = "Mid Stop" },
+            };
+
+            for (int i = 0; i < stops.Length; i++)
+            {
+                db.RouteStops.Add(new RouteStop
+                {
+                    SequenceNumber = i + 1,
+                    Street1 = stops[i].Street,
+                    GeoLocation = new Point(stops[i].Lon, stops[i].Lat) { SRID = 4326 },
+                    RouteId = Guid.Parse(routeId!)
+                });
+            }
+            await db.SaveChangesAsync();
+        }
+
+        // Act
+        var optimizeMutation = $@"
+            mutation {{
+                optimizeRouteStopOrder(input: {{ routeId: ""{routeId}"" }}) {{
+                    id
+                    name
+                    status
+                    stops {{
+                        id
+                        sequenceNumber
+                        street1
+                    }}
+                }}
+            }}";
+        var optimizeResponse = await _fx.ExecuteGraphQLAsync(optimizeMutation);
+
+        // Assert
+        optimizeResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var optimizeJson = await IntegrationFixture.ReadJsonAsync(optimizeResponse);
+        optimizeJson.RootElement.TryGetProperty("errors", out _).Should().BeFalse();
+
+        var data = optimizeJson.RootElement.GetProperty("data").GetProperty("optimizeRouteStopOrder");
+        data.GetProperty("id").GetString().Should().Be(routeId);
+
+        var returnedStops = data.GetProperty("stops").EnumerateArray().ToList();
+        returnedStops.Should().HaveCount(3);
+
+        // Verify sequence numbers are 1, 2, 3
+        var sequences = returnedStops.Select(s => s.GetProperty("sequenceNumber").GetInt32()).ToList();
+        sequences.Should().Equal([1, 2, 3]);
+
+        // The nearest stop to depot should be first
+        returnedStops[0].GetProperty("street1").GetString().Should().Be("Near Stop");
     }
 }

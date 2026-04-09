@@ -4,6 +4,7 @@ using LastMile.TMS.Application.Common.Interfaces;
 using LastMile.TMS.Application.Features.Routes;
 using LastMile.TMS.Domain.Entities;
 using LastMile.TMS.Domain.Enums;
+using LastMile.TMS.Domain.Extensions;
 
 namespace LastMile.TMS.Application.Features.Routes.Commands;
 
@@ -94,9 +95,7 @@ public class AddParcelsToRouteCommandHandler(IAppDbContext context) : IRequestHa
         {
             if (stop.GeoLocation is null) continue;
 
-            var distance = HaversineDistanceMeters(
-                stop.GeoLocation.Y, stop.GeoLocation.X,
-                location.Y, location.X);
+            var distance = stop.GeoLocation.HaversineDistanceMeters(location);
 
             if (distance <= thresholdMeters)
             {
@@ -105,18 +104,6 @@ public class AddParcelsToRouteCommandHandler(IAppDbContext context) : IRequestHa
         }
 
         return null;
-    }
-
-    private static double HaversineDistanceMeters(double lat1, double lon1, double lat2, double lon2)
-    {
-        const double r = 6_371_000; // Earth radius in meters
-        var dLat = (lat2 - lat1) * Math.PI / 180;
-        var dLon = (lon2 - lon1) * Math.PI / 180;
-        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
-                Math.Cos(lat1 * Math.PI / 180) * Math.Cos(lat2 * Math.PI / 180) *
-                Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
-        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-        return r * c;
     }
 
 }
