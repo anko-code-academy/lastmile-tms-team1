@@ -12,23 +12,18 @@ namespace LastMile.TMS.Api.IntegrationTests;
 
 public class IntegrationTestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    private readonly PostgreSqlContainerFixture _postgreSqlFixture;
+    private readonly string _connectionString;
 
-    public IntegrationTestWebApplicationFactory(PostgreSqlContainerFixture postgreSqlFixture)
+    public IntegrationTestWebApplicationFactory(string connectionString)
     {
-        _postgreSqlFixture = postgreSqlFixture;
+        _connectionString = connectionString;
     }
-
-    public string GetConnectionString() => _postgreSqlFixture.ConnectionString;
 
     public async Task InitializeAsync()
     {
-        await _postgreSqlFixture.InitializeAsync();
-
         // Apply migrations using the test database
-        var connectionString = _postgreSqlFixture.ConnectionString;
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>()
-            .UseNpgsql(connectionString, o => o.UseNetTopologySuite())
+            .UseNpgsql(_connectionString, o => o.UseNetTopologySuite())
             .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
 
         var currentUserService = new StubCurrentUserService();
@@ -38,7 +33,6 @@ public class IntegrationTestWebApplicationFactory : WebApplicationFactory<Progra
 
     public new Task DisposeAsync()
     {
-        // Don't dispose the fixture here - it's managed by ICollectionFixture
         return Task.CompletedTask;
     }
 
@@ -89,7 +83,7 @@ public class IntegrationTestWebApplicationFactory : WebApplicationFactory<Progra
             // Re-register cleanly with test connection string
             services.AddDbContextFactory<AppDbContext>((sp, options) =>
                 options.UseNpgsql(
-                    _postgreSqlFixture.ConnectionString,
+                    _connectionString,
                     o => o.UseNetTopologySuite())
                 .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)),
                 ServiceLifetime.Scoped);
@@ -101,6 +95,7 @@ public class IntegrationTestWebApplicationFactory : WebApplicationFactory<Progra
                 sp => sp.GetRequiredService<AppDbContext>());
         });
 
+        // Configure admin credentials from environment variables
         builder.UseSetting("AdminCredentials:Username",
             Environment.GetEnvironmentVariable("ADMIN_USERNAME") ?? "admin");
         builder.UseSetting("AdminCredentials:Email",

@@ -12,33 +12,19 @@ namespace LastMile.TMS.Api.IntegrationTests;
 [Collection("Integration")]
 public class RouteIntegrationTests : IAsyncLifetime
 {
-    private readonly IntegrationTestWebApplicationFactory _factory;
-    private HttpClient _client = null!;
-    private string _accessToken = null!;
+    private readonly IntegrationFixture _fx;
     private Guid _vehicleId = Guid.Empty;
     private string _vehiclePlate = null!;
-    private Guid _driverId = Guid.Empty;
+    private Guid _driverId;
 
-    private static string AdminUsername => Environment.GetEnvironmentVariable("ADMIN_USERNAME") ?? "admin";
-    private static string AdminPassword => Environment.GetEnvironmentVariable("ADMIN_PASSWORD") ?? "Admin@123";
-
-    public RouteIntegrationTests(PostgreSqlContainerFixture postgreSqlFixture)
+    public RouteIntegrationTests(IntegrationFixture fx)
     {
-        _factory = new IntegrationTestWebApplicationFactory(postgreSqlFixture);
+        _fx = fx;
     }
 
     public async Task InitializeAsync()
     {
-        await _factory.InitializeAsync();
-        _client = _factory.CreateClient();
-
-        using var scope = _factory.Services.CreateScope();
-        var dbSeeder = scope.ServiceProvider.GetRequiredService<LastMile.TMS.Application.Common.Interfaces.IDbSeeder>();
-        await dbSeeder.SeedAsync();
-
-        _accessToken = await GetAccessTokenAsync();
-
-        // Create a vehicle with unique registration plate for route assignment tests
+        // Create a vehicle for route assignment tests
         var uniquePlate = $"ROUTE-VEH-{Guid.NewGuid():N}".Substring(0, 15).ToUpperInvariant();
         var vehicleMutation = $@"
             mutation {{
@@ -49,10 +35,9 @@ public class RouteIntegrationTests : IAsyncLifetime
                     weightCapacityKg: 500.0
                 ) {{ id }}
             }}";
-        var vehicleResponse = await ExecuteGraphQLAsync(vehicleMutation);
-        var vehicleJson = await ReadJsonAsync(vehicleResponse);
+        var vehicleResponse = await _fx.ExecuteGraphQLAsync(vehicleMutation);
+        var vehicleJson = await IntegrationFixture.ReadJsonAsync(vehicleResponse);
 
-        // Check if there are errors
         if (vehicleJson.RootElement.TryGetProperty("errors", out var errors) && errors.GetArrayLength() > 0)
         {
             var errorMessage = errors[0].GetProperty("message").GetString();
@@ -75,7 +60,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             ? plateEl.GetString()!
             : uniquePlate;
 
-        // Create a driver with a unique license number and a shift schedule for next week
+        // Create a driver with a shift schedule for next week
         var driverEmail = await CreateDriverUserAsync($"driver-route-test-{Guid.NewGuid():N}@test.com");
         var uniqueLicense = $"DL-{Guid.NewGuid():N}".Substring(0, 12).ToUpperInvariant();
         var nextWeek = DateTime.UtcNow.AddDays(7);
@@ -93,8 +78,8 @@ public class RouteIntegrationTests : IAsyncLifetime
                     }}
                 ) {{ id }}
             }}";
-        var driverResponse = await ExecuteGraphQLAsync(driverMutation);
-        var driverJson = await ReadJsonAsync(driverResponse);
+        var driverResponse = await _fx.ExecuteGraphQLAsync(driverMutation);
+        var driverJson = await IntegrationFixture.ReadJsonAsync(driverResponse);
 
         if (driverJson.RootElement.TryGetProperty("errors", out var driverErrors) && driverErrors.GetArrayLength() > 0)
         {
@@ -107,31 +92,11 @@ public class RouteIntegrationTests : IAsyncLifetime
         _driverId = Guid.Parse(driverData.GetProperty("id").GetString()!);
     }
 
-    public async Task DisposeAsync()
-    {
-        _client.Dispose();
-        await _factory.DisposeAsync();
-    }
-
-    private async Task<string> GetAccessTokenAsync()
-    {
-        var formData = new Dictionary<string, string>
-        {
-            { "grant_type", "password" },
-            { "username", AdminUsername },
-            { "password", AdminPassword }
-        };
-        var content = new FormUrlEncodedContent(formData);
-        var response = await _client.PostAsync("/connect/token", content);
-        var responseContent = await response.Content.ReadAsStringAsync();
-        var tokenResponse = JsonSerializer.Deserialize<JsonElement>(responseContent);
-        return tokenResponse.GetProperty("access_token").GetString()!;
-    }
+    public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
     public async Task CreateRoute_WithValidData_ReturnsRoute()
     {
-        // Arrange
         var mutation = $@"
             mutation {{
                 createRoute(input: {{
@@ -150,24 +115,21 @@ public class RouteIntegrationTests : IAsyncLifetime
                 }}
             }}";
 
-        // Act
-        var response = await ExecuteGraphQLAsync(mutation);
+        var response = await _fx.ExecuteGraphQLAsync(mutation);
 
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var json = await ReadJsonAsync(response);
+        var json = await IntegrationFixture.ReadJsonAsync(response);
         json.RootElement.TryGetProperty("errors", out _).Should().BeFalse();
-        var data = json.RootElement.GetProperty("data").GetProperty("createRoute");
-        data.GetProperty("name").GetString().Should().Be("Test Route 001");
-        data.GetProperty("status").GetString().Should().Be("DRAFT");
-        data.GetProperty("totalDistanceKm").GetDecimal().Should().Be(50.5m);
-        data.GetProperty("totalParcelCount").GetInt32().Should().Be(25);
+        var routeData = json.RootElement.GetProperty("data").GetProperty("createRoute");
+        routeData.GetProperty("name").GetString().Should().Be("Test Route 001");
+        routeData.GetProperty("status").GetString().Should().Be("DRAFT");
+        routeData.GetProperty("totalDistanceKm").GetDecimal().Should().Be(50.5m);
+        routeData.GetProperty("totalParcelCount").GetInt32().Should().Be(25);
     }
 
     [Fact]
     public async Task CreateRoute_WithVehicleAssignment_ReturnsRouteWithVehicle()
     {
-        // Arrange
         var mutation = $@"
             mutation {{
                 createRoute(input: {{
@@ -184,22 +146,19 @@ public class RouteIntegrationTests : IAsyncLifetime
                 }}
             }}";
 
-        // Act
-        var response = await ExecuteGraphQLAsync(mutation);
+        var response = await _fx.ExecuteGraphQLAsync(mutation);
 
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var json = await ReadJsonAsync(response);
+        var json = await IntegrationFixture.ReadJsonAsync(response);
         json.RootElement.TryGetProperty("errors", out _).Should().BeFalse();
-        var data = json.RootElement.GetProperty("data").GetProperty("createRoute");
-        data.GetProperty("vehicleId").GetString().Should().Be(_vehicleId.ToString());
-        data.GetProperty("vehiclePlate").GetString().Should().Be(_vehiclePlate);
+        var routeData = json.RootElement.GetProperty("data").GetProperty("createRoute");
+        routeData.GetProperty("vehicleId").GetString().Should().Be(_vehicleId.ToString());
+        routeData.GetProperty("vehiclePlate").GetString().Should().Be(_vehiclePlate);
     }
 
     [Fact]
     public async Task CreateRoute_WithEmptyName_ReturnsError()
     {
-        // Arrange
         var mutation = $@"
             mutation {{
                 createRoute(input: {{
@@ -212,20 +171,17 @@ public class RouteIntegrationTests : IAsyncLifetime
                 }}
             }}";
 
-        // Act
-        var response = await ExecuteGraphQLAsync(mutation);
+        var response = await _fx.ExecuteGraphQLAsync(mutation);
 
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var json = await ReadJsonAsync(response);
-        json.RootElement.TryGetProperty("errors", out var errors).Should().BeTrue();
-        errors.GetArrayLength().Should().BeGreaterThan(0);
+        var json = await IntegrationFixture.ReadJsonAsync(response);
+        json.RootElement.TryGetProperty("errors", out var err).Should().BeTrue();
+        err.GetArrayLength().Should().BeGreaterThan(0);
     }
 
     [Fact]
     public async Task GetRoutes_ReturnsAllRoutes()
     {
-        // Arrange - Create a couple of routes first
         var createMutation1 = $@"
             mutation {{
                 createRoute(input: {{
@@ -235,7 +191,7 @@ public class RouteIntegrationTests : IAsyncLifetime
                     totalParcelCount: 15
                 }}) {{ id }}
             }}";
-        await ExecuteGraphQLAsync(createMutation1);
+        await _fx.ExecuteGraphQLAsync(createMutation1);
 
         var createMutation2 = $@"
             mutation {{
@@ -246,9 +202,8 @@ public class RouteIntegrationTests : IAsyncLifetime
                     totalParcelCount: 20
                 }}) {{ id }}
             }}";
-        await ExecuteGraphQLAsync(createMutation2);
+        await _fx.ExecuteGraphQLAsync(createMutation2);
 
-        // Act
         var query = @"
             query {
                 routes(first: 100) {
@@ -260,11 +215,10 @@ public class RouteIntegrationTests : IAsyncLifetime
                     }
                 }
             }";
-        var response = await ExecuteGraphQLAsync(query);
+        var response = await _fx.ExecuteGraphQLAsync(query);
 
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var json = await ReadJsonAsync(response);
+        var json = await IntegrationFixture.ReadJsonAsync(response);
         json.RootElement.TryGetProperty("errors", out _).Should().BeFalse();
         var routes = json.RootElement.GetProperty("data").GetProperty("routes").GetProperty("nodes").EnumerateArray().ToList();
         routes.Should().Contain(r => r.GetProperty("name").GetString() == "Route List 001");
@@ -274,7 +228,6 @@ public class RouteIntegrationTests : IAsyncLifetime
     [Fact]
     public async Task GetRoute_ById_ReturnsRoute()
     {
-        // Arrange - Create a route
         var createMutation = $@"
             mutation {{
                 createRoute(input: {{
@@ -284,11 +237,10 @@ public class RouteIntegrationTests : IAsyncLifetime
                     totalParcelCount: 30
                 }}) {{ id }}
             }}";
-        var createResponse = await ExecuteGraphQLAsync(createMutation);
-        var createJson = await ReadJsonAsync(createResponse);
+        var createResponse = await _fx.ExecuteGraphQLAsync(createMutation);
+        var createJson = await IntegrationFixture.ReadJsonAsync(createResponse);
         var routeId = createJson.RootElement.GetProperty("data").GetProperty("createRoute").GetProperty("id").GetString();
 
-        // Act
         var query = $@"
             query {{
                 route(id: ""{routeId}"") {{
@@ -299,11 +251,10 @@ public class RouteIntegrationTests : IAsyncLifetime
                     totalParcelCount
                 }}
             }}";
-        var response = await ExecuteGraphQLAsync(query);
+        var response = await _fx.ExecuteGraphQLAsync(query);
 
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var json = await ReadJsonAsync(response);
+        var json = await IntegrationFixture.ReadJsonAsync(response);
         json.RootElement.TryGetProperty("errors", out _).Should().BeFalse();
         var route = json.RootElement.GetProperty("data").GetProperty("route");
         route.GetProperty("name").GetString().Should().Be("Get Route By ID");
@@ -313,7 +264,6 @@ public class RouteIntegrationTests : IAsyncLifetime
     [Fact]
     public async Task UpdateRoute_ChangesRouteData()
     {
-        // Arrange - Create a route
         var createMutation = $@"
             mutation {{
                 createRoute(input: {{
@@ -323,11 +273,10 @@ public class RouteIntegrationTests : IAsyncLifetime
                     totalParcelCount: 10
                 }}) {{ id }}
             }}";
-        var createResponse = await ExecuteGraphQLAsync(createMutation);
-        var createJson = await ReadJsonAsync(createResponse);
+        var createResponse = await _fx.ExecuteGraphQLAsync(createMutation);
+        var createJson = await IntegrationFixture.ReadJsonAsync(createResponse);
         var routeId = createJson.RootElement.GetProperty("data").GetProperty("createRoute").GetProperty("id").GetString();
 
-        // Act - Update the route
         var updateMutation = $@"
             mutation {{
                 updateRoute(input: {{
@@ -343,22 +292,20 @@ public class RouteIntegrationTests : IAsyncLifetime
                     totalParcelCount
                 }}
             }}";
-        var updateResponse = await ExecuteGraphQLAsync(updateMutation);
+        var updateResponse = await _fx.ExecuteGraphQLAsync(updateMutation);
 
-        // Assert
         updateResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var json = await ReadJsonAsync(updateResponse);
+        var json = await IntegrationFixture.ReadJsonAsync(updateResponse);
         json.RootElement.TryGetProperty("errors", out _).Should().BeFalse();
-        var data = json.RootElement.GetProperty("data").GetProperty("updateRoute");
-        data.GetProperty("name").GetString().Should().Be("Updated Route Name");
-        data.GetProperty("totalDistanceKm").GetDecimal().Should().Be(75.0m);
-        data.GetProperty("totalParcelCount").GetInt32().Should().Be(35);
+        var routeData = json.RootElement.GetProperty("data").GetProperty("updateRoute");
+        routeData.GetProperty("name").GetString().Should().Be("Updated Route Name");
+        routeData.GetProperty("totalDistanceKm").GetDecimal().Should().Be(75.0m);
+        routeData.GetProperty("totalParcelCount").GetInt32().Should().Be(35);
     }
 
     [Fact]
     public async Task UpdateRoute_WithVehicleAssignment_UpdatesVehicleStatus()
     {
-        // Arrange - Create a route without vehicle
         var createMutation = $@"
             mutation {{
                 createRoute(input: {{
@@ -368,11 +315,10 @@ public class RouteIntegrationTests : IAsyncLifetime
                     totalParcelCount: 20
                 }}) {{ id }}
             }}";
-        var createResponse = await ExecuteGraphQLAsync(createMutation);
-        var createJson = await ReadJsonAsync(createResponse);
+        var createResponse = await _fx.ExecuteGraphQLAsync(createMutation);
+        var createJson = await IntegrationFixture.ReadJsonAsync(createResponse);
         var routeId = createJson.RootElement.GetProperty("data").GetProperty("createRoute").GetProperty("id").GetString();
 
-        // Act - Assign vehicle to route
         var updateMutation = $@"
             mutation {{
                 updateRoute(input: {{
@@ -388,21 +334,19 @@ public class RouteIntegrationTests : IAsyncLifetime
                     vehiclePlate
                 }}
             }}";
-        var updateResponse = await ExecuteGraphQLAsync(updateMutation);
+        var updateResponse = await _fx.ExecuteGraphQLAsync(updateMutation);
 
-        // Assert
         updateResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var json = await ReadJsonAsync(updateResponse);
+        var json = await IntegrationFixture.ReadJsonAsync(updateResponse);
         json.RootElement.TryGetProperty("errors", out _).Should().BeFalse();
-        var data = json.RootElement.GetProperty("data").GetProperty("updateRoute");
-        data.GetProperty("vehicleId").GetString().Should().Be(_vehicleId.ToString());
-        data.GetProperty("vehiclePlate").GetString().Should().Be(_vehiclePlate);
+        var routeData = json.RootElement.GetProperty("data").GetProperty("updateRoute");
+        routeData.GetProperty("vehicleId").GetString().Should().Be(_vehicleId.ToString());
+        routeData.GetProperty("vehiclePlate").GetString().Should().Be(_vehiclePlate);
     }
 
     [Fact]
     public async Task DeleteRoute_RemovesRoute()
     {
-        // Arrange - Create a route
         var createMutation = $@"
             mutation {{
                 createRoute(input: {{
@@ -412,34 +356,30 @@ public class RouteIntegrationTests : IAsyncLifetime
                     totalParcelCount: 25
                 }}) {{ id }}
             }}";
-        var createResponse = await ExecuteGraphQLAsync(createMutation);
-        var createJson = await ReadJsonAsync(createResponse);
+        var createResponse = await _fx.ExecuteGraphQLAsync(createMutation);
+        var createJson = await IntegrationFixture.ReadJsonAsync(createResponse);
         var routeId = createJson.RootElement.GetProperty("data").GetProperty("createRoute").GetProperty("id").GetString();
 
-        // Act - Delete the route
         var deleteMutation = $@"
             mutation {{
                 deleteRoute(id: ""{routeId}"")
             }}";
-        var deleteResponse = await ExecuteGraphQLAsync(deleteMutation);
+        var deleteResponse = await _fx.ExecuteGraphQLAsync(deleteMutation);
 
-        // Assert
         deleteResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var deleteJson = await ReadJsonAsync(deleteResponse);
+        var deleteJson = await IntegrationFixture.ReadJsonAsync(deleteResponse);
         deleteJson.RootElement.TryGetProperty("errors", out _).Should().BeFalse();
         deleteJson.RootElement.GetProperty("data").GetProperty("deleteRoute").GetBoolean().Should().BeTrue();
 
-        // Verify route is gone
         var getQuery = $@"
             query {{
                 route(id: ""{routeId}"") {{
                     id
                 }}
             }}";
-        var getResponse = await ExecuteGraphQLAsync(getQuery);
-        var getJson = await ReadJsonAsync(getResponse);
+        var getResponse = await _fx.ExecuteGraphQLAsync(getQuery);
+        var getJson = await IntegrationFixture.ReadJsonAsync(getResponse);
         var routeData = getJson.RootElement.GetProperty("data").GetProperty("route");
-        // After soft-delete, route may be null or have null id
         if (routeData.ValueKind != JsonValueKind.Null)
         {
             routeData.GetProperty("id").GetString().Should().BeNull();
@@ -449,7 +389,6 @@ public class RouteIntegrationTests : IAsyncLifetime
     [Fact]
     public async Task DeleteRoute_WithAssignedVehicle_ReleasesVehicle()
     {
-        // Arrange - Create a route with vehicle
         var createMutation = $@"
             mutation {{
                 createRoute(input: {{
@@ -460,20 +399,18 @@ public class RouteIntegrationTests : IAsyncLifetime
                     vehicleId: ""{_vehicleId}""
                 }}) {{ id }}
             }}";
-        var createResponse = await ExecuteGraphQLAsync(createMutation);
-        var createJson = await ReadJsonAsync(createResponse);
+        var createResponse = await _fx.ExecuteGraphQLAsync(createMutation);
+        var createJson = await IntegrationFixture.ReadJsonAsync(createResponse);
         var routeId = createJson.RootElement.GetProperty("data").GetProperty("createRoute").GetProperty("id").GetString();
 
-        // Act - Delete the route (vehicle should be released)
         var deleteQuery = $@"
             mutation {{
                 deleteRoute(id: ""{routeId}"")
             }}";
-        var deleteResponse = await ExecuteGraphQLAsync(deleteQuery);
+        var deleteResponse = await _fx.ExecuteGraphQLAsync(deleteQuery);
 
-        // Assert
         deleteResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var deleteJson = await ReadJsonAsync(deleteResponse);
+        var deleteJson = await IntegrationFixture.ReadJsonAsync(deleteResponse);
         deleteJson.RootElement.TryGetProperty("errors", out _).Should().BeFalse();
         deleteJson.RootElement.GetProperty("data").GetProperty("deleteRoute").GetBoolean().Should().BeTrue();
     }
@@ -481,7 +418,6 @@ public class RouteIntegrationTests : IAsyncLifetime
     [Fact]
     public async Task ChangeRouteStatus_ToInProgress_SetsActualStartTime()
     {
-        // Arrange - Create a route
         var createMutation = $@"
             mutation {{
                 createRoute(input: {{
@@ -491,11 +427,10 @@ public class RouteIntegrationTests : IAsyncLifetime
                     totalParcelCount: 20
                 }}) {{ id }}
             }}";
-        var createResponse = await ExecuteGraphQLAsync(createMutation);
-        var createJson = await ReadJsonAsync(createResponse);
+        var createResponse = await _fx.ExecuteGraphQLAsync(createMutation);
+        var createJson = await IntegrationFixture.ReadJsonAsync(createResponse);
         var routeId = createJson.RootElement.GetProperty("data").GetProperty("createRoute").GetProperty("id").GetString();
 
-        // Act - Change status to IN_PROGRESS
         var changeMutation = $@"
             mutation {{
                 changeRouteStatus(id: ""{routeId}"", newStatus: IN_PROGRESS) {{
@@ -504,21 +439,19 @@ public class RouteIntegrationTests : IAsyncLifetime
                     actualStartTime
                 }}
             }}";
-        var changeResponse = await ExecuteGraphQLAsync(changeMutation);
+        var changeResponse = await _fx.ExecuteGraphQLAsync(changeMutation);
 
-        // Assert
         changeResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var changeJson = await ReadJsonAsync(changeResponse);
+        var changeJson = await IntegrationFixture.ReadJsonAsync(changeResponse);
         changeJson.RootElement.TryGetProperty("errors", out _).Should().BeFalse();
-        var data = changeJson.RootElement.GetProperty("data").GetProperty("changeRouteStatus");
-        data.GetProperty("status").GetString().Should().Be("IN_PROGRESS");
-        data.GetProperty("actualStartTime").GetString().Should().NotBeNullOrEmpty();
+        var routeData = changeJson.RootElement.GetProperty("data").GetProperty("changeRouteStatus");
+        routeData.GetProperty("status").GetString().Should().Be("IN_PROGRESS");
+        routeData.GetProperty("actualStartTime").GetString().Should().NotBeNullOrEmpty();
     }
 
     [Fact]
     public async Task ChangeRouteStatus_ToCompleted_ReleasesVehicle()
     {
-        // Arrange - Create a route with vehicle
         var createMutation = $@"
             mutation {{
                 createRoute(input: {{
@@ -529,11 +462,10 @@ public class RouteIntegrationTests : IAsyncLifetime
                     vehicleId: ""{_vehicleId}""
                 }}) {{ id }}
             }}";
-        var createResponse = await ExecuteGraphQLAsync(createMutation);
-        var createJson = await ReadJsonAsync(createResponse);
+        var createResponse = await _fx.ExecuteGraphQLAsync(createMutation);
+        var createJson = await IntegrationFixture.ReadJsonAsync(createResponse);
         var routeId = createJson.RootElement.GetProperty("data").GetProperty("createRoute").GetProperty("id").GetString();
 
-        // Start the route first (Required: Draft -> InProgress -> Completed)
         var startMutation = $@"
             mutation {{
                 changeRouteStatus(id: ""{routeId}"", newStatus: IN_PROGRESS) {{
@@ -541,9 +473,8 @@ public class RouteIntegrationTests : IAsyncLifetime
                     status
                 }}
             }}";
-        await ExecuteGraphQLAsync(startMutation);
+        await _fx.ExecuteGraphQLAsync(startMutation);
 
-        // Act - Change status to COMPLETED
         var completeMutation = $@"
             mutation {{
                 changeRouteStatus(id: ""{routeId}"", newStatus: COMPLETED) {{
@@ -553,23 +484,20 @@ public class RouteIntegrationTests : IAsyncLifetime
                     vehiclePlate
                 }}
             }}";
-        var completeResponse = await ExecuteGraphQLAsync(completeMutation);
+        var completeResponse = await _fx.ExecuteGraphQLAsync(completeMutation);
 
-        // Assert
         completeResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var completeJson = await ReadJsonAsync(completeResponse);
+        var completeJson = await IntegrationFixture.ReadJsonAsync(completeResponse);
         completeJson.RootElement.TryGetProperty("errors", out _).Should().BeFalse();
-        var data = completeJson.RootElement.GetProperty("data").GetProperty("changeRouteStatus");
-        data.GetProperty("status").GetString().Should().Be("COMPLETED");
-        data.GetProperty("actualEndTime").GetString().Should().NotBeNullOrEmpty();
-        // Vehicle should be released (plate still returned but vehicle status updated)
-        data.GetProperty("vehiclePlate").GetString().Should().NotBeNullOrEmpty();
+        var routeData = completeJson.RootElement.GetProperty("data").GetProperty("changeRouteStatus");
+        routeData.GetProperty("status").GetString().Should().Be("COMPLETED");
+        routeData.GetProperty("actualEndTime").GetString().Should().NotBeNullOrEmpty();
+        routeData.GetProperty("vehiclePlate").GetString().Should().NotBeNullOrEmpty();
     }
 
     [Fact]
     public async Task ChangeRouteStatus_ToCompleted_UpdatesVehicleHistory()
     {
-        // Arrange - Create a route with vehicle
         var createMutation = $@"
             mutation {{
                 createRoute(input: {{
@@ -580,11 +508,10 @@ public class RouteIntegrationTests : IAsyncLifetime
                     vehicleId: ""{_vehicleId}""
                 }}) {{ id }}
             }}";
-        var createResponse = await ExecuteGraphQLAsync(createMutation);
-        var createJson = await ReadJsonAsync(createResponse);
+        var createResponse = await _fx.ExecuteGraphQLAsync(createMutation);
+        var createJson = await IntegrationFixture.ReadJsonAsync(createResponse);
         var routeId = createJson.RootElement.GetProperty("data").GetProperty("createRoute").GetProperty("id").GetString();
 
-        // Act - Start the route
         var startMutation = $@"
             mutation {{
                 changeRouteStatus(id: ""{routeId}"", newStatus: IN_PROGRESS) {{
@@ -592,9 +519,8 @@ public class RouteIntegrationTests : IAsyncLifetime
                     status
                 }}
             }}";
-        await ExecuteGraphQLAsync(startMutation);
+        await _fx.ExecuteGraphQLAsync(startMutation);
 
-        // Complete the route
         var completeMutation = $@"
             mutation {{
                 changeRouteStatus(id: ""{routeId}"", newStatus: COMPLETED) {{
@@ -602,9 +528,8 @@ public class RouteIntegrationTests : IAsyncLifetime
                     status
                 }}
             }}";
-        await ExecuteGraphQLAsync(completeMutation);
+        await _fx.ExecuteGraphQLAsync(completeMutation);
 
-        // Assert - Check vehicle history
         var historyQuery = $@"
             query {{
                 vehicleHistory(id: ""{_vehicleId}"") {{
@@ -617,8 +542,8 @@ public class RouteIntegrationTests : IAsyncLifetime
                     }}
                 }}
             }}";
-        var historyResponse = await ExecuteGraphQLAsync(historyQuery);
-        var historyJson = await ReadJsonAsync(historyResponse);
+        var historyResponse = await _fx.ExecuteGraphQLAsync(historyQuery);
+        var historyJson = await IntegrationFixture.ReadJsonAsync(historyResponse);
         historyJson.RootElement.TryGetProperty("errors", out _).Should().BeFalse();
 
         var historyData = historyJson.RootElement.GetProperty("data").GetProperty("vehicleHistory");
@@ -630,7 +555,6 @@ public class RouteIntegrationTests : IAsyncLifetime
     [Fact]
     public async Task CreateRoute_WithRetiredVehicle_ReturnsError()
     {
-        // Arrange - Create a retired vehicle first
         var uniquePlate = $"RET-VEH-{Guid.NewGuid():N}".Substring(0, 12).ToUpperInvariant();
         var createVehicleMutation = $@"
             mutation {{
@@ -641,11 +565,10 @@ public class RouteIntegrationTests : IAsyncLifetime
                     weightCapacityKg: 300.0
                 ) {{ id }}
             }}";
-        var vehicleResponse = await ExecuteGraphQLAsync(createVehicleMutation);
-        var vehicleJson = await ReadJsonAsync(vehicleResponse);
+        var vehicleResponse = await _fx.ExecuteGraphQLAsync(createVehicleMutation);
+        var vehicleJson = await IntegrationFixture.ReadJsonAsync(vehicleResponse);
         var vehicleId = vehicleJson.RootElement.GetProperty("data").GetProperty("createVehicle").GetProperty("id").GetString();
 
-        // Retire the vehicle
         var retireMutation = $@"
             mutation {{
                 changeVehicleStatus(id: ""{vehicleId}"", newStatus: RETIRED) {{
@@ -653,9 +576,8 @@ public class RouteIntegrationTests : IAsyncLifetime
                     status
                 }}
             }}";
-        await ExecuteGraphQLAsync(retireMutation);
+        await _fx.ExecuteGraphQLAsync(retireMutation);
 
-        // Act - Try to create a route with the retired vehicle
         var createRouteMutation = $@"
             mutation {{
                 createRoute(input: {{
@@ -666,20 +588,18 @@ public class RouteIntegrationTests : IAsyncLifetime
                     vehicleId: ""{vehicleId}""
                 }}) {{ id }}
             }}";
-        var routeResponse = await ExecuteGraphQLAsync(createRouteMutation);
+        var routeResponse = await _fx.ExecuteGraphQLAsync(createRouteMutation);
 
-        // Assert
         routeResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var routeJson = await ReadJsonAsync(routeResponse);
-        routeJson.RootElement.TryGetProperty("errors", out var errors).Should().BeTrue();
-        errors.GetArrayLength().Should().BeGreaterThan(0);
-        errors[0].GetProperty("message").GetString().Should().Contain("retired vehicle");
+        var routeJson = await IntegrationFixture.ReadJsonAsync(routeResponse);
+        routeJson.RootElement.TryGetProperty("errors", out var err).Should().BeTrue();
+        err.GetArrayLength().Should().BeGreaterThan(0);
+        err[0].GetProperty("message").GetString().Should().Contain("retired vehicle");
     }
 
     [Fact]
     public async Task CreateRoute_WithDriverAssignment_ReturnsDriverFields()
     {
-        // Arrange
         var plannedDate = DateTime.UtcNow.AddDays(7);
         var mutation = $@"
             mutation {{
@@ -697,22 +617,19 @@ public class RouteIntegrationTests : IAsyncLifetime
                 }}
             }}";
 
-        // Act
-        var response = await ExecuteGraphQLAsync(mutation);
+        var response = await _fx.ExecuteGraphQLAsync(mutation);
 
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var json = await ReadJsonAsync(response);
+        var json = await IntegrationFixture.ReadJsonAsync(response);
         json.RootElement.TryGetProperty("errors", out _).Should().BeFalse();
-        var data = json.RootElement.GetProperty("data").GetProperty("createRoute");
-        data.GetProperty("driverId").GetString().Should().Be(_driverId.ToString());
-        data.GetProperty("driverName").GetString().Should().NotBeNullOrEmpty();
+        var routeData = json.RootElement.GetProperty("data").GetProperty("createRoute");
+        routeData.GetProperty("driverId").GetString().Should().Be(_driverId.ToString());
+        routeData.GetProperty("driverName").GetString().Should().NotBeNullOrEmpty();
     }
 
     [Fact]
     public async Task AssignDriverToRoute_OnPlannedRoute_Succeeds()
     {
-        // Arrange - Create a route without driver
         var createMutation = $@"
             mutation {{
                 createRoute(input: {{
@@ -722,11 +639,10 @@ public class RouteIntegrationTests : IAsyncLifetime
                     totalParcelCount: 20
                 }}) {{ id }}
             }}";
-        var createResponse = await ExecuteGraphQLAsync(createMutation);
-        var createJson = await ReadJsonAsync(createResponse);
+        var createResponse = await _fx.ExecuteGraphQLAsync(createMutation);
+        var createJson = await IntegrationFixture.ReadJsonAsync(createResponse);
         var routeId = createJson.RootElement.GetProperty("data").GetProperty("createRoute").GetProperty("id").GetString();
 
-        // Act - Assign driver
         var assignMutation = $@"
             mutation {{
                 assignDriverToRoute(
@@ -738,21 +654,19 @@ public class RouteIntegrationTests : IAsyncLifetime
                     driverName
                 }}
             }}";
-        var assignResponse = await ExecuteGraphQLAsync(assignMutation);
+        var assignResponse = await _fx.ExecuteGraphQLAsync(assignMutation);
 
-        // Assert
         assignResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var assignJson = await ReadJsonAsync(assignResponse);
+        var assignJson = await IntegrationFixture.ReadJsonAsync(assignResponse);
         assignJson.RootElement.TryGetProperty("errors", out _).Should().BeFalse();
-        var data = assignJson.RootElement.GetProperty("data").GetProperty("assignDriverToRoute");
-        data.GetProperty("driverId").GetString().Should().Be(_driverId.ToString());
-        data.GetProperty("driverName").GetString().Should().NotBeNullOrEmpty();
+        var routeData = assignJson.RootElement.GetProperty("data").GetProperty("assignDriverToRoute");
+        routeData.GetProperty("driverId").GetString().Should().Be(_driverId.ToString());
+        routeData.GetProperty("driverName").GetString().Should().NotBeNullOrEmpty();
     }
 
     [Fact]
     public async Task AssignDriverToRoute_Reassignment_Succeeds()
     {
-        // Arrange - Create route with first driver
         var createMutation = $@"
             mutation {{
                 createRoute(input: {{
@@ -763,11 +677,10 @@ public class RouteIntegrationTests : IAsyncLifetime
                     driverId: ""{_driverId}""
                 }}) {{ id }}
             }}";
-        var createResponse = await ExecuteGraphQLAsync(createMutation);
-        var createJson = await ReadJsonAsync(createResponse);
+        var createResponse = await _fx.ExecuteGraphQLAsync(createMutation);
+        var createJson = await IntegrationFixture.ReadJsonAsync(createResponse);
         var routeId = createJson.RootElement.GetProperty("data").GetProperty("createRoute").GetProperty("id").GetString();
 
-        // Create a second driver
         var driver2Email = await CreateDriverUserAsync($"driver-reassign-{Guid.NewGuid():N}@test.com");
         var uniqueLicense2 = $"DL-{Guid.NewGuid():N}".Substring(0, 12).ToUpperInvariant();
         var createDriver2Mutation = $@"
@@ -780,11 +693,10 @@ public class RouteIntegrationTests : IAsyncLifetime
                     }}
                 ) {{ id }}
             }}";
-        var driver2Response = await ExecuteGraphQLAsync(createDriver2Mutation);
-        var driver2Json = await ReadJsonAsync(driver2Response);
+        var driver2Response = await _fx.ExecuteGraphQLAsync(createDriver2Mutation);
+        var driver2Json = await IntegrationFixture.ReadJsonAsync(driver2Response);
         var driver2Id = driver2Json.RootElement.GetProperty("data").GetProperty("createDriver").GetProperty("id").GetString();
 
-        // Act - Reassign to second driver
         var reassignMutation = $@"
             mutation {{
                 assignDriverToRoute(
@@ -796,20 +708,18 @@ public class RouteIntegrationTests : IAsyncLifetime
                     driverName
                 }}
             }}";
-        var reassignResponse = await ExecuteGraphQLAsync(reassignMutation);
+        var reassignResponse = await _fx.ExecuteGraphQLAsync(reassignMutation);
 
-        // Assert
         reassignResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var reassignJson = await ReadJsonAsync(reassignResponse);
+        var reassignJson = await IntegrationFixture.ReadJsonAsync(reassignResponse);
         reassignJson.RootElement.TryGetProperty("errors", out _).Should().BeFalse();
-        var data = reassignJson.RootElement.GetProperty("data").GetProperty("assignDriverToRoute");
-        data.GetProperty("driverId").GetString().Should().Be(driver2Id);
+        var routeData = reassignJson.RootElement.GetProperty("data").GetProperty("assignDriverToRoute");
+        routeData.GetProperty("driverId").GetString().Should().Be(driver2Id);
     }
 
     [Fact]
     public async Task AssignDriverToRoute_Unassign_SetsDriverToNull()
     {
-        // Arrange - Create route with driver
         var createMutation = $@"
             mutation {{
                 createRoute(input: {{
@@ -820,11 +730,10 @@ public class RouteIntegrationTests : IAsyncLifetime
                     driverId: ""{_driverId}""
                 }}) {{ id }}
             }}";
-        var createResponse = await ExecuteGraphQLAsync(createMutation);
-        var createJson = await ReadJsonAsync(createResponse);
+        var createResponse = await _fx.ExecuteGraphQLAsync(createMutation);
+        var createJson = await IntegrationFixture.ReadJsonAsync(createResponse);
         var routeId = createJson.RootElement.GetProperty("data").GetProperty("createRoute").GetProperty("id").GetString();
 
-        // Act - Unassign driver by passing null
         var unassignMutation = $@"
             mutation {{
                 assignDriverToRoute(
@@ -834,21 +743,19 @@ public class RouteIntegrationTests : IAsyncLifetime
                     driverId
                 }}
             }}";
-        var unassignResponse = await ExecuteGraphQLAsync(unassignMutation);
+        var unassignResponse = await _fx.ExecuteGraphQLAsync(unassignMutation);
 
-        // Assert
         unassignResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var unassignJson = await ReadJsonAsync(unassignResponse);
+        var unassignJson = await IntegrationFixture.ReadJsonAsync(unassignResponse);
         unassignJson.RootElement.TryGetProperty("errors", out _).Should().BeFalse();
-        var data = unassignJson.RootElement.GetProperty("data").GetProperty("assignDriverToRoute");
-        data.TryGetProperty("driverId", out var driverIdProp).Should().BeTrue();
+        var routeData = unassignJson.RootElement.GetProperty("data").GetProperty("assignDriverToRoute");
+        routeData.TryGetProperty("driverId", out var driverIdProp).Should().BeTrue();
         driverIdProp.ValueKind.Should().Be(JsonValueKind.Null);
     }
 
     [Fact]
     public async Task AssignDriverToRoute_OnCompletedRoute_ReturnsError()
     {
-        // Arrange - Create route, start and complete it
         var createMutation = $@"
             mutation {{
                 createRoute(input: {{
@@ -858,25 +765,22 @@ public class RouteIntegrationTests : IAsyncLifetime
                     totalParcelCount: 15
                 }}) {{ id }}
             }}";
-        var createResponse = await ExecuteGraphQLAsync(createMutation);
-        var createJson = await ReadJsonAsync(createResponse);
+        var createResponse = await _fx.ExecuteGraphQLAsync(createMutation);
+        var createJson = await IntegrationFixture.ReadJsonAsync(createResponse);
         var routeId = createJson.RootElement.GetProperty("data").GetProperty("createRoute").GetProperty("id").GetString();
 
-        // Start the route
         var startMutation = $@"
             mutation {{
                 changeRouteStatus(id: ""{routeId}"", newStatus: IN_PROGRESS) {{ id }}
             }}";
-        await ExecuteGraphQLAsync(startMutation);
+        await _fx.ExecuteGraphQLAsync(startMutation);
 
-        // Complete the route
         var completeMutation = $@"
             mutation {{
                 changeRouteStatus(id: ""{routeId}"", newStatus: COMPLETED) {{ id }}
             }}";
-        await ExecuteGraphQLAsync(completeMutation);
+        await _fx.ExecuteGraphQLAsync(completeMutation);
 
-        // Act - Try to assign driver to completed route
         var assignMutation = $@"
             mutation {{
                 assignDriverToRoute(
@@ -886,19 +790,17 @@ public class RouteIntegrationTests : IAsyncLifetime
                     id
                 }}
             }}";
-        var assignResponse = await ExecuteGraphQLAsync(assignMutation);
+        var assignResponse = await _fx.ExecuteGraphQLAsync(assignMutation);
 
-        // Assert
         assignResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var assignJson = await ReadJsonAsync(assignResponse);
-        assignJson.RootElement.TryGetProperty("errors", out var errors).Should().BeTrue();
-        errors[0].GetProperty("message").GetString().Should().Contain("Draft");
+        var assignJson = await IntegrationFixture.ReadJsonAsync(assignResponse);
+        assignJson.RootElement.TryGetProperty("errors", out var err).Should().BeTrue();
+        err[0].GetProperty("message").GetString().Should().Contain("Draft");
     }
 
     [Fact]
     public async Task GetAvailableDrivers_ReturnsFilteredDrivers()
     {
-        // Arrange - Query available drivers for a date
         var queryDate = DateTime.UtcNow.AddDays(7);
         var query = $@"
             query {{
@@ -917,29 +819,18 @@ public class RouteIntegrationTests : IAsyncLifetime
                 }}
             }}";
 
-        // Act
-        var response = await ExecuteGraphQLAsync(query);
+        var response = await _fx.ExecuteGraphQLAsync(query);
 
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var json = await ReadJsonAsync(response);
+        var json = await IntegrationFixture.ReadJsonAsync(response);
         json.RootElement.TryGetProperty("errors", out _).Should().BeFalse();
         var drivers = json.RootElement.GetProperty("data").GetProperty("availableDrivers").EnumerateArray().ToList();
-        // Should contain at least our test driver (they have a shift schedule for that day)
         drivers.Should().NotBeEmpty();
-    }
-
-    private async Task<HttpResponseMessage> ExecuteGraphQLAsync(string query)
-    {
-        var request = new HttpRequestMessage(HttpMethod.Post, "/graphql");
-        request.Content = new StringContent(JsonSerializer.Serialize(new { query }), Encoding.UTF8, "application/json");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
-        return await _client.SendAsync(request);
     }
 
     private async Task<string> CreateDriverUserAsync(string email)
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = _fx.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<Role>>();
 
@@ -955,11 +846,5 @@ public class RouteIntegrationTests : IAsyncLifetime
             throw new InvalidOperationException($"Failed to create driver user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
 
         return email;
-    }
-
-    private static async Task<JsonDocument> ReadJsonAsync(HttpResponseMessage response)
-    {
-        var content = await response.Content.ReadAsStringAsync();
-        return JsonSerializer.Deserialize<JsonDocument>(content)!;
     }
 }

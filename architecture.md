@@ -484,6 +484,92 @@ builder.Services
 | **Persistence** | `AppDbContext` (PostgreSQL + PostGIS), ASP.NET Identity stores, OpenIddict core (EF), `IDbSeeder`, global soft-delete filter |
 | **Api** | HotChocolate GraphQL server (projections, filtering, sorting, spatial), all domain Query/Mutation/Type extensions, `ErrorFilter`, `DomainExceptionErrorFilter`, Hangfire (PostgreSQL storage), Redis cache, Serilog, SignalR, Swagger |
 
+### 2.8 Integration Tests
+
+Integration tests live in `LastMile.TMS.Api.IntegrationTests` and exercise the full GraphQL pipeline — HTTP request through HotChocolate resolver, MediatR handler, EF Core, and a real PostgreSQL database.
+
+#### Test infrastructure
+
+```
+IntegrationFixture                          -- xUnit ICollectionFixture<IAsyncLifetime>
+ ├── PostgreSqlContainer (Testcontainers)   -- postgis/postgis:17-3.5, ephemeral per test run
+ ├── IntegrationTestWebApplicationFactory   -- WebApplicationFactory<Program>
+ │    ├── replaces DbContext with test connection string
+ │    ├── replaces ICurrentUserService → StubCurrentUserService
+ │    ├── replaces IGeocodingService → StubGeocodingService
+ │    └── removes Redis, Hangfire hosted services
+ ├── HttpClient                             -- configured with admin Bearer token
+ └── AccessToken                            -- auto-obtained from /connect/token on init
+
+IntegrationTestCollection                   -- [CollectionDefinition("Integration")]
+                                            -- ties test classes to IntegrationFixture
+```
+
+**Lifecycle** (managed by xUnit `IAsyncLifetime`):
+1. Start PostgreSql container, enable PostGIS extension
+2. Create `WebApplicationFactory`, run EF Core migrations
+3. Seed database via `IDbSeeder`
+4. Authenticate as admin, store access token
+5. All test classes in the collection share the same fixture instance (one container per test run)
+
+#### Writing a test class
+
+```csharp
+[Collection("Integration")]
+public class VehicleIntegrationTests
+{
+    private readonly IntegrationFixture _fx;
+    private readonly string _run;  // unique suffix for test data isolation
+
+    public VehicleIntegrationTests(IntegrationFixture fx)
+    {
+        _fx = fx;
+        _run = Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
+    }
+
+    [Fact]
+    public async Task CreateVehicle_WithValidData_ReturnsVehicle()
+    {
+        var mutation = $@"
+            mutation {{
+                createVehicle(
+                    registrationPlate: ""TEST-{_run}"",
+                    type: VAN,
+                    parcelCapacity: 100,
+                    weightCapacityKg: 500.5
+                ) {{ id registrationPlate status }}
+            }}";
+
+        var response = await _fx.ExecuteGraphQLAsync(mutation);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var json = await IntegrationFixture.ReadJsonAsync(response);
+        json.RootElement.TryGetProperty("errors", out _).Should().BeFalse();
+        var data = json.RootElement.GetProperty("data").GetProperty("createVehicle");
+        data.GetProperty("registrationPlate").GetString().Should().Be($"TEST-{_run}");
+    }
+}
+```
+
+#### Conventions
+
+- **`[Collection("Integration")]`** on every test class — enables fixture sharing via constructor injection
+- **`_run` suffix** — each test class generates a unique short GUID (`_run`) and appends it to created entities (e.g. `TEST-{_run}`) for data isolation between parallel test runs
+- **Raw GraphQL strings** — queries and mutations are inline string literals, not generated clients
+- **Assertions** — FluentAssertions on `HttpStatusCode`, json structure (no `errors` property), and field values via `JsonElement`
+- **Helper methods** on `IntegrationFixture`:
+  - `ExecuteGraphQLAsync(query)` — sends authenticated POST to `/graphql`, returns `HttpResponseMessage`
+  - `GraphQLRequestAsync(query, variables)` — sends authenticated POST, returns deserialized `JsonElement`
+  - `ReadJsonAsync(response)` — static helper to deserialize response body
+  - `CreateScope()` — creates a DI scope for accessing `AppDbContext` directly
+
+#### Stubs
+
+| Stub | Replaces | Behavior |
+|---|---|---|
+| `StubCurrentUserService` | `ICurrentUserService` | Returns fixed `test-user-id` / `test-user` |
+| `StubGeocodingService` | `IGeocodingService` | Returns a valid Point (SRID 4326) near Springfield, IL for any non-empty address; null for empty |
+
 ---
 
 ## 3. Frontend Architecture (Web)
