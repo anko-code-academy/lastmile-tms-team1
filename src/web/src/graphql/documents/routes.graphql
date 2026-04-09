@@ -5,7 +5,14 @@ query GetRoutes($where: RouteFilterInput, $order: [RouteSortInput!], $first: Int
       name
       status
       plannedStartTime
+      actualStartTime
+      actualEndTime
+      totalDistanceKm
+      totalParcelCount
       zoneId
+      zone {
+        name
+      }
       vehicleId
       vehicle {
         registrationPlate
@@ -221,6 +228,20 @@ mutation RemoveParcelsFromRoute($input: RemoveParcelsFromRouteCommandInput!) {
 
 mutation ReorderRouteStops($input: ReorderRouteStopsCommandInput!) {
   reorderRouteStops(input: $input) {
+    id
+    name
+    status
+    stops {
+      id
+      sequenceNumber
+      street1
+      parcelCount
+    }
+  }
+}
+
+mutation OptimizeRouteStopOrder($input: OptimizeRouteStopOrderCommandInput!) {
+  optimizeRouteStopOrder(input: $input) {
     id
     name
     status

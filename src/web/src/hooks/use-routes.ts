@@ -214,3 +214,20 @@ export function useReorderRouteStops() {
     },
   });
 }
+
+export function useOptimizeRouteStopOrder() {
+  const { data: session } = useSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (routeId: string) =>
+      routesService.optimizeRouteStopOrder(session!.user.accessToken, { routeId }),
+    onSuccess: (_, routeId) => {
+      queryClient.invalidateQueries({ queryKey: routeKeys.detail(routeId) });
+      toast.success("Stop order optimized");
+    },
+    onError: () => {
+      toast.error("Failed to optimize stop order");
+    },
+  });
+}

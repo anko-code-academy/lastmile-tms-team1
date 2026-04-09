@@ -400,8 +400,6 @@ public class DriverIntegrationTests
             createRoute(input: {{
                 name: ""DayOff Conflict Route {_run}"",
                 plannedStartTime: ""{nextWeek:O}"",
-                totalDistanceKm: 30.0,
-                totalParcelCount: 15,
                 driverId: ""{driverId}""
             }}) {{ id }}
         }}";

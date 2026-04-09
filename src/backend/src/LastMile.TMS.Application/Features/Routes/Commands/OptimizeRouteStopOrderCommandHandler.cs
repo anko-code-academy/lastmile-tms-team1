@@ -2,7 +2,6 @@ using LastMile.TMS.Application.Common.Interfaces;
 using LastMile.TMS.Application.Features.Routes;
 using LastMile.TMS.Application.Features.Routes.Services;
 using LastMile.TMS.Domain.Enums;
-using LastMile.TMS.Domain.Extensions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Geometries;
@@ -15,11 +14,12 @@ public class OptimizeRouteStopOrderCommandHandler(
 {
     public async Task<RouteDto> Handle(OptimizeRouteStopOrderCommand request, CancellationToken cancellationToken)
     {
+        // Load route with stops — avoid deep Zone.Depot.Address include to prevent circular dependency
         var route = await context.Routes
             .Include(r => r.RouteStops).ThenInclude(s => s.Parcels)
             .Include(r => r.Vehicle)
             .Include(r => r.Driver).ThenInclude(d => d.User)
-            .Include(r => r.Zone).ThenInclude(z => z.Depot).ThenInclude(d => d.Address)
+            .Include(r => r.Zone)
             .FirstOrDefaultAsync(r => r.Id == request.RouteId, cancellationToken);
 
         if (route is null)
@@ -37,11 +37,24 @@ public class OptimizeRouteStopOrderCommandHandler(
             return route.ToDto();
         }
 
-        // Resolve depot coordinates
-        var depotGeo = route.Zone?.Depot?.Address?.GeoLocation;
+        // Resolve depot coordinates via separate query to avoid circular dependency
+        double depotLat = 0, depotLon = 0;
+        if (route.ZoneId.HasValue)
+        {
+            var depotGeo = await context.Zones
+                .Where(z => z.Id == route.ZoneId.Value)
+                .Select(z => z.Depot.Address.GeoLocation)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (depotGeo is not null)
+            {
+                depotLat = depotGeo.Y;
+                depotLon = depotGeo.X;
+            }
+        }
 
         // Build geo info list
-        var stops = route.RouteStops
+        var geoStops = route.RouteStops
             .Select((s, i) => new RouteStopGeoInfo(
                 s.Id,
                 s.GeoLocation?.Y ?? double.NaN,
@@ -49,18 +62,22 @@ public class OptimizeRouteStopOrderCommandHandler(
                 i))
             .ToList();
 
-        var optimizedIds = optimizer.OptimizeStopOrder(
-            stops,
-            depotGeo?.Y ?? 0,
-            depotGeo?.X ?? 0);
+        var optimizedIds = optimizer.OptimizeStopOrder(geoStops, depotLat, depotLon);
 
-        // Update sequence numbers
+        // Update sequence numbers in two phases to avoid unique index collision on (RouteId, SequenceNumber):
+        // Phase 1: Clear all sequence numbers to negative values
+        foreach (var stop in route.RouteStops)
+        {
+            stop.SequenceNumber = -stop.SequenceNumber - 1000;
+        }
+        await context.SaveChangesAsync(cancellationToken);
+
+        // Phase 2: Assign final optimized sequence numbers
         for (var i = 0; i < optimizedIds.Count; i++)
         {
             var stop = route.RouteStops.First(s => s.Id == optimizedIds[i]);
             stop.SequenceNumber = i + 1;
         }
-
         await context.SaveChangesAsync(cancellationToken);
 
         return route.ToDto();

@@ -13,6 +13,7 @@ import {
   AutoAssignParcelsByZoneDocument,
   RemoveParcelsFromRouteDocument,
   ReorderRouteStopsDocument,
+  OptimizeRouteStopOrderDocument,
   type GetRoutesQuery,
   type GetRouteQuery,
   type GetAvailableDriversQuery,
@@ -24,19 +25,23 @@ import {
   type AutoAssignParcelsByZoneMutation,
   type RemoveParcelsFromRouteMutation,
   type ReorderRouteStopsMutation,
+  type OptimizeRouteStopOrderMutation,
   type CreateRouteCommandInput,
   type UpdateRouteCommandInput,
   type AddParcelsToRouteCommandInput,
   type AutoAssignParcelsByZoneCommandInput,
   type RemoveParcelsFromRouteCommandInput,
   type ReorderRouteStopsCommandInput,
+  type OptimizeRouteStopOrderCommandInput,
   type RouteStatus,
 } from "@/graphql/generated/graphql";
 
 export interface FetchRoutesFilters {
   status?: RouteStatus;
+  date?: string;
   first?: number;
   after?: string;
+  order?: Record<string, string>[];
 }
 
 export type RouteListItem = NonNullable<NonNullable<GetRoutesQuery["routes"]>["nodes"]>[number];
@@ -45,13 +50,26 @@ export async function fetchRoutes(
   token: string,
   filters?: FetchRoutesFilters
 ): Promise<GetRoutesQuery["routes"]> {
+  const where: Record<string, unknown> = {};
+  if (filters?.status) {
+    where.status = { eq: filters.status };
+  }
+  if (filters?.date) {
+    const dayStart = new Date(filters.date);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(dayStart);
+    dayEnd.setDate(dayEnd.getDate() + 1);
+    where.plannedStartTime = { gte: dayStart.toISOString(), lt: dayEnd.toISOString() };
+  }
+
   const response = await apiFetch<{ data: GetRoutesQuery }>("/api/graphql", {
     method: "POST",
     token,
     body: JSON.stringify({
       query: print(GetRoutesDocument),
       variables: {
-        where: filters?.status ? { status: { eq: filters.status } } : undefined,
+        where: Object.keys(where).length > 0 ? where : undefined,
+        order: filters?.order,
         first: filters?.first ?? 25,
         after: filters?.after || null,
       },
@@ -225,4 +243,19 @@ export async function reorderRouteStops(
     }),
   });
   return response.data.reorderRouteStops;
+}
+
+export async function optimizeRouteStopOrder(
+  token: string,
+  input: OptimizeRouteStopOrderCommandInput
+): Promise<OptimizeRouteStopOrderMutation["optimizeRouteStopOrder"]> {
+  const response = await apiFetch<{ data: OptimizeRouteStopOrderMutation }>("/api/graphql", {
+    method: "POST",
+    token,
+    body: JSON.stringify({
+      query: print(OptimizeRouteStopOrderDocument),
+      variables: { input },
+    }),
+  });
+  return response.data.optimizeRouteStopOrder;
 }

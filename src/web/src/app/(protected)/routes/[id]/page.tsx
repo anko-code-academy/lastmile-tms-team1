@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Pencil, Plus, Trash2, Zap } from "lucide-react";
+import { ArrowLeft, Pencil, Plus, Trash2, Zap, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import {
   useChangeRouteStatus,
   useAutoAssignParcelsByZone,
   useRemoveParcelsFromRoute,
+  useOptimizeRouteStopOrder,
 } from "@/hooks/use-routes";
 import { RouteStatus, RouteStopStatus } from "@/graphql/generated/graphql";
 import { useParams, useRouter } from "next/navigation";
@@ -54,6 +55,7 @@ export default function RouteDetailPage() {
   const changeStatus = useChangeRouteStatus();
   const autoAssign = useAutoAssignParcelsByZone();
   const removeParcels = useRemoveParcelsFromRoute();
+  const optimizeStops = useOptimizeRouteStopOrder();
 
   const handleStatusChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +73,14 @@ export default function RouteDetailPage() {
   const handleAutoAssign = async () => {
     try {
       await autoAssign.mutateAsync(id);
+    } catch {
+      // error toast handled by hook
+    }
+  };
+
+  const handleOptimizeStops = async () => {
+    try {
+      await optimizeStops.mutateAsync(id);
     } catch {
       // error toast handled by hook
     }
@@ -214,6 +224,17 @@ export default function RouteDetailPage() {
             <CardTitle>Stops ({route.routeStops.length})</CardTitle>
             {isDraft && (
               <div className="flex gap-2">
+                {route.routeStops.length >= 2 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleOptimizeStops}
+                    disabled={optimizeStops.isPending}
+                  >
+                    <ArrowUpDown className="h-4 w-4 mr-1" />
+                    {optimizeStops.isPending ? "Optimizing..." : "Optimize Order"}
+                  </Button>
+                )}
                 {route.zoneId && (
                   <Button
                     variant="outline"

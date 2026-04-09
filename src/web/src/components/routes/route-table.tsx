@@ -50,12 +50,19 @@ interface RouteTableProps {
   data: RouteListItem[];
   onDelete: (id: string) => void;
   isDeleting?: boolean;
+  onSortingChange?: (sorting: SortingState) => void;
 }
 
-export function RouteTable({ data, onDelete, isDeleting }: RouteTableProps) {
+export function RouteTable({ data, onDelete, isDeleting, onSortingChange }: RouteTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const routeToDelete = data.find((r) => r.id === deleteId);
+
+  const handleSortingChange = (updaterOrValue: SortingState | ((prev: SortingState) => SortingState)) => {
+    const newSorting = typeof updaterOrValue === "function" ? updaterOrValue(sorting) : updaterOrValue;
+    setSorting(newSorting);
+    onSortingChange?.(newSorting);
+  };
 
   const columns = [
     columnHelper.accessor("name", {
@@ -64,14 +71,22 @@ export function RouteTable({ data, onDelete, isDeleting }: RouteTableProps) {
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Route Name
+          Name
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
       cell: (info) => info.getValue(),
     }),
     columnHelper.accessor("status", {
-      header: "Status",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Status
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
       cell: (info) => (
         <Badge variant={getStatusBadgeVariant(info.getValue())}>
           {info.getValue().replace("_", " ")}
@@ -79,11 +94,69 @@ export function RouteTable({ data, onDelete, isDeleting }: RouteTableProps) {
       ),
     }),
     columnHelper.accessor("plannedStartTime", {
-      header: "Planned Start",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Planned Start
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
       cell: (info) => {
         const date = new Date(info.getValue());
         return date.toLocaleDateString() + " " + date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
       },
+    }),
+    columnHelper.accessor("actualStartTime", {
+      header: "Actual Start",
+      cell: (info) => {
+        const val = info.getValue();
+        if (!val) return <span className="text-muted-foreground">—</span>;
+        const date = new Date(val);
+        return date.toLocaleDateString() + " " + date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      },
+    }),
+    columnHelper.accessor("actualEndTime", {
+      header: "Actual End",
+      cell: (info) => {
+        const val = info.getValue();
+        if (!val) return <span className="text-muted-foreground">—</span>;
+        const date = new Date(val);
+        return date.toLocaleDateString() + " " + date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      },
+    }),
+    columnHelper.accessor("totalDistanceKm", {
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Distance
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: (info) => {
+        const val = info.getValue();
+        return val > 0 ? `${val} km` : <span className="text-muted-foreground">—</span>;
+      },
+    }),
+    columnHelper.accessor("totalParcelCount", {
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Parcels
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: (info) => info.getValue(),
+    }),
+    columnHelper.accessor((row) => row.zone?.name, {
+      id: "zoneName",
+      header: "Zone",
+      cell: (info) => info.getValue() ?? <span className="text-muted-foreground">Unassigned</span>,
     }),
     columnHelper.accessor((row) => row.vehicle?.registrationPlate, {
       id: "vehiclePlate",
@@ -126,13 +199,13 @@ export function RouteTable({ data, onDelete, isDeleting }: RouteTableProps) {
     data,
     columns,
     state: { sorting },
-    onSortingChange: setSorting,
+    onSortingChange: handleSortingChange,
     getCoreRowModel: getCoreRowModel(),
   });
 
   return (
     <>
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

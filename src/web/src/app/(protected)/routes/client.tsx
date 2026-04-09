@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import type { SortingState } from "@tanstack/react-table";
 import { RouteStatus } from "@/graphql/generated/graphql";
 import { RouteTable } from "@/components/routes/route-table";
 import { useRoutes, useDeleteRoute } from "@/hooks/use-routes";
@@ -19,6 +20,21 @@ import { toast } from "sonner";
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 25;
 
+const SORT_FIELD_MAP: Record<string, string> = {
+  name: "name",
+  status: "status",
+  plannedStartTime: "plannedStartTime",
+  totalDistanceKm: "totalDistanceKm",
+  totalParcelCount: "totalParcelCount",
+};
+
+function sortingToOrder(sorting: SortingState): Record<string, string>[] | undefined {
+  if (sorting.length === 0) return undefined;
+  return sorting
+    .filter((s) => SORT_FIELD_MAP[s.id])
+    .map((s) => ({ [SORT_FIELD_MAP[s.id]]: s.desc ? "DESC" : "ASC" }));
+}
+
 export function RouteListClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -28,6 +44,8 @@ export function RouteListClient() {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [history, setHistory] = useState<string[]>([]);
+  const [dateFilter, setDateFilter] = useState<string>("");
+  const [sorting, setSorting] = useState<SortingState>([]);
 
   const resetPagination = () => {
     setCursor(undefined);
@@ -36,8 +54,10 @@ export function RouteListClient() {
 
   const filters = {
     status: statusParam ?? undefined,
+    date: dateFilter || undefined,
     first: pageSize,
     after: cursor,
+    order: sortingToOrder(sorting),
   };
 
   const { data, isLoading, error } = useRoutes(filters);
@@ -67,6 +87,16 @@ export function RouteListClient() {
       router.push(`/routes?status=${value}`);
     }
   };
+
+  const handleDateFilter = (value: string) => {
+    setDateFilter(value);
+    resetPagination();
+  };
+
+  const handleSortingChange = useCallback((newSorting: SortingState) => {
+    setSorting(newSorting);
+    resetPagination();
+  }, []);
 
   const handleNextPage = () => {
     if (pageInfo?.endCursor) {
@@ -103,6 +133,23 @@ export function RouteListClient() {
           <option value={RouteStatus.Completed}>Completed</option>
         </select>
 
+        <input
+          type="date"
+          className="flex w-[180px] items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          value={dateFilter}
+          onChange={(e) => handleDateFilter(e.target.value)}
+          placeholder="Filter by date"
+        />
+        {dateFilter && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDateFilter("")}
+          >
+            Clear date
+          </Button>
+        )}
+
         <Select
           value={String(pageSize)}
           onValueChange={(value) => {
@@ -123,7 +170,12 @@ export function RouteListClient() {
         </Select>
       </div>
 
-      <RouteTable data={routes} onDelete={handleDelete} isDeleting={isDeleting} />
+      <RouteTable
+        data={routes}
+        onDelete={handleDelete}
+        isDeleting={isDeleting}
+        onSortingChange={handleSortingChange}
+      />
 
       {totalCount > 0 && (
         <div className="flex items-center justify-between pt-4">

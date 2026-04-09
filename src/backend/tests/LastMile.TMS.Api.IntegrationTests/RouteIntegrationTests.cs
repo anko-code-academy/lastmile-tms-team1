@@ -103,16 +103,12 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {{
                 createRoute(input: {{
                     name: ""Test Route 001"",
-                    plannedStartTime: ""{DateTime.UtcNow.AddDays(7):O}"",
-                    totalDistanceKm: 50.5,
-                    totalParcelCount: 25
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(7):O}""
                 }}) {{
                     id
                     name
                     status
                     plannedStartTime
-                    totalDistanceKm
-                    totalParcelCount
                     vehicleId
                 }}
             }}";
@@ -125,8 +121,6 @@ public class RouteIntegrationTests : IAsyncLifetime
         var routeData = json.RootElement.GetProperty("data").GetProperty("createRoute");
         routeData.GetProperty("name").GetString().Should().Be("Test Route 001");
         routeData.GetProperty("status").GetString().Should().Be("DRAFT");
-        routeData.GetProperty("totalDistanceKm").GetDecimal().Should().Be(50.5m);
-        routeData.GetProperty("totalParcelCount").GetInt32().Should().Be(25);
     }
 
     [Fact]
@@ -137,8 +131,6 @@ public class RouteIntegrationTests : IAsyncLifetime
                 createRoute(input: {{
                     name: ""Route With Vehicle"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(8):O}"",
-                    totalDistanceKm: 100.0,
-                    totalParcelCount: 50,
                     vehicleId: ""{_vehicleId}""
                 }}) {{
                     id
@@ -165,9 +157,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {{
                 createRoute(input: {{
                     name: """",
-                    plannedStartTime: ""{DateTime.UtcNow.AddDays(7):O}"",
-                    totalDistanceKm: 50.0,
-                    totalParcelCount: 25
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(7):O}""
                 }}) {{
                     id
                 }}
@@ -188,9 +178,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {{
                 createRoute(input: {{
                     name: ""Route List 001"",
-                    plannedStartTime: ""{DateTime.UtcNow.AddDays(9):O}"",
-                    totalDistanceKm: 30.0,
-                    totalParcelCount: 15
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(9):O}""
                 }}) {{ id }}
             }}";
         await _fx.ExecuteGraphQLAsync(createMutation1);
@@ -199,9 +187,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {{
                 createRoute(input: {{
                     name: ""Route List 002"",
-                    plannedStartTime: ""{DateTime.UtcNow.AddDays(9):O}"",
-                    totalDistanceKm: 40.0,
-                    totalParcelCount: 20
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(9):O}""
                 }}) {{ id }}
             }}";
         await _fx.ExecuteGraphQLAsync(createMutation2);
@@ -234,9 +220,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {{
                 createRoute(input: {{
                     name: ""Get Route By ID"",
-                    plannedStartTime: ""{DateTime.UtcNow.AddDays(10):O}"",
-                    totalDistanceKm: 60.0,
-                    totalParcelCount: 30
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(10):O}""
                 }}) {{ id }}
             }}";
         var createResponse = await _fx.ExecuteGraphQLAsync(createMutation);
@@ -249,8 +233,6 @@ public class RouteIntegrationTests : IAsyncLifetime
                     id
                     name
                     status
-                    totalDistanceKm
-                    totalParcelCount
                 }}
             }}";
         var response = await _fx.ExecuteGraphQLAsync(query);
@@ -270,9 +252,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {{
                 createRoute(input: {{
                     name: ""Update Route Test"",
-                    plannedStartTime: ""{DateTime.UtcNow.AddDays(11):O}"",
-                    totalDistanceKm: 25.0,
-                    totalParcelCount: 10
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(11):O}""
                 }}) {{ id }}
             }}";
         var createResponse = await _fx.ExecuteGraphQLAsync(createMutation);
@@ -284,14 +264,10 @@ public class RouteIntegrationTests : IAsyncLifetime
                 updateRoute(input: {{
                     id: ""{routeId}"",
                     name: ""Updated Route Name"",
-                    plannedStartTime: ""{DateTime.UtcNow.AddDays(12):O}"",
-                    totalDistanceKm: 75.0,
-                    totalParcelCount: 35
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(12):O}""
                 }}) {{
                     id
                     name
-                    totalDistanceKm
-                    totalParcelCount
                 }}
             }}";
         var updateResponse = await _fx.ExecuteGraphQLAsync(updateMutation);
@@ -301,8 +277,6 @@ public class RouteIntegrationTests : IAsyncLifetime
         json.RootElement.TryGetProperty("errors", out _).Should().BeFalse();
         var routeData = json.RootElement.GetProperty("data").GetProperty("updateRoute");
         routeData.GetProperty("name").GetString().Should().Be("Updated Route Name");
-        routeData.GetProperty("totalDistanceKm").GetDecimal().Should().Be(75.0m);
-        routeData.GetProperty("totalParcelCount").GetInt32().Should().Be(35);
     }
 
     [Fact]
@@ -312,9 +286,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {{
                 createRoute(input: {{
                     name: ""Update Route Vehicle"",
-                    plannedStartTime: ""{DateTime.UtcNow.AddDays(13):O}"",
-                    totalDistanceKm: 45.0,
-                    totalParcelCount: 20
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(13):O}""
                 }}) {{ id }}
             }}";
         var createResponse = await _fx.ExecuteGraphQLAsync(createMutation);
@@ -327,8 +299,6 @@ public class RouteIntegrationTests : IAsyncLifetime
                     id: ""{routeId}"",
                     name: ""Update Route Vehicle"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(13):O}"",
-                    totalDistanceKm: 45.0,
-                    totalParcelCount: 20,
                     vehicleId: ""{_vehicleId}""
                 }}) {{
                     id
@@ -353,9 +323,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {{
                 createRoute(input: {{
                     name: ""Delete Route Test"",
-                    plannedStartTime: ""{DateTime.UtcNow.AddDays(14):O}"",
-                    totalDistanceKm: 55.0,
-                    totalParcelCount: 25
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(14):O}""
                 }}) {{ id }}
             }}";
         var createResponse = await _fx.ExecuteGraphQLAsync(createMutation);
@@ -396,8 +364,6 @@ public class RouteIntegrationTests : IAsyncLifetime
                 createRoute(input: {{
                     name: ""Delete Route With Vehicle"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(15):O}"",
-                    totalDistanceKm: 35.0,
-                    totalParcelCount: 15,
                     vehicleId: ""{_vehicleId}""
                 }}) {{ id }}
             }}";
@@ -424,9 +390,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {{
                 createRoute(input: {{
                     name: ""Status Change Test"",
-                    plannedStartTime: ""{DateTime.UtcNow.AddDays(12):O}"",
-                    totalDistanceKm: 40.0,
-                    totalParcelCount: 20
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(12):O}""
                 }}) {{ id }}
             }}";
         var createResponse = await _fx.ExecuteGraphQLAsync(createMutation);
@@ -459,8 +423,6 @@ public class RouteIntegrationTests : IAsyncLifetime
                 createRoute(input: {{
                     name: ""Complete With Vehicle"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(13):O}"",
-                    totalDistanceKm: 50.0,
-                    totalParcelCount: 25,
                     vehicleId: ""{_vehicleId}""
                 }}) {{ id }}
             }}";
@@ -505,8 +467,6 @@ public class RouteIntegrationTests : IAsyncLifetime
                 createRoute(input: {{
                     name: ""History Test Route"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(17):O}"",
-                    totalDistanceKm: 60.0,
-                    totalParcelCount: 30,
                     vehicleId: ""{_vehicleId}""
                 }}) {{ id }}
             }}";
@@ -585,8 +545,6 @@ public class RouteIntegrationTests : IAsyncLifetime
                 createRoute(input: {{
                     name: ""Route With Retired Vehicle"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(27):O}"",
-                    totalDistanceKm: 30.0,
-                    totalParcelCount: 15,
                     vehicleId: ""{vehicleId}""
                 }}) {{ id }}
             }}";
@@ -608,8 +566,6 @@ public class RouteIntegrationTests : IAsyncLifetime
                 createRoute(input: {{
                     name: ""Route With Driver"",
                     plannedStartTime: ""{plannedDate:O}"",
-                    totalDistanceKm: 50.0,
-                    totalParcelCount: 25,
                     driverId: ""{_driverId}""
                 }}) {{
                     id
@@ -636,9 +592,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {{
                 createRoute(input: {{
                     name: ""Assign Driver Test"",
-                    plannedStartTime: ""{DateTime.UtcNow.AddDays(8):O}"",
-                    totalDistanceKm: 40.0,
-                    totalParcelCount: 20
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(8):O}""
                 }}) {{ id }}
             }}";
         var createResponse = await _fx.ExecuteGraphQLAsync(createMutation);
@@ -674,8 +628,6 @@ public class RouteIntegrationTests : IAsyncLifetime
                 createRoute(input: {{
                     name: ""Reassign Driver Test"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(9):O}"",
-                    totalDistanceKm: 30.0,
-                    totalParcelCount: 15,
                     driverId: ""{_driverId}""
                 }}) {{ id }}
             }}";
@@ -727,8 +679,6 @@ public class RouteIntegrationTests : IAsyncLifetime
                 createRoute(input: {{
                     name: ""Unassign Driver Test"",
                     plannedStartTime: ""{DateTime.UtcNow.AddDays(10):O}"",
-                    totalDistanceKm: 25.0,
-                    totalParcelCount: 10,
                     driverId: ""{_driverId}""
                 }}) {{ id }}
             }}";
@@ -762,9 +712,7 @@ public class RouteIntegrationTests : IAsyncLifetime
             mutation {{
                 createRoute(input: {{
                     name: ""Completed Route Driver"",
-                    plannedStartTime: ""{DateTime.UtcNow.AddDays(11):O}"",
-                    totalDistanceKm: 35.0,
-                    totalParcelCount: 15
+                    plannedStartTime: ""{DateTime.UtcNow.AddDays(11):O}""
                 }}) {{ id }}
             }}";
         var createResponse = await _fx.ExecuteGraphQLAsync(createMutation);
