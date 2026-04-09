@@ -32,11 +32,10 @@ public class AutoAssignParcelsByZoneCommandHandler(IAppDbContext context, IMedia
             throw new InvalidOperationException("Route must have a zone assigned to auto-assign parcels.");
         }
 
-        // Find unassigned parcels in this zone that are ready for routing
-        var availableStatuses = new[] { ParcelStatus.Sorted, ParcelStatus.Staged };
+        // Find unassigned Sorted parcels in this zone that are ready for routing
         var unassignedParcels = await context.Parcels
             .Include(p => p.RecipientAddress)
-            .Where(p => p.ZoneId == route.ZoneId && !p.RouteStopId.HasValue && availableStatuses.Contains(p.Status))
+            .Where(p => p.ZoneId == route.ZoneId && !p.RouteStopId.HasValue && p.Status == ParcelStatus.Sorted)
             .ToListAsync(cancellationToken);
 
         if (unassignedParcels.Count == 0)

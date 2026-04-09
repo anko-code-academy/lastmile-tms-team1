@@ -41,7 +41,15 @@ public class AddParcelsToRouteCommandHandler(IAppDbContext context) : IRequestHa
             throw new InvalidOperationException($"Parcels not found: {string.Join(", ", missingIds)}");
         }
 
-        // Check parcels are not already assigned to another active route
+        // Check parcels are in Sorted status (only Sorted parcels can be added to routes)
+        var notSorted = parcels.Where(p => p.Status != ParcelStatus.Sorted).ToList();
+        if (notSorted.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"Only parcels in Sorted status can be added to a route. Parcels not in Sorted status: {string.Join(", ", notSorted.Select(p => $"{p.TrackingNumber} ({p.Status})"))}");
+        }
+
+        // Check parcels are not already assigned to another route
         var alreadyAssigned = parcels.Where(p => p.RouteStopId.HasValue).ToList();
         if (alreadyAssigned.Count > 0)
         {
@@ -56,6 +64,9 @@ public class AddParcelsToRouteCommandHandler(IAppDbContext context) : IRequestHa
                 throw new InvalidOperationException(
                     $"Parcel {parcel.TrackingNumber} has no geocoded delivery address.");
             }
+
+            // Transition parcel from Sorted to Staged
+            parcel.TransitionTo(ParcelStatus.Staged);
 
             // Find existing stop within 50m proximity using GeoLocation
             var matchingStop = FindMatchingStop(route.RouteStops.ToList(), parcel.RecipientAddress.GeoLocation);

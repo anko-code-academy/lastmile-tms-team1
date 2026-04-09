@@ -213,6 +213,7 @@ public class RouteTests
                 new Parcel { ServiceType = ServiceType.Standard }
             ]
         };
+        foreach (var p in stop1.Parcels) p.RouteStopId = stop1.Id;
 
         var stop2 = new RouteStop
         {
@@ -223,6 +224,7 @@ public class RouteTests
                 new Parcel { ServiceType = ServiceType.Standard }
             ]
         };
+        foreach (var p in stop2.Parcels) p.RouteStopId = stop2.Id;
 
         route.RouteStops.Add(stop1);
         route.RouteStops.Add(stop2);

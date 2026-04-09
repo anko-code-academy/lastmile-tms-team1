@@ -71,7 +71,7 @@ public class Route : BaseAuditableEntity
 
     public void RecalculateTotals()
     {
-        TotalParcelCount = RouteStops.Sum(s => s.Parcels.Count);
+        TotalParcelCount = RouteStops.Sum(s => s.Parcels.Count(p => p.RouteStopId == s.Id));
     }
 
     public void RecalculateDistance(Point? depotGeoLocation)

@@ -4,6 +4,8 @@ using LastMile.TMS.Application.Common.Interfaces;
 using LastMile.TMS.Application.Features.Routes;
 using LastMile.TMS.Domain.Enums;
 
+using ParcelStatus = LastMile.TMS.Domain.Enums.ParcelStatus;
+
 namespace LastMile.TMS.Application.Features.Routes.Commands;
 
 public class RemoveParcelsFromRouteCommandHandler(IAppDbContext context) : IRequestHandler<RemoveParcelsFromRouteCommand, RouteDto>
@@ -31,22 +33,30 @@ public class RemoveParcelsFromRouteCommandHandler(IAppDbContext context) : IRequ
             .Where(p => request.ParcelIds.Contains(p.Id))
             .ToListAsync(cancellationToken);
 
-        // Clear RouteStopId on each parcel
+        // Clear RouteStopId on each parcel and transition back to Sorted
+        var removedParcelIds = request.ParcelIds.ToHashSet();
         foreach (var parcel in parcels)
         {
             parcel.RouteStopId = null;
+            if (parcel.Status == ParcelStatus.Staged)
+            {
+                parcel.Status = ParcelStatus.Sorted;
+            }
         }
 
-        // Remove stops that now have zero parcels
-        var emptyStops = route.RouteStops.Where(s => !s.Parcels.Any(p => !request.ParcelIds.Contains(p.Id))).ToList();
+        // Remove stops that now have zero remaining parcels
+        var parcelIdSet = request.ParcelIds.ToHashSet();
+        var emptyStops = route.RouteStops
+            .Where(s => !s.Parcels.Any(p => !parcelIdSet.Contains(p.Id)))
+            .ToList();
         foreach (var stop in emptyStops)
         {
+            route.RouteStops.Remove(stop);
             context.RouteStops.Remove(stop);
         }
 
         // Re-sequence remaining stops
         var remainingStops = route.RouteStops
-            .Where(s => !emptyStops.Contains(s))
             .OrderBy(s => s.SequenceNumber)
             .ToList();
 

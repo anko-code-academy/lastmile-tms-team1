@@ -152,6 +152,7 @@ export function useAddParcelsToRoute() {
     mutationFn: ({ routeId, parcelIds }: { routeId: string; parcelIds: string[] }) =>
       routesService.addParcelsToRoute(session!.user.accessToken, { routeId, parcelIds }),
     onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: routeKeys.all });
       queryClient.invalidateQueries({ queryKey: routeKeys.detail(variables.routeId) });
       queryClient.invalidateQueries({ queryKey: parcelKeys.all });
       toast.success("Parcels added to route");
@@ -170,6 +171,7 @@ export function useAutoAssignParcelsByZone() {
     mutationFn: (routeId: string) =>
       routesService.autoAssignParcelsByZone(session!.user.accessToken, { routeId }),
     onSuccess: (_, routeId) => {
+      queryClient.invalidateQueries({ queryKey: routeKeys.all });
       queryClient.invalidateQueries({ queryKey: routeKeys.detail(routeId) });
       queryClient.invalidateQueries({ queryKey: parcelKeys.all });
       toast.success("Parcels auto-assigned by zone");
@@ -188,6 +190,7 @@ export function useRemoveParcelsFromRoute() {
     mutationFn: ({ routeId, parcelIds }: { routeId: string; parcelIds: string[] }) =>
       routesService.removeParcelsFromRoute(session!.user.accessToken, { routeId, parcelIds }),
     onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: routeKeys.all });
       queryClient.invalidateQueries({ queryKey: routeKeys.detail(variables.routeId) });
       queryClient.invalidateQueries({ queryKey: parcelKeys.all });
       toast.success("Parcels removed from route");

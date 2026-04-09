@@ -40,7 +40,7 @@ export default function EditRoutePage() {
 
   const { data: parcelsData, isLoading: parcelsLoading } = useParcels({
     zoneId: route?.zoneId ?? undefined,
-    status: "STAGED",
+    status: "SORTED",
     columns: PARCEL_PICK_COLUMNS,
     first: PAGE_SIZE,
     after: cursor,
@@ -171,7 +171,7 @@ export default function EditRoutePage() {
       {isDraft && (
         <Card className="max-w-2xl mt-6">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Add Parcels (Staged)</CardTitle>
+            <CardTitle>Add Parcels (Sorted)</CardTitle>
             <Button
               size="sm"
               onClick={handleAddParcels}
@@ -190,7 +190,7 @@ export default function EditRoutePage() {
               <p className="text-muted-foreground">Loading parcels...</p>
             ) : availableParcels.length === 0 ? (
               <p className="text-muted-foreground">
-                No staged parcels available
+                No sorted parcels available
                 {route.zoneId ? ` in zone ${route.zone?.name ?? ""}` : ""}.
               </p>
             ) : (
