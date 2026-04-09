@@ -61,4 +61,15 @@ public class ParcelQuery
     [UseProjection]
     public IQueryable<DomainParcel> GetParcelByTrackingNumber(string trackingNumber, [Service] AppDbContext context)
         => context.Parcels.AsNoTracking().Where(p => p.TrackingNumber == trackingNumber);
+
+    [Authorize]
+    [UsePaging(IncludeTotalCount = true)]
+    [UseProjection]
+    [UseFiltering]
+    [UseSorting]
+    public IQueryable<TrackingEvent> GetTrackingEvents(
+        Guid parcelId, [Service] AppDbContext context)
+        => context.TrackingEvents.AsNoTracking()
+            .Where(te => te.ParcelId == parcelId)
+            .OrderByDescending(te => te.Timestamp);
 }

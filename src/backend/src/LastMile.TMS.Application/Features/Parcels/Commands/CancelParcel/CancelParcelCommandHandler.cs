@@ -1,5 +1,6 @@
 using LastMile.TMS.Application.Common.Interfaces;
 using LastMile.TMS.Domain.Entities;
+using LastMile.TMS.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -37,6 +38,15 @@ public class CancelParcelCommandHandler(
             $"Cancelled - {request.Reason}",
             userId);
         dbContext.ParcelAuditLogs.Add(auditLog);
+
+        dbContext.TrackingEvents.Add(new TrackingEvent
+        {
+            ParcelId = parcel.Id,
+            Timestamp = DateTimeOffset.UtcNow,
+            EventType = EventType.Exception,
+            Description = $"Cancelled - {request.Reason}",
+            Operator = userId
+        });
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
