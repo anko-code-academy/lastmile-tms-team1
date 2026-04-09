@@ -43,6 +43,12 @@ public class ReorderRouteStopsCommandHandler(IAppDbContext context) : IRequestHa
             stop.SequenceNumber = i + 1;
         }
 
+        var depotGeo = await context.Zones
+            .Where(z => z.Id == route.ZoneId)
+            .Select(z => z.Depot.Address.GeoLocation)
+            .FirstOrDefaultAsync(cancellationToken);
+        route.RecalculateDistance(depotGeo);
+
         await context.SaveChangesAsync(cancellationToken);
 
         return route.ToDto();

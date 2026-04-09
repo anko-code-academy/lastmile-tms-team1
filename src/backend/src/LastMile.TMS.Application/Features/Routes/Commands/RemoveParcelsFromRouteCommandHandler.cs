@@ -56,6 +56,13 @@ public class RemoveParcelsFromRouteCommandHandler(IAppDbContext context) : IRequ
         }
 
         route.RecalculateTotals();
+
+        var depotGeo = await context.Zones
+            .Where(z => z.Id == route.ZoneId)
+            .Select(z => z.Depot.Address.GeoLocation)
+            .FirstOrDefaultAsync(cancellationToken);
+        route.RecalculateDistance(depotGeo);
+
         await context.SaveChangesAsync(cancellationToken);
 
         return route.ToDto();

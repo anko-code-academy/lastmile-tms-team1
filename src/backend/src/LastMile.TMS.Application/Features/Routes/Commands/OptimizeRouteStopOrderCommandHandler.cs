@@ -38,10 +38,11 @@ public class OptimizeRouteStopOrderCommandHandler(
         }
 
         // Resolve depot coordinates via separate query to avoid circular dependency
+        Point? depotGeo = null;
         double depotLat = 0, depotLon = 0;
         if (route.ZoneId.HasValue)
         {
-            var depotGeo = await context.Zones
+            depotGeo = await context.Zones
                 .Where(z => z.Id == route.ZoneId.Value)
                 .Select(z => z.Depot.Address.GeoLocation)
                 .FirstOrDefaultAsync(cancellationToken);
@@ -78,6 +79,10 @@ public class OptimizeRouteStopOrderCommandHandler(
             var stop = route.RouteStops.First(s => s.Id == optimizedIds[i]);
             stop.SequenceNumber = i + 1;
         }
+
+        // Recalculate distance with optimized stop order
+        route.RecalculateDistance(depotGeo);
+
         await context.SaveChangesAsync(cancellationToken);
 
         return route.ToDto();

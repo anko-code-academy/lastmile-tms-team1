@@ -1,5 +1,7 @@
 using LastMile.TMS.Domain.Common;
 using LastMile.TMS.Domain.Enums;
+using LastMile.TMS.Domain.Extensions;
+using NetTopologySuite.Geometries;
 
 namespace LastMile.TMS.Domain.Entities;
 
@@ -70,5 +72,39 @@ public class Route : BaseAuditableEntity
     public void RecalculateTotals()
     {
         TotalParcelCount = RouteStops.Sum(s => s.Parcels.Count);
+    }
+
+    public void RecalculateDistance(Point? depotGeoLocation)
+    {
+        if (depotGeoLocation is null || RouteStops.Count == 0)
+        {
+            TotalDistanceKm = 0;
+            return;
+        }
+
+        var orderedStops = RouteStops
+            .OrderBy(s => s.SequenceNumber)
+            .Where(s => s.GeoLocation is not null)
+            .Select(s => s.GeoLocation!)
+            .ToList();
+
+        if (orderedStops.Count == 0)
+        {
+            TotalDistanceKm = 0;
+            return;
+        }
+
+        var totalMeters = 0.0;
+
+        // Depot to first stop
+        totalMeters += depotGeoLocation.HaversineDistanceMeters(orderedStops[0]);
+
+        // Between consecutive stops
+        for (var i = 1; i < orderedStops.Count; i++)
+        {
+            totalMeters += orderedStops[i - 1].HaversineDistanceMeters(orderedStops[i]);
+        }
+
+        TotalDistanceKm = (decimal)Math.Round(totalMeters / 1000.0, 2);
     }
 }

@@ -177,7 +177,7 @@ export default function RouteDetailPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Distance</p>
-                <p>{route.totalDistanceKm} km</p>
+                <p>{route.totalDistanceKm > 0 ? `${route.totalDistanceKm} km` : "—"}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Vehicle</p>
@@ -294,9 +294,9 @@ export default function RouteDetailPage() {
                               className="flex items-center justify-between text-sm py-1 px-2 rounded bg-muted/50"
                             >
                               <div className="flex items-center gap-2">
-                                <span className="font-mono text-xs">
+                                <Link href={`/parcels/${parcel.trackingNumber}`} className="font-mono text-xs hover:underline">
                                   {parcel.trackingNumber}
-                                </span>
+                                </Link>
                                 <Badge variant="outline" className="text-xs">
                                   {parcel.status.replace("_", " ")}
                                 </Badge>

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -22,11 +22,15 @@ const PARCEL_PICK_COLUMNS: ColumnKey[] = [
   "zone",
 ];
 
+const PAGE_SIZE = 10;
+
 export default function EditRoutePage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
   const [selectedParcelIds, setSelectedParcelIds] = useState<Set<string>>(new Set());
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
+  const [history, setHistory] = useState<string[]>([]);
 
   const { data: route, isLoading } = useRoute(id);
   const updateRoute = useUpdateRoute();
@@ -36,8 +40,10 @@ export default function EditRoutePage() {
 
   const { data: parcelsData, isLoading: parcelsLoading } = useParcels({
     zoneId: route?.zoneId ?? undefined,
+    status: "STAGED",
     columns: PARCEL_PICK_COLUMNS,
-    first: 100,
+    first: PAGE_SIZE,
+    after: cursor,
   });
 
   // Exclude parcels already on this route
@@ -47,6 +53,8 @@ export default function EditRoutePage() {
   const availableParcels = (parcelsData?.nodes ?? []).filter(
     (p) => !assignedParcelIds.has(p.id),
   );
+  const pageInfo = parcelsData?.pageInfo;
+  const totalCount = parcelsData?.totalCount ?? 0;
 
   const handleSubmit = async (values: {
     name: string;
@@ -92,6 +100,19 @@ export default function EditRoutePage() {
     } else {
       setSelectedParcelIds(new Set(availableParcels.map((p) => p.id)));
     }
+  };
+
+  const handleNextPage = () => {
+    if (pageInfo?.endCursor) {
+      setHistory((prev) => [...prev, cursor ?? ""]);
+      setCursor(pageInfo.endCursor);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    const prev = history[history.length - 1];
+    setHistory((h) => h.slice(0, -1));
+    setCursor(prev || undefined);
   };
 
   if (isLoading) {
@@ -150,7 +171,7 @@ export default function EditRoutePage() {
       {isDraft && (
         <Card className="max-w-2xl mt-6">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Add Parcels</CardTitle>
+            <CardTitle>Add Parcels (Staged)</CardTitle>
             <Button
               size="sm"
               onClick={handleAddParcels}
@@ -169,60 +190,92 @@ export default function EditRoutePage() {
               <p className="text-muted-foreground">Loading parcels...</p>
             ) : availableParcels.length === 0 ? (
               <p className="text-muted-foreground">
-                No available parcels
+                No staged parcels available
                 {route.zoneId ? ` in zone ${route.zone?.name ?? ""}` : ""}.
               </p>
             ) : (
-              <div className="border rounded-md">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="p-2 text-left w-10">
-                        <input
-                          type="checkbox"
-                          checked={
-                            availableParcels.length > 0 &&
-                            selectedParcelIds.size === availableParcels.length
-                          }
-                          onChange={toggleAll}
-                        />
-                      </th>
-                      <th className="p-2 text-left">Tracking #</th>
-                      <th className="p-2 text-left">Status</th>
-                      <th className="p-2 text-left">Address</th>
-                      {!route.zoneId && <th className="p-2 text-left">Zone</th>}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {availableParcels.map((parcel) => (
-                      <tr
-                        key={parcel.id}
-                        className={`border-b last:border-0 ${selectedParcelIds.has(parcel.id) ? "bg-primary/5" : "hover:bg-muted/30"}`}
-                      >
-                        <td className="p-2">
+              <>
+                <div className="border rounded-md">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-muted/50">
+                        <th className="p-2 text-left w-10">
                           <input
                             type="checkbox"
-                            checked={selectedParcelIds.has(parcel.id)}
-                            onChange={() => toggleParcel(parcel.id)}
+                            checked={
+                              availableParcels.length > 0 &&
+                              selectedParcelIds.size === availableParcels.length
+                            }
+                            onChange={toggleAll}
                           />
-                        </td>
-                        <td className="p-2 font-mono text-xs">
-                          {parcel.trackingNumber}
-                        </td>
-                        <td className="p-2">{(parcel.status as string)?.replace("_", " ")}</td>
-                        <td className="p-2">
-                          {parcel.recipientAddress?.street1}
-                          {parcel.recipientAddress?.city &&
-                            `, ${parcel.recipientAddress.city}`}
-                        </td>
-                        {!route.zoneId && (
-                          <td className="p-2">{parcel.zone?.name ?? "\u2014"}</td>
-                        )}
+                        </th>
+                        <th className="p-2 text-left">Tracking #</th>
+                        <th className="p-2 text-left">Status</th>
+                        <th className="p-2 text-left">Address</th>
+                        {!route.zoneId && <th className="p-2 text-left">Zone</th>}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {availableParcels.map((parcel) => (
+                        <tr
+                          key={parcel.id}
+                          className={`border-b last:border-0 ${selectedParcelIds.has(parcel.id) ? "bg-primary/5" : "hover:bg-muted/30"}`}
+                        >
+                          <td className="p-2">
+                            <input
+                              type="checkbox"
+                              checked={selectedParcelIds.has(parcel.id)}
+                              onChange={() => toggleParcel(parcel.id)}
+                            />
+                          </td>
+                          <td className="p-2 font-mono text-xs">
+                            <Link href={`/parcels/${parcel.trackingNumber}`} className="hover:underline">
+                              {parcel.trackingNumber}
+                            </Link>
+                          </td>
+                          <td className="p-2">{(parcel.status as string)?.replace("_", " ")}</td>
+                          <td className="p-2">
+                            {parcel.recipientAddress?.street1}
+                            {parcel.recipientAddress?.city &&
+                              `, ${parcel.recipientAddress.city}`}
+                          </td>
+                          {!route.zoneId && (
+                            <td className="p-2">{parcel.zone?.name ?? "\u2014"}</td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {totalCount > PAGE_SIZE && (
+                  <div className="flex items-center justify-between pt-3">
+                    <div className="text-sm text-muted-foreground">
+                      Showing {availableParcels.length} of {totalCount}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handlePreviousPage}
+                        disabled={!pageInfo?.hasPreviousPage}
+                      >
+                        <ChevronLeft className="size-4 mr-1" />
+                        Previous
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleNextPage}
+                        disabled={!pageInfo?.hasNextPage}
+                      >
+                        Next
+                        <ChevronRight className="size-4 ml-1" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>

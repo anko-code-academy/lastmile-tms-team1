@@ -1,6 +1,7 @@
 using FluentAssertions;
 using LastMile.TMS.Domain.Entities;
 using LastMile.TMS.Domain.Enums;
+using NetTopologySuite.Geometries;
 
 namespace LastMile.TMS.Domain.Tests;
 
@@ -266,5 +267,109 @@ public class RouteTests
 
         // Assert
         route.ZoneId.Should().Be(zoneId);
+    }
+
+    [Fact]
+    public void RecalculateDistance_DepotToStopsToDepot_CalculatesHaversineDistance()
+    {
+        // Depot at (0, 0), stops at ~(0.01, 0.01) and ~(0.02, 0.02)
+        var depotGeo = new Point(0, 0) { SRID = 4326 };
+        var route = new Route
+        {
+            Name = "Distance Test Route",
+            PlannedStartTime = DateTime.UtcNow,
+            RouteStops =
+            [
+                new RouteStop
+                {
+                    SequenceNumber = 1,
+                    Street1 = "Stop 1",
+                    GeoLocation = new Point(0.01, 0.01) { SRID = 4326 }
+                },
+                new RouteStop
+                {
+                    SequenceNumber = 2,
+                    Street1 = "Stop 2",
+                    GeoLocation = new Point(0.02, 0.02) { SRID = 4326 }
+                }
+            ]
+        };
+
+        route.RecalculateDistance(depotGeo);
+
+        route.TotalDistanceKm.Should().BeGreaterThan(0);
+        // depot->stop1 + stop1->stop2 ≈ 2 * haversine(0,0, 0.01,0.01) + haversine(0.01,0.01, 0.02,0.02)
+        // Should be roughly in the range of a few km (each ~1.57 km)
+        route.TotalDistanceKm.Should().BeLessThan(20);
+    }
+
+    [Fact]
+    public void RecalculateDistance_NoStops_SetsZeroDistance()
+    {
+        var depotGeo = new Point(0, 0) { SRID = 4326 };
+        var route = new Route
+        {
+            Name = "Empty Route",
+            PlannedStartTime = DateTime.UtcNow
+        };
+
+        route.RecalculateDistance(depotGeo);
+
+        route.TotalDistanceKm.Should().Be(0);
+    }
+
+    [Fact]
+    public void RecalculateDistance_NullDepot_SetsZeroDistance()
+    {
+        var route = new Route
+        {
+            Name = "No Depot Route",
+            PlannedStartTime = DateTime.UtcNow,
+            RouteStops =
+            [
+                new RouteStop
+                {
+                    SequenceNumber = 1,
+                    Street1 = "Stop 1",
+                    GeoLocation = new Point(0.01, 0.01) { SRID = 4326 }
+                }
+            ]
+        };
+
+        route.RecalculateDistance(null);
+
+        route.TotalDistanceKm.Should().Be(0);
+    }
+
+    [Fact]
+    public void RecalculateDistance_StopsWithoutGeo_SkipsThem()
+    {
+        var depotGeo = new Point(0, 0) { SRID = 4326 };
+        var route = new Route
+        {
+            Name = "Mixed Stops Route",
+            PlannedStartTime = DateTime.UtcNow,
+            RouteStops =
+            [
+                new RouteStop
+                {
+                    SequenceNumber = 1,
+                    Street1 = "Stop With Geo",
+                    GeoLocation = new Point(0.01, 0.01) { SRID = 4326 }
+                },
+                new RouteStop
+                {
+                    SequenceNumber = 2,
+                    Street1 = "Stop Without Geo",
+                    GeoLocation = null
+                }
+            ]
+        };
+
+        route.RecalculateDistance(depotGeo);
+
+        // Should only count depot->stop1 (skip stop2 since it has no geo)
+        route.TotalDistanceKm.Should().BeGreaterThan(0);
+        route.TotalDistanceKm.Should().BeLessThan(5);
     }
 }

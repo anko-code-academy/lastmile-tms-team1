@@ -82,6 +82,14 @@ public class AddParcelsToRouteCommandHandler(IAppDbContext context) : IRequestHa
         }
 
         route.RecalculateTotals();
+
+        // Recalculate distance: resolve depot geo from zone
+        var depotGeo = await context.Zones
+            .Where(z => z.Id == route.ZoneId)
+            .Select(z => z.Depot.Address.GeoLocation)
+            .FirstOrDefaultAsync(cancellationToken);
+        route.RecalculateDistance(depotGeo);
+
         await context.SaveChangesAsync(cancellationToken);
 
         return route.ToDto();
