@@ -3,6 +3,7 @@ import { apiFetch } from "@/lib/api";
 import {
   GetRoutesDocument,
   GetRouteDocument,
+  GetRoutesForMapDocument,
   GetAvailableDriversDocument,
   CreateRouteDocument,
   UpdateRouteDocument,
@@ -17,6 +18,7 @@ import {
   DispatchRouteDocument,
   type GetRoutesQuery,
   type GetRouteQuery,
+  type GetRoutesForMapQuery,
   type GetAvailableDriversQuery,
   type CreateRouteMutation,
   type UpdateRouteMutation,
@@ -75,6 +77,31 @@ export async function fetchRoutes(
         order: filters?.order,
         first: filters?.first ?? 25,
         after: filters?.after || null,
+      },
+    }),
+  });
+  return response.data.routes;
+}
+
+export async function fetchRoutesForMap(
+  token: string,
+  date: string
+): Promise<GetRoutesForMapQuery["routes"]> {
+  const dayStart = new Date(date);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(dayStart);
+  dayEnd.setDate(dayEnd.getDate() + 1);
+
+  const response = await apiFetch<{ data: GetRoutesForMapQuery }>("/api/graphql", {
+    method: "POST",
+    token,
+    body: JSON.stringify({
+      query: print(GetRoutesForMapDocument),
+      variables: {
+        where: {
+          plannedStartTime: { gte: dayStart.toISOString(), lt: dayEnd.toISOString() },
+        },
+        first: 100,
       },
     }),
   });

@@ -36,6 +36,16 @@ export function useRoute(id: string) {
   });
 }
 
+export function useRoutesForMap(date: string | undefined) {
+  const { data: session } = useSession();
+
+  return useQuery({
+    queryKey: routeKeys.map(date ?? ""),
+    queryFn: () => routesService.fetchRoutesForMap(session!.user.accessToken, date!),
+    enabled: !!session?.user?.accessToken && !!date,
+  });
+}
+
 export function useAvailableDrivers(date: string | undefined) {
   const { data: session } = useSession();
 
@@ -210,6 +220,7 @@ export function useReorderRouteStops() {
     mutationFn: ({ routeId, stopIdsInOrder }: { routeId: string; stopIdsInOrder: string[] }) =>
       routesService.reorderRouteStops(session!.user.accessToken, { routeId, stopIdsInOrder }),
     onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: routeKeys.all });
       queryClient.invalidateQueries({ queryKey: routeKeys.detail(variables.routeId) });
       toast.success("Stops reordered");
     },
@@ -227,6 +238,7 @@ export function useOptimizeRouteStopOrder() {
     mutationFn: (routeId: string) =>
       routesService.optimizeRouteStopOrder(session!.user.accessToken, { routeId }),
     onSuccess: (_, routeId) => {
+      queryClient.invalidateQueries({ queryKey: routeKeys.all });
       queryClient.invalidateQueries({ queryKey: routeKeys.detail(routeId) });
       toast.success("Stop order optimized");
     },

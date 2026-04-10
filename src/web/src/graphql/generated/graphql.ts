@@ -139,6 +139,96 @@ export type AddressSortInput = {
   street2?: InputMaybe<SortEnumType>;
 };
 
+export type Aisle = {
+  __typename?: 'Aisle';
+  bins: Array<Bin>;
+  createdAt: Scalars['DateTime']['output'];
+  createdBy?: Maybe<Scalars['String']['output']>;
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  deletedBy?: Maybe<Scalars['String']['output']>;
+  id: Scalars['UUID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isDeleted: Scalars['Boolean']['output'];
+  label: Scalars['String']['output'];
+  lastModifiedAt?: Maybe<Scalars['DateTime']['output']>;
+  lastModifiedBy?: Maybe<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
+  order: Scalars['Int']['output'];
+  zone: Zone;
+  zoneId: Scalars['UUID']['output'];
+};
+
+export type AisleFilterInput = {
+  and?: InputMaybe<Array<AisleFilterInput>>;
+  bins?: InputMaybe<ListFilterInputTypeOfBinFilterInput>;
+  createdAt?: InputMaybe<DateTimeOperationFilterInput>;
+  createdBy?: InputMaybe<StringOperationFilterInput>;
+  deletedAt?: InputMaybe<DateTimeOperationFilterInput>;
+  deletedBy?: InputMaybe<StringOperationFilterInput>;
+  id?: InputMaybe<UuidOperationFilterInput>;
+  isActive?: InputMaybe<BooleanOperationFilterInput>;
+  isDeleted?: InputMaybe<BooleanOperationFilterInput>;
+  label?: InputMaybe<StringOperationFilterInput>;
+  lastModifiedAt?: InputMaybe<DateTimeOperationFilterInput>;
+  lastModifiedBy?: InputMaybe<StringOperationFilterInput>;
+  name?: InputMaybe<StringOperationFilterInput>;
+  or?: InputMaybe<Array<AisleFilterInput>>;
+  order?: InputMaybe<IntOperationFilterInput>;
+  zone?: InputMaybe<ZoneFilterInput>;
+  zoneId?: InputMaybe<UuidOperationFilterInput>;
+};
+
+export type AisleResult = {
+  __typename?: 'AisleResult';
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['UUID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  label: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+  order: Scalars['Int']['output'];
+  zoneId: Scalars['UUID']['output'];
+  zoneName: Scalars['String']['output'];
+};
+
+export type AisleSortInput = {
+  createdAt?: InputMaybe<SortEnumType>;
+  createdBy?: InputMaybe<SortEnumType>;
+  deletedAt?: InputMaybe<SortEnumType>;
+  deletedBy?: InputMaybe<SortEnumType>;
+  id?: InputMaybe<SortEnumType>;
+  isActive?: InputMaybe<SortEnumType>;
+  isDeleted?: InputMaybe<SortEnumType>;
+  label?: InputMaybe<SortEnumType>;
+  lastModifiedAt?: InputMaybe<SortEnumType>;
+  lastModifiedBy?: InputMaybe<SortEnumType>;
+  name?: InputMaybe<SortEnumType>;
+  order?: InputMaybe<SortEnumType>;
+  zone?: InputMaybe<ZoneSortInput>;
+  zoneId?: InputMaybe<SortEnumType>;
+};
+
+/** A connection to a list of items. */
+export type AislesConnection = {
+  __typename?: 'AislesConnection';
+  /** A list of edges. */
+  edges?: Maybe<Array<AislesEdge>>;
+  /** A flattened list of the nodes. */
+  nodes?: Maybe<Array<Aisle>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** Identifies the total count of items in the connection. */
+  totalCount: Scalars['Int']['output'];
+};
+
+/** An edge in a connection. */
+export type AislesEdge = {
+  __typename?: 'AislesEdge';
+  /** A cursor for use in pagination. */
+  cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  node: Aisle;
+};
+
 /** Defines when a policy shall be executed. */
 export enum ApplyPolicy {
   /** After the resolver was executed. */
@@ -163,7 +253,8 @@ export type AvailableDriverDto = {
 
 export type Bin = {
   __typename?: 'Bin';
-  aisle: Scalars['Int']['output'];
+  aisle: Aisle;
+  aisleId: Scalars['UUID']['output'];
   capacity: Scalars['Int']['output'];
   createdAt: Scalars['DateTime']['output'];
   createdBy?: Maybe<Scalars['String']['output']>;
@@ -183,7 +274,7 @@ export type Bin = {
 
 export type BinDto = {
   __typename?: 'BinDto';
-  aisle: Scalars['Int']['output'];
+  aisleLabel: Scalars['String']['output'];
   capacity: Scalars['Int']['output'];
   createdAt: Scalars['DateTime']['output'];
   currentParcelCount: Scalars['Int']['output'];
@@ -199,7 +290,8 @@ export type BinDto = {
 };
 
 export type BinFilterInput = {
-  aisle?: InputMaybe<IntOperationFilterInput>;
+  aisle?: InputMaybe<AisleFilterInput>;
+  aisleId?: InputMaybe<UuidOperationFilterInput>;
   and?: InputMaybe<Array<BinFilterInput>>;
   capacity?: InputMaybe<IntOperationFilterInput>;
   createdAt?: InputMaybe<DateTimeOperationFilterInput>;
@@ -221,7 +313,7 @@ export type BinFilterInput = {
 
 export type BinResult = {
   __typename?: 'BinResult';
-  aisle: Scalars['Int']['output'];
+  aisleLabel: Scalars['String']['output'];
   capacity: Scalars['Int']['output'];
   createdAt: Scalars['DateTime']['output'];
   description?: Maybe<Scalars['String']['output']>;
@@ -234,7 +326,8 @@ export type BinResult = {
 };
 
 export type BinSortInput = {
-  aisle?: InputMaybe<SortEnumType>;
+  aisle?: InputMaybe<AisleSortInput>;
+  aisleId?: InputMaybe<SortEnumType>;
   capacity?: InputMaybe<SortEnumType>;
   createdAt?: InputMaybe<SortEnumType>;
   createdBy?: InputMaybe<SortEnumType>;
@@ -374,8 +467,15 @@ export type CoordinateSortInput = {
   z?: InputMaybe<SortEnumType>;
 };
 
+export type CreateAisleCommandInput = {
+  isActive?: Scalars['Boolean']['input'];
+  name: Scalars['String']['input'];
+  order?: InputMaybe<Scalars['Int']['input']>;
+  zoneId: Scalars['UUID']['input'];
+};
+
 export type CreateBinCommandInput = {
-  aisle: Scalars['Int']['input'];
+  aisleId: Scalars['UUID']['input'];
   capacity: Scalars['Int']['input'];
   description?: InputMaybe<Scalars['String']['input']>;
   isActive?: Scalars['Boolean']['input'];
@@ -1160,6 +1260,13 @@ export type IntOperationFilterInput = {
   nlte?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export type ListFilterInputTypeOfAisleFilterInput = {
+  all?: InputMaybe<AisleFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<AisleFilterInput>;
+  some?: InputMaybe<AisleFilterInput>;
+};
+
 export type ListFilterInputTypeOfBinFilterInput = {
   all?: InputMaybe<BinFilterInput>;
   any?: InputMaybe<Scalars['Boolean']['input']>;
@@ -1291,6 +1398,7 @@ export type Mutation = {
   changeRouteStatus: RouteDto;
   changeVehicleStatus: VehicleDto;
   completePasswordReset: Scalars['Boolean']['output'];
+  createAisle: AisleResult;
   createBin: BinResult;
   createDepot: DepotResult;
   createDriver: DriverResult;
@@ -1300,6 +1408,7 @@ export type Mutation = {
   createVehicle: VehicleDto;
   createZone: ZoneResult;
   deactivateUser: UserDto;
+  deleteAisle: Scalars['Boolean']['output'];
   deleteBin: Scalars['Boolean']['output'];
   deleteDepot: Scalars['Boolean']['output'];
   deleteDriver: Scalars['Boolean']['output'];
@@ -1312,6 +1421,7 @@ export type Mutation = {
   reorderRouteStops: RouteDto;
   resetPassword: Scalars['Boolean']['output'];
   sentinel?: Maybe<Scalars['String']['output']>;
+  updateAisle: AisleResult;
   updateBin: BinResult;
   updateDepot: DepotResult;
   updateDriver: DriverResult;
@@ -1373,6 +1483,11 @@ export type MutationCompletePasswordResetArgs = {
 };
 
 
+export type MutationCreateAisleArgs = {
+  input: CreateAisleCommandInput;
+};
+
+
 export type MutationCreateBinArgs = {
   input: CreateBinCommandInput;
 };
@@ -1429,6 +1544,11 @@ export type MutationDeactivateUserArgs = {
 };
 
 
+export type MutationDeleteAisleArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+
 export type MutationDeleteBinArgs = {
   id: Scalars['UUID']['input'];
 };
@@ -1481,6 +1601,11 @@ export type MutationReorderRouteStopsArgs = {
 
 export type MutationResetPasswordArgs = {
   email: Scalars['String']['input'];
+};
+
+
+export type MutationUpdateAisleArgs = {
+  input: UpdateAisleCommandInput;
 };
 
 
@@ -1665,6 +1790,8 @@ export type Parcel = {
   __typename?: 'Parcel';
   actualDeliveryDate?: Maybe<Scalars['DateTime']['output']>;
   auditLogs: Array<ParcelAuditLog>;
+  bin?: Maybe<Bin>;
+  binId?: Maybe<Scalars['UUID']['output']>;
   canTransitionTo: Scalars['Boolean']['output'];
   contentItems: Array<ParcelContentItem>;
   createdAt: Scalars['DateTime']['output'];
@@ -1846,6 +1973,8 @@ export type ParcelFilterInput = {
   actualDeliveryDate?: InputMaybe<DateTimeOperationFilterInput>;
   and?: InputMaybe<Array<ParcelFilterInput>>;
   auditLogs?: InputMaybe<ListFilterInputTypeOfParcelAuditLogFilterInput>;
+  bin?: InputMaybe<BinFilterInput>;
+  binId?: InputMaybe<UuidOperationFilterInput>;
   contentItems?: InputMaybe<ListFilterInputTypeOfParcelContentItemFilterInput>;
   createdAt?: InputMaybe<DateTimeOperationFilterInput>;
   createdBy?: InputMaybe<StringOperationFilterInput>;
@@ -1887,6 +2016,8 @@ export type ParcelFilterInput = {
 
 export type ParcelSortInput = {
   actualDeliveryDate?: InputMaybe<SortEnumType>;
+  bin?: InputMaybe<BinSortInput>;
+  binId?: InputMaybe<SortEnumType>;
   createdAt?: InputMaybe<SortEnumType>;
   createdBy?: InputMaybe<SortEnumType>;
   currency?: InputMaybe<SortEnumType>;
@@ -2168,6 +2299,9 @@ export type PrecisionModelsOperationFilterInput = {
 
 export type Query = {
   __typename?: 'Query';
+  aisle?: Maybe<Aisle>;
+  aisles?: Maybe<AislesConnection>;
+  aislesByZone: Array<Aisle>;
   availableDrivers: Array<AvailableDriverDto>;
   bin?: Maybe<Bin>;
   binUtilizations: Array<BinDto>;
@@ -2192,6 +2326,27 @@ export type Query = {
   vehicles: Array<Vehicle>;
   zone?: Maybe<Zone>;
   zones?: Maybe<ZonesConnection>;
+};
+
+
+export type QueryAisleArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+
+export type QueryAislesArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  before?: InputMaybe<Scalars['String']['input']>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  order?: InputMaybe<Array<AisleSortInput>>;
+  where?: InputMaybe<AisleFilterInput>;
+};
+
+
+export type QueryAislesByZoneArgs = {
+  order?: InputMaybe<Array<AisleSortInput>>;
+  zoneId: Scalars['UUID']['input'];
 };
 
 
@@ -2895,8 +3050,16 @@ export type UpdateAddressInput = {
   street2?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type UpdateAisleCommandInput = {
+  id: Scalars['UUID']['input'];
+  isActive: Scalars['Boolean']['input'];
+  name: Scalars['String']['input'];
+  order: Scalars['Int']['input'];
+  zoneId: Scalars['UUID']['input'];
+};
+
 export type UpdateBinCommandInput = {
-  aisle: Scalars['Int']['input'];
+  aisleId: Scalars['UUID']['input'];
   capacity: Scalars['Int']['input'];
   description?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['UUID']['input'];
@@ -3322,7 +3485,7 @@ export type WeightUnitOperationFilterInput = {
 
 export type Zone = {
   __typename?: 'Zone';
-  bins: Array<Bin>;
+  aisles: Array<Aisle>;
   boundaryGeometry?: Maybe<Scalars['Geometry']['output']>;
   createdAt: Scalars['DateTime']['output'];
   createdBy?: Maybe<Scalars['String']['output']>;
@@ -3339,8 +3502,8 @@ export type Zone = {
 };
 
 export type ZoneFilterInput = {
+  aisles?: InputMaybe<ListFilterInputTypeOfAisleFilterInput>;
   and?: InputMaybe<Array<ZoneFilterInput>>;
-  bins?: InputMaybe<ListFilterInputTypeOfBinFilterInput>;
   boundaryGeometry?: InputMaybe<GeometryFilterInput>;
   createdAt?: InputMaybe<DateTimeOperationFilterInput>;
   createdBy?: InputMaybe<StringOperationFilterInput>;
@@ -3500,6 +3663,14 @@ export type GetAvailableDriversQueryVariables = Exact<{
 
 
 export type GetAvailableDriversQuery = { __typename?: 'Query', availableDrivers: Array<{ __typename?: 'AvailableDriverDto', id: any, name: string, shift?: { __typename?: 'ShiftInfoDto', openTime: any, closeTime: any } | null, assignedRoutes: Array<{ __typename?: 'DriverRouteSummaryDto', id: any, name: string, status: RouteStatus }> }> };
+
+export type GetRoutesForMapQueryVariables = Exact<{
+  where?: InputMaybe<RouteFilterInput>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type GetRoutesForMapQuery = { __typename?: 'Query', routes?: { __typename?: 'RoutesConnection', nodes?: Array<{ __typename?: 'Route', id: any, name: string, status: RouteStatus, zoneId?: any | null, routeStops: Array<{ __typename?: 'RouteStop', id: any, sequenceNumber: number, status: RouteStopStatus, street1: string, geoLocation?: { __typename?: 'GeoJSONPointType', coordinates?: any | null } | null, parcels: Array<{ __typename?: 'Parcel', id: any, trackingNumber: string, status: ParcelStatus }> }> }> | null } | null };
 
 export type CreateRouteMutationVariables = Exact<{
   input: CreateRouteCommandInput;
@@ -3757,6 +3928,7 @@ export const DeleteDriverDocument = {"kind":"Document","definitions":[{"kind":"O
 export const GetRoutesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetRoutes"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"where"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"RouteFilterInput"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"order"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RouteSortInput"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"after"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"routes"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"Variable","name":{"kind":"Name","value":"where"}}},{"kind":"Argument","name":{"kind":"Name","value":"order"},"value":{"kind":"Variable","name":{"kind":"Name","value":"order"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}},{"kind":"Argument","name":{"kind":"Name","value":"after"},"value":{"kind":"Variable","name":{"kind":"Name","value":"after"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"nodes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"plannedStartTime"}},{"kind":"Field","name":{"kind":"Name","value":"actualStartTime"}},{"kind":"Field","name":{"kind":"Name","value":"actualEndTime"}},{"kind":"Field","name":{"kind":"Name","value":"totalDistanceKm"}},{"kind":"Field","name":{"kind":"Name","value":"totalParcelCount"}},{"kind":"Field","name":{"kind":"Name","value":"zoneId"}},{"kind":"Field","name":{"kind":"Name","value":"zone"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"vehicleId"}},{"kind":"Field","name":{"kind":"Name","value":"vehicle"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"registrationPlate"}}]}},{"kind":"Field","name":{"kind":"Name","value":"driverId"}},{"kind":"Field","name":{"kind":"Name","value":"driver"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"pageInfo"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"hasNextPage"}},{"kind":"Field","name":{"kind":"Name","value":"hasPreviousPage"}},{"kind":"Field","name":{"kind":"Name","value":"startCursor"}},{"kind":"Field","name":{"kind":"Name","value":"endCursor"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}}]}}]} as unknown as DocumentNode<GetRoutesQuery, GetRoutesQueryVariables>;
 export const GetRouteDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetRoute"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UUID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"route"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"plannedStartTime"}},{"kind":"Field","name":{"kind":"Name","value":"actualStartTime"}},{"kind":"Field","name":{"kind":"Name","value":"actualEndTime"}},{"kind":"Field","name":{"kind":"Name","value":"totalDistanceKm"}},{"kind":"Field","name":{"kind":"Name","value":"totalParcelCount"}},{"kind":"Field","name":{"kind":"Name","value":"zoneId"}},{"kind":"Field","name":{"kind":"Name","value":"zone"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"vehicleId"}},{"kind":"Field","name":{"kind":"Name","value":"vehicle"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"registrationPlate"}}]}},{"kind":"Field","name":{"kind":"Name","value":"driverId"}},{"kind":"Field","name":{"kind":"Name","value":"driver"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"routeStops"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"sequenceNumber"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"arrivalTime"}},{"kind":"Field","name":{"kind":"Name","value":"departureTime"}},{"kind":"Field","name":{"kind":"Name","value":"estimatedServiceMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"accessInstructions"}},{"kind":"Field","name":{"kind":"Name","value":"street1"}},{"kind":"Field","name":{"kind":"Name","value":"parcels"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"trackingNumber"}},{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<GetRouteQuery, GetRouteQueryVariables>;
 export const GetAvailableDriversDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAvailableDrivers"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"date"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"DateTime"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"availableDrivers"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"date"},"value":{"kind":"Variable","name":{"kind":"Name","value":"date"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"shift"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"openTime"}},{"kind":"Field","name":{"kind":"Name","value":"closeTime"}}]}},{"kind":"Field","name":{"kind":"Name","value":"assignedRoutes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]}}]} as unknown as DocumentNode<GetAvailableDriversQuery, GetAvailableDriversQueryVariables>;
+export const GetRoutesForMapDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetRoutesForMap"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"where"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"RouteFilterInput"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"routes"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"Variable","name":{"kind":"Name","value":"where"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"nodes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"zoneId"}},{"kind":"Field","name":{"kind":"Name","value":"routeStops"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"sequenceNumber"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"geoLocation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"coordinates"}}]}},{"kind":"Field","name":{"kind":"Name","value":"street1"}},{"kind":"Field","name":{"kind":"Name","value":"parcels"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"trackingNumber"}},{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetRoutesForMapQuery, GetRoutesForMapQueryVariables>;
 export const CreateRouteDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateRoute"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateRouteCommandInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createRoute"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"plannedStartTime"}},{"kind":"Field","name":{"kind":"Name","value":"zoneId"}},{"kind":"Field","name":{"kind":"Name","value":"zoneName"}},{"kind":"Field","name":{"kind":"Name","value":"estimatedStopCount"}},{"kind":"Field","name":{"kind":"Name","value":"vehicleId"}},{"kind":"Field","name":{"kind":"Name","value":"vehiclePlate"}},{"kind":"Field","name":{"kind":"Name","value":"driverId"}},{"kind":"Field","name":{"kind":"Name","value":"driverName"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<CreateRouteMutation, CreateRouteMutationVariables>;
 export const UpdateRouteDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateRoute"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateRouteCommandInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateRoute"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"plannedStartTime"}},{"kind":"Field","name":{"kind":"Name","value":"zoneId"}},{"kind":"Field","name":{"kind":"Name","value":"zoneName"}},{"kind":"Field","name":{"kind":"Name","value":"estimatedStopCount"}},{"kind":"Field","name":{"kind":"Name","value":"vehicleId"}},{"kind":"Field","name":{"kind":"Name","value":"vehiclePlate"}},{"kind":"Field","name":{"kind":"Name","value":"driverId"}},{"kind":"Field","name":{"kind":"Name","value":"driverName"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<UpdateRouteMutation, UpdateRouteMutationVariables>;
 export const DeleteRouteDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteRoute"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UUID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteRoute"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteRouteMutation, DeleteRouteMutationVariables>;

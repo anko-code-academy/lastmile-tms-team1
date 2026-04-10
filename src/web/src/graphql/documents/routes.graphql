@@ -95,6 +95,31 @@ query GetAvailableDrivers($date: DateTime!) {
   }
 }
 
+query GetRoutesForMap($where: RouteFilterInput, $first: Int) {
+  routes(where: $where, first: $first) {
+    nodes {
+      id
+      name
+      status
+      zoneId
+      routeStops {
+        id
+        sequenceNumber
+        status
+        geoLocation {
+          coordinates
+        }
+        street1
+        parcels {
+          id
+          trackingNumber
+          status
+        }
+      }
+    }
+  }
+}
+
 mutation CreateRoute($input: CreateRouteCommandInput!) {
   createRoute(input: $input) {
     id

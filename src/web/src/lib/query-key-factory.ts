@@ -26,6 +26,7 @@ export const routeKeys = {
   details: () => [...routeKeys.all, 'detail'] as const,
   detail: (id: string) => [...routeKeys.details(), id] as const,
   availableDrivers: (date: string) => [...routeKeys.all, 'availableDrivers', date] as const,
+  map: (date: string) => [...routeKeys.all, 'map', date] as const,
 };
 
 export const depotKeys = {

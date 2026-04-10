@@ -6,7 +6,10 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { SortingState } from "@tanstack/react-table";
 import { RouteStatus } from "@/graphql/generated/graphql";
 import { RouteTable } from "@/components/routes/route-table";
-import { useRoutes, useDeleteRoute } from "@/hooks/use-routes";
+import { RouteMap } from "@/components/routes/route-map";
+import { useRoutes, useRoutesForMap, useDeleteRoute } from "@/hooks/use-routes";
+import { useZones } from "@/hooks/use-zones";
+import { useDepots } from "@/hooks/use-depots";
 import {
   Select,
   SelectContent,
@@ -66,6 +69,10 @@ export function RouteListClient() {
   const totalCount = data?.totalCount ?? 0;
 
   const deleteRouteMutation = useDeleteRoute();
+
+  const { data: mapRoutes } = useRoutesForMap(dateFilter || undefined);
+  const { data: zones } = useZones();
+  const { data: depots } = useDepots();
 
   const handleDelete = async (id: string) => {
     setIsDeleting(true);
@@ -169,6 +176,14 @@ export function RouteListClient() {
           </SelectContent>
         </Select>
       </div>
+
+      {dateFilter && (
+        <RouteMap
+          routes={mapRoutes?.nodes?.filter((r): r is NonNullable<typeof r> => !!r) ?? []}
+          zones={zones ?? []}
+          depots={depots ?? []}
+        />
+      )}
 
       <RouteTable
         data={routes}
