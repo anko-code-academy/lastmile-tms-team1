@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
+import { Undo2, Redo2 } from "lucide-react";
 import "mapbox-gl/dist/mapbox-gl.css";
 import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
 import {
@@ -12,6 +13,9 @@ import {
   getZoneCenter,
   type ZoneGeoJson,
 } from "@/components/map/map-utils";
+import { syncDrawToSnapshot } from "@/components/map/draw-history-sync";
+import { useDrawHistory } from "@/hooks/use-draw-history";
+import { useDrawKeyboardShortcuts } from "@/hooks/use-draw-keyboard-shortcuts";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ?? "";
 
@@ -58,13 +62,63 @@ export function ZoneBoundaryMap({
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
   const addedZoneLayersRef = useRef<Set<string>>(new Set());
   const mapInitializedRef = useRef(false);
+  // State (not just ref) so the initial-polygon load effect re-runs when map becomes ready
+  const [mapReady, setMapReady] = useState(false);
 
-  // Keep ref updated with latest existingZones to avoid stale closures
+  // ── Refs for all props/callbacks used inside stable closures ──
+  const onGeoJsonChangeRef = useRef(onGeoJsonChange);
+  useEffect(() => { onGeoJsonChangeRef.current = onGeoJsonChange; }, [onGeoJsonChange]);
+
+  const onZoneSelectRef = useRef(onZoneSelect);
+  useEffect(() => { onZoneSelectRef.current = onZoneSelect; }, [onZoneSelect]);
+
+  const readOnlyRef = useRef(readOnly);
+  useEffect(() => { readOnlyRef.current = readOnly; }, [readOnly]);
+
+  const depotLocationRef = useRef(depotLocation);
+  useEffect(() => { depotLocationRef.current = depotLocation; }, [depotLocation]);
+
   const existingZonesRef = useRef(existingZones);
-  useEffect(() => {
-    existingZonesRef.current = existingZones;
-  }, [existingZones]);
+  useEffect(() => { existingZonesRef.current = existingZones; }, [existingZones]);
 
+  // ── Undo/redo history ──
+  const history = useDrawHistory({ initialSnapshot: "" });
+  const historyRef = useRef(history);
+  useEffect(() => { historyRef.current = history; }, [history]);
+
+  // Track whether a pending undo/redo sync is needed
+  const [syncVersion, setSyncVersion] = useState(0);
+
+  const handleUndo = useCallback(() => {
+    historyRef.current.undo();
+    setSyncVersion((v) => v + 1);
+  }, []);
+  const handleRedo = useCallback(() => {
+    historyRef.current.redo();
+    setSyncVersion((v) => v + 1);
+  }, []);
+
+  useDrawKeyboardShortcuts({
+    undo: handleUndo,
+    redo: handleRedo,
+    canUndo: history.canUndo,
+    canRedo: history.canRedo,
+    containerRef: mapContainer,
+  });
+
+  // Sync MapboxDraw visual when history changes via undo/redo
+  const syncCountRef = useRef(0);
+  useEffect(() => {
+    syncCountRef.current++;
+    if (syncCountRef.current <= 1) return;
+    if (!draw.current || !mapInitializedRef.current) return;
+
+    syncDrawToSnapshot({ draw: draw.current, targetGeoJson: historyRef.current.present });
+    onGeoJsonChangeRef.current(historyRef.current.present);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [syncVersion]);
+
+  // ── Stable draw event handlers (empty deps — use refs) ──
   const handleDrawCreate = useCallback(
     (e: { features: GeoJSON.Feature[] }) => {
       if (e.features.length > 0) {
@@ -77,11 +131,13 @@ export function ZoneBoundaryMap({
             type: feature.geometry.type,
             coordinates: feature.geometry.coordinates,
           };
-          onGeoJsonChange(formatGeoJson(geoJson));
+          const snapshot = formatGeoJson(geoJson);
+          historyRef.current.pushSnapshot(snapshot);
+          onGeoJsonChangeRef.current(snapshot);
         }
       }
     },
-    [onGeoJsonChange]
+    [],
   );
 
   const handleDrawUpdate = useCallback(
@@ -96,24 +152,26 @@ export function ZoneBoundaryMap({
             type: feature.geometry.type,
             coordinates: feature.geometry.coordinates,
           };
-          onGeoJsonChange(formatGeoJson(geoJson));
+          const snapshot = formatGeoJson(geoJson);
+          historyRef.current.pushSnapshot(snapshot);
+          onGeoJsonChangeRef.current(snapshot);
         }
       }
     },
-    [onGeoJsonChange]
+    [],
   );
 
   const handleDrawDelete = useCallback(() => {
-    onGeoJsonChange("");
-  }, [onGeoJsonChange]);
+    historyRef.current.pushSnapshot("");
+    onGeoJsonChangeRef.current("");
+  }, []);
 
-  // Helper to add a single zone's overlay layers
+  // ── Stable overlay helper (empty deps — use refs) ──
   const addZoneOverlayLayer = useCallback(
     (
       currentMap: mapboxgl.Map,
       zone: { id: string; name: string; boundaryGeometry: unknown },
       index: number,
-      currentSelectedZoneId: string | null
     ) => {
       if (!zone.boundaryGeometry) return;
 
@@ -132,32 +190,25 @@ export function ZoneBoundaryMap({
       const strokeLayerId = `zone-overlay-stroke-${zone.id}`;
       const labelLayerId = `zone-overlay-label-${zone.id}`;
 
-      // Skip if already added
       if (currentMap.getSource(sourceId)) return;
 
-      // Add source
       currentMap.addSource(sourceId, {
         type: "geojson",
         data: feature as GeoJSON.Feature,
       });
       addedZoneLayersRef.current.add(sourceId);
 
-      // Initial opacity based on selection state
-      const initialOpacity = currentSelectedZoneId === zone.id ? 0.5 : 0.2;
-
-      // Add fill layer
       currentMap.addLayer({
         id: fillLayerId,
         type: "fill",
         source: sourceId,
         paint: {
           "fill-color": color,
-          "fill-opacity": initialOpacity,
+          "fill-opacity": 0.2,
         },
       });
       addedZoneLayersRef.current.add(fillLayerId);
 
-      // Add stroke layer
       currentMap.addLayer({
         id: strokeLayerId,
         type: "line",
@@ -169,7 +220,6 @@ export function ZoneBoundaryMap({
       });
       addedZoneLayersRef.current.add(strokeLayerId);
 
-      // Add label
       const center = getZoneCenter(geoJsonStr);
       if (center) {
         const labelSourceId = `zone-label-${zone.id}`;
@@ -205,38 +255,30 @@ export function ZoneBoundaryMap({
         addedZoneLayersRef.current.add(labelLayerId);
       }
 
-      // Hover effects - use currentSelectedZoneId to avoid stale closure
       currentMap.on("mouseenter", fillLayerId, () => {
         currentMap.setPaintProperty(fillLayerId, "fill-opacity", 0.4);
         currentMap.getCanvas().style.cursor = "pointer";
       });
 
       currentMap.on("mouseleave", fillLayerId, () => {
-        currentMap.setPaintProperty(
-          fillLayerId,
-          "fill-opacity",
-          currentSelectedZoneId === zone.id ? 0.5 : 0.2
-        );
+        currentMap.setPaintProperty(fillLayerId, "fill-opacity", 0.2);
         currentMap.getCanvas().style.cursor = "";
       });
 
-      // Click to select
       currentMap.on("click", fillLayerId, () => {
         setSelectedZoneId(zone.id);
         currentMap.setPaintProperty(fillLayerId, "fill-opacity", 0.5);
-        onZoneSelect?.(zone.id);
+        onZoneSelectRef.current?.(zone.id);
       });
     },
-    [onZoneSelect, selectedZoneId]
+    [],
   );
 
-  // Cleanup zone layers from map
   const cleanupZoneLayers = useCallback((currentMap: mapboxgl.Map) => {
     addedZoneLayersRef.current.forEach((layerId) => {
       if (currentMap.getLayer(layerId)) {
         currentMap.removeLayer(layerId);
       }
-      // Extract source ID from layer ID pattern
       if (layerId.startsWith("zone-overlay-") || layerId.startsWith("zone-label-")) {
         const sourceId = layerId.replace("-fill", "").replace("-stroke", "").replace("-label", "");
         if (currentMap.getSource(sourceId)) {
@@ -247,14 +289,11 @@ export function ZoneBoundaryMap({
     addedZoneLayersRef.current.clear();
   }, []);
 
+  // ── Main map setup — runs ONCE ──
   useEffect(() => {
     if (!mapContainer.current || !MAPBOX_TOKEN) return;
 
     mapboxgl.accessToken = MAPBOX_TOKEN;
-
-    // Determine initial mode: if editing (has initialGeoJson), use simple_select
-    const isEditing = !readOnly && !!initialGeoJson;
-    const initialMode = isEditing ? "simple_select" : "draw_polygon";
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
@@ -263,19 +302,15 @@ export function ZoneBoundaryMap({
       zoom: 12,
     });
 
-    if (!readOnly) {
-      // When editing (has initialGeoJson), don't show polygon control to prevent drawing new zones
-      const showPolygonControl = !initialGeoJson;
-
+    if (!readOnlyRef.current) {
       draw.current = new MapboxDraw({
         displayControlsDefault: false,
         controls: {
-          polygon: showPolygonControl,
+          polygon: true,
           trash: true,
         },
-        defaultMode: initialMode,
+        defaultMode: "draw_polygon",
         styles: [
-          // Polygon fill
           {
             id: "gl-draw-polygon-fill",
             type: "fill",
@@ -285,7 +320,6 @@ export function ZoneBoundaryMap({
               "fill-opacity": 0.3,
             },
           },
-          // Polygon stroke
           {
             id: "gl-draw-polygon-stroke",
             type: "line",
@@ -295,14 +329,24 @@ export function ZoneBoundaryMap({
               "line-width": 2,
             },
           },
-          // Vertex points
           {
             id: "gl-draw-polygon-and-line-vertex-active",
             type: "circle",
             filter: ["all", ["==", "meta", "vertex"], ["==", "$type", "Point"]],
             paint: {
-              "circle-radius": 6,
+              "circle-radius": 7,
               "circle-color": "#3b82f6",
+            },
+          },
+          {
+            id: "gl-draw-polygon-midpoint",
+            type: "circle",
+            filter: ["all", ["==", "meta", "midpoint"], ["==", "$type", "Point"]],
+            paint: {
+              "circle-radius": 5,
+              "circle-color": "#ffffff",
+              "circle-stroke-color": "#3b82f6",
+              "circle-stroke-width": 2,
             },
           },
         ],
@@ -316,83 +360,23 @@ export function ZoneBoundaryMap({
 
     currentMap.on("load", () => {
       mapInitializedRef.current = true;
+      setMapReady(true);
 
       // Add existing zones as overlay layers
       existingZonesRef.current.forEach((zone, index) => {
-        addZoneOverlayLayer(currentMap, zone, index, selectedZoneId);
+        addZoneOverlayLayer(currentMap, zone, index);
       });
 
       // Add depot marker
-      if (depotLocation) {
+      const loc = depotLocationRef.current;
+      if (loc) {
         depotMarker.current = new mapboxgl.Marker({ color: "#ef4444" })
-          .setLngLat([depotLocation.lng, depotLocation.lat])
+          .setLngLat([loc.lng, loc.lat])
           .addTo(currentMap);
-      }
-
-      // Handle initial zone (the one being edited)
-      if (initialGeoJson) {
-        const parsed = parseZoneGeoJson(initialGeoJson);
-        if (parsed) {
-          if (!readOnly && currentDraw) {
-            const feature = createPolygonFeature(parsed);
-            currentDraw.add(feature as GeoJSON.Feature);
-          } else if (readOnly) {
-            // Read-only view of the zone being edited
-            const sourceId = "zone-boundary";
-            const fillLayerId = "zone-boundary-fill";
-            const strokeLayerId = "zone-boundary-stroke";
-
-            if (!currentMap.getSource(sourceId)) {
-              currentMap.addSource(sourceId, {
-                type: "geojson",
-                data: createPolygonFeature(parsed) as GeoJSON.Feature,
-              });
-
-              currentMap.addLayer({
-                id: fillLayerId,
-                type: "fill",
-                source: sourceId,
-                paint: {
-                  "fill-color": "#3b82f6",
-                  "fill-opacity": 0.3,
-                },
-              });
-
-              currentMap.addLayer({
-                id: strokeLayerId,
-                type: "line",
-                source: sourceId,
-                paint: {
-                  "line-color": "#3b82f6",
-                  "line-width": 2,
-                },
-              });
-            }
-
-            // Fit bounds to zone
-            const coords =
-              parsed.type === "Polygon"
-                ? (parsed.coordinates as unknown as number[][][])[0]
-                : (
-                    (parsed.coordinates as unknown as number[][][][])[0] as unknown as number[][]
-                  )[0];
-
-            if (coords && coords.length > 0) {
-              const bounds = coords.reduce(
-                (b, c) => b.extend(c as [number, number]),
-                new mapboxgl.LngLatBounds(
-                  coords[0] as [number, number],
-                  coords[0] as [number, number]
-                )
-              );
-              currentMap.fitBounds(bounds, { padding: 50 });
-            }
-          }
-        }
       }
     });
 
-    if (!readOnly && currentDraw) {
+    if (!readOnlyRef.current && currentDraw) {
       currentMap.on("draw.create", handleDrawCreate);
       currentMap.on("draw.update", handleDrawUpdate);
       currentMap.on("draw.delete", handleDrawDelete);
@@ -402,38 +386,78 @@ export function ZoneBoundaryMap({
       if (depotMarker.current) {
         depotMarker.current.remove();
       }
-      // Cleanup zone overlay layers to prevent memory leaks and "Source already exists" errors
       cleanupZoneLayers(currentMap);
       currentMap.remove();
+      mapInitializedRef.current = false;
+      setMapReady(false);
     };
-  }, [
-    handleDrawCreate,
-    handleDrawUpdate,
-    handleDrawDelete,
-    initialGeoJson,
-    readOnly,
-    depotLocation,
-    addZoneOverlayLayer,
-    cleanupZoneLayers,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Effect to handle existingZones changes after map is initialized (fixes stale closure)
+  // ── Load initial polygon into draw when zone data arrives (async) ──
+  // Uses a ref flag to ensure the polygon is loaded exactly once — prevents
+  // re-loading on drawing feedback (onGeoJsonChange → parent updates geoJson →
+  // passed back as initialGeoJson).
+  const hasLoadedInitialPolygon = useRef(false);
+  useEffect(() => {
+    if (!mapReady || !draw.current) return;
+    if (!initialGeoJson) return;
+    if (hasLoadedInitialPolygon.current) return;
+
+    const parsed = parseZoneGeoJson(initialGeoJson);
+    if (!parsed) return;
+
+    hasLoadedInitialPolygon.current = true;
+    const currentDraw = draw.current;
+
+    if (!readOnlyRef.current) {
+      // Clear any stale features first (e.g. from strict mode re-mount)
+      currentDraw.deleteAll();
+      const feature = createPolygonFeature(parsed);
+      const addedIds = currentDraw.add(feature as GeoJSON.Feature);
+      if (addedIds.length > 0) {
+        currentDraw.changeMode("direct_select", {
+          featureId: addedIds[0],
+        });
+      }
+      // Initialize history with this snapshot
+      historyRef.current.reset(initialGeoJson);
+    }
+
+    // Fit bounds to zone
+    const coords =
+      parsed.type === "Polygon"
+        ? (parsed.coordinates as unknown as number[][][])[0]
+        : (
+            (parsed.coordinates as unknown as number[][][][])[0] as unknown as number[][]
+          )[0];
+
+    if (coords && coords.length > 0) {
+      const bounds = coords.reduce(
+        (b, c) => b.extend(c as [number, number]),
+        new mapboxgl.LngLatBounds(
+          coords[0] as [number, number],
+          coords[0] as [number, number],
+        ),
+      );
+      map.current?.fitBounds(bounds, { padding: 50 });
+    }
+  }, [mapReady, initialGeoJson]);
+
+  // ── Handle existingZones changes after map is initialized ──
   useEffect(() => {
     if (!map.current || !mapInitializedRef.current) return;
 
     const currentMap = map.current;
 
-    // Wait for map to be idle before manipulating layers
     const handleIdle = () => {
-      // Add any new zones that weren't added yet
       existingZones.forEach((zone, index) => {
         const sourceId = `zone-overlay-${zone.id}`;
         if (!currentMap.getSource(sourceId)) {
-          addZoneOverlayLayer(currentMap, zone, index, selectedZoneId);
+          addZoneOverlayLayer(currentMap, zone, index);
         }
       });
 
-      // Remove zones that no longer exist (only remove that zone's layers, not all)
       const currentZoneIds = new Set(existingZones.map((z) => z.id));
       const toRemove: string[] = [];
 
@@ -446,7 +470,6 @@ export function ZoneBoundaryMap({
         }
       });
 
-      // Now remove the layers (outside of forEach to avoid mutation during iteration)
       toRemove.forEach((zoneId) => {
         const fillLayerId = `zone-overlay-fill-${zoneId}`;
         const strokeLayerId = `zone-overlay-stroke-${zoneId}`;
@@ -474,9 +497,9 @@ export function ZoneBoundaryMap({
     } else {
       currentMap.on("idle", handleIdle);
     }
-  }, [existingZones, selectedZoneId]);
+  }, [existingZones, addZoneOverlayLayer]);
 
-  // Effect to update zone opacities when selectedZoneId changes
+  // ── Update zone opacities when selectedZoneId changes ──
   useEffect(() => {
     if (!map.current || !mapInitializedRef.current) return;
 
@@ -488,6 +511,20 @@ export function ZoneBoundaryMap({
       }
     });
   }, [selectedZoneId, existingZones]);
+
+  // ── Update depot marker when depotLocation changes ──
+  useEffect(() => {
+    if (!map.current || !mapInitializedRef.current) return;
+    if (depotMarker.current) {
+      depotMarker.current.remove();
+      depotMarker.current = null;
+    }
+    if (depotLocation) {
+      depotMarker.current = new mapboxgl.Marker({ color: "#ef4444" })
+        .setLngLat([depotLocation.lng, depotLocation.lat])
+        .addTo(map.current!);
+    }
+  }, [depotLocation]);
 
   if (!MAPBOX_TOKEN) {
     return (
@@ -502,11 +539,35 @@ export function ZoneBoundaryMap({
   return (
     <div className="space-y-2">
       {!readOnly && (
-        <p className="text-sm text-muted-foreground">
-          {initialGeoJson
-            ? "Drag vertices to edit the zone boundary. Click the polygon tool to draw a new zone."
-            : "Draw a polygon on the map to define the zone boundary. Click the polygon tool to start drawing."}
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            {initialGeoJson
+              ? "Drag vertices to edit the zone boundary. Click midpoints on edges to add vertices."
+              : "Draw a polygon on the map to define the zone boundary. Click the polygon tool to start drawing."}
+          </p>
+          <div className="flex gap-1">
+            <button
+              type="button"
+              onClick={handleUndo}
+              disabled={!history.canUndo}
+              className="rounded p-1.5 text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Undo (Ctrl+Z)"
+              aria-label="Undo"
+            >
+              <Undo2 className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={handleRedo}
+              disabled={!history.canRedo}
+              className="rounded p-1.5 text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Redo (Ctrl+Shift+Z)"
+              aria-label="Redo"
+            >
+              <Redo2 className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
       )}
       <div ref={mapContainer} className="h-[400px] rounded-lg" />
     </div>
