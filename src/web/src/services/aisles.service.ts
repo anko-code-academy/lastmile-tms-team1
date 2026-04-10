@@ -1,15 +1,19 @@
 import { apiFetch } from "@/lib/api";
 import type { AisleDto, AisleResult } from "@/lib/graphql/types";
 
-const GET_AISLES_BY_ZONE_QUERY = `
-  query GetAislesByZone($zoneId: UUID!) {
-    aislesByZone(zoneId: $zoneId, order: { name: ASC }) {
-      id
-      name
-      label
-      order
-      isActive
-      zoneId
+const GET_AISLES_QUERY = `
+  query GetAisles($zoneId: UUID!, $order: [AisleSortInput!]) {
+    aisles(where: { zoneId: { eq: $zoneId } }, order: $order) {
+      edges {
+        node {
+          id
+          name
+          label
+          order
+          isActive
+          zoneId
+        }
+      }
     }
   }
 `;
@@ -50,23 +54,25 @@ const DELETE_AISLE_MUTATION = `
   }
 `;
 
-interface AislesByZoneResponse {
-  aislesByZone: AisleDto[];
+interface AislesResponse {
+  aisles: {
+    edges: Array<{ node: AisleDto }>;
+  };
 }
 
 export async function fetchAislesByZone(
   token: string,
   zoneId: string
 ): Promise<AisleDto[]> {
-  const response = await apiFetch<{ data: AislesByZoneResponse }>("/api/graphql", {
+  const response = await apiFetch<{ data: AislesResponse }>("/api/graphql", {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: JSON.stringify({
-      query: GET_AISLES_BY_ZONE_QUERY,
-      variables: { zoneId },
+      query: GET_AISLES_QUERY,
+      variables: { zoneId, order: [{ name: "ASC" }] },
     }),
   });
-  return response.data.aislesByZone;
+  return response.data.aisles.edges.map((e) => e.node);
 }
 
 export async function createAisle(

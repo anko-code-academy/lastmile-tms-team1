@@ -24,9 +24,4 @@ public class AisleQuery
     [UseProjection]
     public IQueryable<DomainAisle> GetAisle(Guid id, [Service] AppDbContext context)
         => context.Aisles.AsNoTracking().Where(a => a.Id == id);
-
-    [Authorize(Roles = new[] { Role.RoleNames.Admin, Role.RoleNames.OperationsManager })]
-    [UseSorting]
-    public IQueryable<DomainAisle> GetAislesByZone(Guid zoneId, [Service] AppDbContext context)
-        => context.Aisles.AsNoTracking().Where(a => a.ZoneId == zoneId);
 }

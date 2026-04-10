@@ -318,20 +318,20 @@ public class BinIntegrationTests
     }
 
     [Fact]
-    public async Task GetAislesByZone_WithValidZoneId_ReturnsAisles()
+    public async Task GetAisles_FilteredByZone_ReturnsAisles()
     {
         var (_, zoneId, _) = await CreateDepotZoneAisleAsync();
 
         // Create a second aisle (first already created in helper)
         await GqlAsync($@"mutation {{ createAisle(input: {{ name: ""A2"", zoneId: ""{zoneId}"" }}) {{ id }} }}");
 
-        var query = $@"query {{ aislesByZone(zoneId: ""{zoneId}"", order: {{ name: ASC }}) {{ id name label }} }}";
+        var query = $@"query {{ aisles(where: {{ zoneId: {{ eq: ""{zoneId}"" }} }}, order: {{ name: ASC }}) {{ edges {{ node {{ id name label }} }} }} }}";
         var queryJson = await GqlAsync(query);
 
-        var aisles = queryJson.GetProperty("data").GetProperty("aislesByZone");
-        aisles.GetArrayLength().Should().Be(2);
-        aisles[0].GetProperty("name").GetString().Should().Be("A1");
-        aisles[1].GetProperty("name").GetString().Should().Be("A2");
+        var edges = queryJson.GetProperty("data").GetProperty("aisles").GetProperty("edges");
+        edges.GetArrayLength().Should().Be(2);
+        edges[0].GetProperty("node").GetProperty("name").GetString().Should().Be("A1");
+        edges[1].GetProperty("node").GetProperty("name").GetString().Should().Be("A2");
     }
 
     // --- Label Tests ---
