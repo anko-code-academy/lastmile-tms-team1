@@ -307,7 +307,7 @@ Infrastructure/
   DependencyInjection.cs
   Services/
     CurrentUserService.cs           -- JWT claim extraction (UserId, UserName from HttpContext)
-    NominatimGeocodingService.cs    -- Address -> Point (lat/lon, SRID 4326)
+    NominatimGeocodingService.cs    -- Address -> Point (lat/lon, SRID 4326), rate-limited (1 req/s), retry (3x exponential backoff)
     SendGridEmailService.cs         -- Password reset + user created emails
     TokenRevocationService.cs       -- Revokes OpenIddict tokens on user deactivation
     LabelService.cs                 -- QuestPDF labels, ZXing barcodes/QR codes, ZPL
@@ -601,7 +601,7 @@ builder.Services
 | Layer | Registers |
 |---|---|
 | **Application** | MediatR (commands only), FluentValidation validators (assembly scan), `ValidationBehavior`, `IDeliveryDateCalculator` (singleton) |
-| **Infrastructure** | `ICurrentUserService`, `IGeocodingService` (Nominatim), `IEmailService` (SendGrid), `ILabelService` (QuestPDF + ZXing), `ITokenRevocationService`, OpenIddict server |
+| **Infrastructure** | `ICurrentUserService`, `IGeocodingService` (Nominatim + resilience pipeline), `IEmailService` (SendGrid), `ILabelService` (QuestPDF + ZXing), `ITokenRevocationService`, OpenIddict server |
 | **Persistence** | `AppDbContext` (PostgreSQL + PostGIS), ASP.NET Identity stores, OpenIddict core (EF), `IDbSeeder`, global soft-delete filter |
 | **Api** | HotChocolate GraphQL server (projections, filtering, sorting, spatial), all domain Query/Mutation/Type extensions, `ErrorFilter`, `DomainExceptionErrorFilter`, Hangfire (PostgreSQL storage), Redis cache, Serilog, SignalR, Swagger |
 
@@ -845,7 +845,7 @@ app/
 | Background Jobs | Hangfire (PostgreSQL storage) |
 | Cache | Redis 7 (StackExchange) |
 | Spatial | NetTopologySuite + PostGIS |
-| Geocoding | Nominatim API |
+| Geocoding | Nominatim API (rate-limited: 1 req/s fixed window, 3x retry, 10s timeout via Polly) |
 | PDF/Labels | QuestPDF, ZXing.Net, SkiaSharp |
 | Email | SendGrid |
 | SMS | Twilio |
