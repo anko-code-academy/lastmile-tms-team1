@@ -18,6 +18,8 @@ public class AppDbContext(
     public DbSet<Depot> Depots => Set<Depot>();
     public DbSet<DayOff> DaysOff => Set<DayOff>();
     public DbSet<Driver> Drivers => Set<Driver>();
+    public DbSet<Manifest> Manifests => Set<Manifest>();
+    public DbSet<ManifestItem> ManifestItems => Set<ManifestItem>();
     public DbSet<Parcel> Parcels => Set<Parcel>();
     public DbSet<Route> Routes => Set<Route>();
     public DbSet<ParcelAuditLog> ParcelAuditLogs => Set<ParcelAuditLog>();

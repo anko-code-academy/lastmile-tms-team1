@@ -65,6 +65,12 @@ export function RouteTable({ data, onDelete, isDeleting, onSortingChange }: Rout
   };
 
   const columns = [
+    columnHelper.accessor("id", {
+      header: "ID",
+      cell: (info) => (
+        <span className="font-mono text-xs text-muted-foreground">{info.getValue()}</span>
+      ),
+    }),
     columnHelper.accessor("name", {
       header: ({ column }) => (
         <Button

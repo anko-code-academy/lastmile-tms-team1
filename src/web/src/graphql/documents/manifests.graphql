@@ -1,0 +1,74 @@
+query GetManifests($where: ManifestFilterInput $first: Int $after: String) {
+  manifests(where: $where first: $first after: $after) {
+    nodes {
+      id
+      name
+      status
+      depotId
+      startedAt
+      completedAt
+      items {
+        id
+        trackingNumber
+        status
+        parcelId
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    totalCount
+  }
+}
+
+query GetManifest($id: UUID!) {
+  manifest(id: $id) {
+    id
+    name
+    status
+    depotId
+    startedAt
+    completedAt
+    items {
+      id
+      trackingNumber
+      status
+      parcelId
+    }
+  }
+}
+
+mutation CreateManifest($input: CreateManifestCommandInput!) {
+  createManifest(input: $input) {
+    id
+    name
+    status
+    depotId
+    expectedCount
+    receivedCount
+    unexpectedCount
+    missingCount
+  }
+}
+
+mutation ReceiveParcel($input: ReceiveParcelCommandInput!) {
+  receiveParcel(input: $input) {
+    parcelId
+    trackingNumber
+    newStatus
+    manifestItemStatus
+  }
+}
+
+mutation CompleteManifestReceiving($input: CompleteManifestReceivingCommandInput!) {
+  completeManifestReceiving(input: $input) {
+    id
+    name
+    status
+    expectedCount
+    receivedCount
+    unexpectedCount
+    missingCount
+  }
+}

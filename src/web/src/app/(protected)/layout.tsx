@@ -13,6 +13,7 @@ import {
   Package,
   CircleUser,
   Box,
+  Warehouse,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,7 @@ const navItems = [
   { href: "/depots", label: "Depots", icon: Building2 },
   { href: "/zones", label: "Zones", icon: MapPin },
   { href: "/parcels", label: "Parcels", icon: Package, roles: ["WarehouseOperator", "Admin"] },
+  { href: "/depot", label: "Depot Ops", icon: Warehouse, roles: ["WarehouseOperator", "Admin", "OperationsManager"] },
   { href: "/bins", label: "Bins", icon: Box },
   { href: "/users", label: "Users", icon: Users, roles: ["Admin"] },
   { href: "/drivers", label: "Drivers", icon: CircleUser },

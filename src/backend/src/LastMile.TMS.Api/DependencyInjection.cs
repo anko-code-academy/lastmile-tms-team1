@@ -74,7 +74,9 @@ public static class DependencyInjection
             .AddErrorFilter<DomainExceptionErrorFilter>()
             .AddErrorFilter<ErrorFilter>()
             .AddType<ShiftScheduleInputType>()
-            .AddType<DayOffInputType>();
+            .AddType<DayOffInputType>()
+            .AddType<GraphQL.Extensions.Manifest.ManifestQuery>()
+            .AddType<GraphQL.Extensions.Manifest.ManifestMutation>();
 
         return services;
     }

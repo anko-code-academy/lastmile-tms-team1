@@ -59,6 +59,14 @@ public class ParcelConfiguration : IEntityTypeConfiguration<Parcel>
             .HasForeignKey(p => p.ZoneId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        // Depot relationship
+        builder.HasOne(p => p.Depot)
+            .WithMany()
+            .HasForeignKey(p => p.DepotId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasIndex(p => p.DepotId);
+
         // Bin relationship
         builder.HasOne(p => p.Bin)
             .WithMany()

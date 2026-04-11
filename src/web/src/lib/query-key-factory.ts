@@ -78,3 +78,11 @@ export const aisleKeys = {
   lists: () => [...aisleKeys.all, 'list'] as const,
   list: (zoneId: string) => [...aisleKeys.lists(), { zoneId }] as const,
 };
+
+export const manifestKeys = {
+  all: ['manifests'] as const,
+  lists: () => [...manifestKeys.all, 'list'] as const,
+  list: (filters?: any) => [...manifestKeys.lists(), filters] as const,
+  details: () => [...manifestKeys.all, 'detail'] as const,
+  detail: (id: string) => [...manifestKeys.details(), id] as const,
+};

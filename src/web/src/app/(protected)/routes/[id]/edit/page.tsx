@@ -144,7 +144,7 @@ export default function EditRoutePage() {
         <div>
           <h1 className="text-3xl font-bold">Edit Route</h1>
           <p className="text-muted-foreground">
-            Update route {route.name}
+            Update route {route.name} &middot; <span className="font-mono text-xs">{route.id}</span>
           </p>
         </div>
       </div>

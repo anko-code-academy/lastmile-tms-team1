@@ -1,0 +1,11 @@
+mutation ScanParcel($input: ScanParcelCommandInput!) {
+  scanParcel(input: $input) {
+    id
+    trackingNumber
+    previousStatus
+    newStatus
+    zoneName
+    binLabel
+    routeName
+  }
+}
