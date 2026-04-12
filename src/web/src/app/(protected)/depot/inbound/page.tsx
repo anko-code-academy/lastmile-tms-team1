@@ -65,11 +65,11 @@ export default function InboundPage() {
     const name = prompt("Enter manifest name:");
     if (!name || !depotId) return;
 
-    const trackingNumbersStr = prompt("Enter tracking numbers (one per line):");
+    const trackingNumbersStr = prompt("Enter tracking numbers (comma separated):");
     if (!trackingNumbersStr) return;
 
     const trackingNumbers = trackingNumbersStr
-      .split("\n")
+      .split(",")
       .map((t) => t.trim())
       .filter(Boolean);
 
