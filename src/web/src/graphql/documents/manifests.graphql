@@ -5,6 +5,10 @@ query GetManifests($where: ManifestFilterInput $first: Int $after: String) {
       name
       status
       depotId
+      depot {
+        id
+        name
+      }
       startedAt
       completedAt
       items {
@@ -16,7 +20,9 @@ query GetManifests($where: ManifestFilterInput $first: Int $after: String) {
     }
     pageInfo {
       hasNextPage
+      hasPreviousPage
       endCursor
+      startCursor
     }
     totalCount
   }
