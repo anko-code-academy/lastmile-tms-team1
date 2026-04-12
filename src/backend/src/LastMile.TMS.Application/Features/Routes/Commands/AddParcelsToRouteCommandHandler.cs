@@ -65,9 +65,6 @@ public class AddParcelsToRouteCommandHandler(IAppDbContext context) : IRequestHa
                     $"Parcel {parcel.TrackingNumber} has no geocoded delivery address.");
             }
 
-            // Transition parcel from Sorted to Staged
-            parcel.TransitionTo(ParcelStatus.Staged);
-
             // Find existing stop within 50m proximity using GeoLocation
             var matchingStop = FindMatchingStop(route.RouteStops.ToList(), parcel.RecipientAddress.GeoLocation);
 

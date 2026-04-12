@@ -122,7 +122,7 @@ public class RouteParcelAssignmentTests : IAsyncLifetime
     public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
-    public async Task AddParcelsToRoute_WithSortedParcel_TransitionsToStaged()
+    public async Task AddParcelsToRoute_WithSortedParcel_KeepsStatusUnchanged()
     {
         var mutation = $@"
             mutation {{
@@ -147,13 +147,13 @@ public class RouteParcelAssignmentTests : IAsyncLifetime
         var parcels = stops.EnumerateArray().SelectMany(s => s.GetProperty("parcels").EnumerateArray()).ToList();
         parcels.Should().ContainSingle(p => p.GetProperty("id").GetString() == _sortedParcelId.ToString());
         var addedParcel = parcels.First(p => p.GetProperty("id").GetString() == _sortedParcelId.ToString());
-        addedParcel.GetProperty("status").GetString().Should().Be("STAGED");
+        addedParcel.GetProperty("status").GetString().Should().Be("SORTED");
 
-        // Verify in DB
+        // Verify in DB — status should remain Sorted
         using var scope = _fx.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var parcel = await db.Parcels.FindAsync(_sortedParcelId);
-        parcel!.Status.Should().Be(ParcelStatus.Staged);
+        parcel!.Status.Should().Be(ParcelStatus.Sorted);
         parcel.RouteStopId.Should().NotBeNull();
     }
 
