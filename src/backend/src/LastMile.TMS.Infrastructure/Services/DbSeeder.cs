@@ -48,6 +48,9 @@ public class DbSeeder : IDbSeeder
         // Seed depot and zone for Empire State Building
         await SeedDepotAndZoneAsync();
 
+        // Seed aisles and bins (must run before parcels so sorted parcels can be assigned to bins)
+        await SeedAislesAndBinsAsync();
+
         // Seed parcels
         await SeedParcelsAsync();
 
@@ -389,6 +392,7 @@ public class DbSeeder : IDbSeeder
         // Get the existing depot and zone
         var depot = _context.Depots.FirstOrDefault(d => d.Name == "Empire State Building Depot");
         var zone = _context.Zones.FirstOrDefault(z => z.Name == "Manhattan Zone");
+        var bins = _context.Bins.ToList();
 
         if (depot == null)
         {
@@ -536,6 +540,11 @@ public class DbSeeder : IDbSeeder
             };
             parcel.Status = statuses[statusIndex];
 
+            if (parcel.Status == ParcelStatus.Sorted && bins.Count > 0)
+            {
+                parcel.BinId = bins[random.Next(bins.Count)].Id;
+            }
+
             if (parcel.Status == ParcelStatus.Delivered)
             {
                 parcel.ActualDeliveryDate = DateTimeOffset.UtcNow.AddDays(-random.Next(0, 5));
@@ -550,6 +559,75 @@ public class DbSeeder : IDbSeeder
         await _context.SaveChangesAsync(CancellationToken.None);
 
         _logger.LogInformation("Seeded {Count} parcels", parcels.Count);
+    }
+
+    private async Task SeedAislesAndBinsAsync()
+    {
+        // Skip if bins already exist
+        if (_context.Bins.Any())
+        {
+            _logger.LogDebug("Bins already exist, skipping seed");
+            return;
+        }
+
+        var zone = _context.Zones.FirstOrDefault(z => z.Name == "Manhattan Zone");
+        if (zone == null)
+        {
+            _logger.LogWarning("Manhattan Zone not found, skipping aisle/bin seeding");
+            return;
+        }
+
+        var depot = _context.Depots.FirstOrDefault(d => d.Name == "Empire State Building Depot");
+        if (depot == null)
+        {
+            _logger.LogWarning("Empire State Building Depot not found, skipping aisle/bin seeding");
+            return;
+        }
+
+        var depotFirstChar = depot.Name[0];
+        var zoneFirstChar = zone.Name[0];
+
+        // Create 3 aisles
+        var aisles = new List<Aisle>();
+        for (int i = 1; i <= 3; i++)
+        {
+            var aisle = new Aisle
+            {
+                Name = $"Aisle {i}",
+                Order = i,
+                IsActive = true,
+                ZoneId = zone.Id
+            };
+            aisle.SetLabel(depotFirstChar.ToString(), zoneFirstChar.ToString());
+            aisles.Add(aisle);
+        }
+
+        _context.Aisles.AddRange(aisles);
+        await _context.SaveChangesAsync(CancellationToken.None);
+        _logger.LogInformation("Seeded {Count} aisles", aisles.Count);
+
+        // Create bins: 5 bins per aisle, capacity 20 each
+        var bins = new List<Bin>();
+        foreach (var aisle in aisles)
+        {
+            for (int slot = 1; slot <= 5; slot++)
+            {
+                var bin = new Bin
+                {
+                    Slot = slot,
+                    Capacity = 20,
+                    IsActive = true,
+                    ZoneId = zone.Id,
+                    AisleId = aisle.Id
+                };
+                bin.SetLabel(aisle.Label);
+                bins.Add(bin);
+            }
+        }
+
+        _context.Bins.AddRange(bins);
+        await _context.SaveChangesAsync(CancellationToken.None);
+        _logger.LogInformation("Seeded {Count} bins", bins.Count);
     }
 
     private async Task SeedDriverAsync()
