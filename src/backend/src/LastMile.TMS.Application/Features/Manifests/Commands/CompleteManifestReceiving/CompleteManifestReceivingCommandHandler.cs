@@ -23,10 +23,14 @@ public class CompleteManifestReceivingCommandHandler(
             .Where(i => i.Status == ManifestItemStatus.Expected)
             .ToList();
 
+        var trackingNumbers = expectedItems.Select(i => i.TrackingNumber).ToList();
+        var parcelsByTracking = await dbContext.Parcels
+            .Where(p => trackingNumbers.Contains(p.TrackingNumber))
+            .ToDictionaryAsync(p => p.TrackingNumber, cancellationToken);
+
         foreach (var item in expectedItems)
         {
-            var parcel = await dbContext.Parcels
-                .FirstOrDefaultAsync(p => p.TrackingNumber == item.TrackingNumber, cancellationToken);
+            if (parcelsByTracking.TryGetValue(item.TrackingNumber, out var parcel))
 
             if (parcel is not null)
             {
