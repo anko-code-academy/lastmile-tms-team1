@@ -69,7 +69,7 @@ public class ReceiveParcelCommandHandler(
         {
             var unexpectedItem = ManifestItem.Create(manifest.Id, request.TrackingNumber);
             unexpectedItem.MarkUnexpected(parcel.Id);
-            manifest.Items.Add(unexpectedItem);
+            dbContext.ManifestItems.Add(unexpectedItem);
             itemStatus = ManifestItemStatus.Unexpected;
             isUnexpected = true;
         }
