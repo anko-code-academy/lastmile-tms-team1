@@ -42,7 +42,7 @@ public class RemoveParcelsFromRouteCommandHandler(
         foreach (var parcel in parcels)
         {
             parcel.RouteStopId = null;
-            if (parcel.Status == ParcelStatus.Staged)
+            if (parcel.Status is ParcelStatus.Staged or ParcelStatus.Loaded)
             {
                 parcel.Status = ParcelStatus.Sorted;
 

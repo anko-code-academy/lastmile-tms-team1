@@ -118,6 +118,52 @@ public class RemoveParcelsFromRouteCommandHandlerTests : IDisposable
         updatedParcel!.Status.Should().Be(ParcelStatus.Exception);
     }
 
+    [Fact]
+    public async Task Handle_LoadedParcelRevertsToSortedAndGetBin()
+    {
+        // Arrange
+        var zone = new Zone { Name = "Zone A", IsActive = true, DepotId = Guid.CreateVersion7() };
+        var aisle = new Aisle { Name = "Aisle A1", ZoneId = zone.Id, Order = 1 };
+        aisle.SetLabel("A", "A");
+        var bin = new Bin { Slot = 1, Capacity = 10, IsActive = true, ZoneId = zone.Id, AisleId = aisle.Id };
+        bin.SetLabel(aisle.Label);
+
+        var route = new Route
+        {
+            Name = "Route 1", Status = RouteStatus.Draft,
+            PlannedStartTime = DateTime.UtcNow.AddDays(1), ZoneId = zone.Id
+        };
+        var stop = new RouteStop
+        {
+            SequenceNumber = 1, Status = RouteStopStatus.Pending,
+            Street1 = "123 Main St", RouteId = route.Id, Route = route
+        };
+        var parcel = CreateParcel(ParcelStatus.Loaded);
+        parcel.ZoneId = zone.Id;
+        parcel.RouteStopId = stop.Id;
+        parcel.RouteStop = stop;
+
+        _context.Zones.Add(zone);
+        _context.Aisles.Add(aisle);
+        _context.Bins.Add(bin);
+        _context.Routes.Add(route);
+        _context.RouteStops.Add(stop);
+        _context.Parcels.Add(parcel);
+        await _context.SaveChangesAsync();
+        _context.ChangeTracker.Clear();
+
+        var command = new RemoveParcelsFromRouteCommand(route.Id, [parcel.Id]);
+
+        // Act
+        var result = await _sut.Handle(command, CancellationToken.None);
+
+        // Assert
+        var updatedParcel = await _context.Parcels.FindAsync(parcel.Id);
+        updatedParcel!.Status.Should().Be(ParcelStatus.Sorted);
+        updatedParcel.BinId.Should().Be(bin.Id);
+        updatedParcel.RouteStopId.Should().BeNull();
+    }
+
     private static Parcel CreateParcel(ParcelStatus status)
     {
         var parcel = Parcel.Create("Test parcel", ServiceType.Standard);
