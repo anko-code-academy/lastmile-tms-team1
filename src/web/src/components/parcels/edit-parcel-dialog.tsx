@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -67,10 +67,11 @@ interface EditParcelDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-function AddressFields({ prefix }: { prefix: "shipperAddress" | "recipientAddress" }) {
+function AddressFields({ prefix, control }: { prefix: "shipperAddress" | "recipientAddress"; control: Control<EditParcelValues> }) {
   return (
     <div className="space-y-4">
       <FormField
+        control={control}
         name={`${prefix}.street1`}
         render={({ field }) => (
           <FormItem>
@@ -83,6 +84,7 @@ function AddressFields({ prefix }: { prefix: "shipperAddress" | "recipientAddres
         )}
       />
       <FormField
+        control={control}
         name={`${prefix}.street2`}
         render={({ field }) => (
           <FormItem>
@@ -96,6 +98,7 @@ function AddressFields({ prefix }: { prefix: "shipperAddress" | "recipientAddres
       />
       <div className="grid grid-cols-2 gap-4">
         <FormField
+          control={control}
           name={`${prefix}.city`}
           render={({ field }) => (
             <FormItem>
@@ -108,6 +111,7 @@ function AddressFields({ prefix }: { prefix: "shipperAddress" | "recipientAddres
           )}
         />
         <FormField
+          control={control}
           name={`${prefix}.state`}
           render={({ field }) => (
             <FormItem>
@@ -122,6 +126,7 @@ function AddressFields({ prefix }: { prefix: "shipperAddress" | "recipientAddres
       </div>
       <div className="grid grid-cols-2 gap-4">
         <FormField
+          control={control}
           name={`${prefix}.postalCode`}
           render={({ field }) => (
             <FormItem>
@@ -134,6 +139,7 @@ function AddressFields({ prefix }: { prefix: "shipperAddress" | "recipientAddres
           )}
         />
         <FormField
+          control={control}
           name={`${prefix}.countryCode`}
           render={({ field }) => (
             <FormItem>
@@ -148,6 +154,7 @@ function AddressFields({ prefix }: { prefix: "shipperAddress" | "recipientAddres
       </div>
       <div className="grid grid-cols-2 gap-4">
         <FormField
+          control={control}
           name={`${prefix}.contactName`}
           render={({ field }) => (
             <FormItem>
@@ -160,6 +167,7 @@ function AddressFields({ prefix }: { prefix: "shipperAddress" | "recipientAddres
           )}
         />
         <FormField
+          control={control}
           name={`${prefix}.companyName`}
           render={({ field }) => (
             <FormItem>
@@ -174,6 +182,7 @@ function AddressFields({ prefix }: { prefix: "shipperAddress" | "recipientAddres
       </div>
       <div className="grid grid-cols-2 gap-4">
         <FormField
+          control={control}
           name={`${prefix}.phone`}
           render={({ field }) => (
             <FormItem>
@@ -186,6 +195,7 @@ function AddressFields({ prefix }: { prefix: "shipperAddress" | "recipientAddres
           )}
         />
         <FormField
+          control={control}
           name={`${prefix}.email`}
           render={({ field }) => (
             <FormItem>
@@ -446,13 +456,13 @@ export function EditParcelDialog({ parcel, open, onOpenChange }: EditParcelDialo
             {/* Shipper Address */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium">Shipper Address</h3>
-              <AddressFields prefix="shipperAddress" />
+              <AddressFields prefix="shipperAddress" control={form.control} />
             </div>
 
             {/* Recipient Address */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium">Recipient Address</h3>
-              <AddressFields prefix="recipientAddress" />
+              <AddressFields prefix="recipientAddress" control={form.control} />
             </div>
 
             <DialogFooter>
