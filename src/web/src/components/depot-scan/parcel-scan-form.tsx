@@ -10,6 +10,7 @@ interface ParcelScanFormProps {
   config: ScanOperationConfig;
   expectedTrackingNumbers?: string[];
   manifestItems?: ManifestScanItem[];
+  preScannedEntries?: ScannedParcelEntry[];
   onScan: (trackingNumber: string) => Promise<ScanResult>;
   contextSelector?: React.ReactNode;
   contextValue?: unknown;
@@ -60,6 +61,7 @@ export function ParcelScanForm({
   config,
   expectedTrackingNumbers,
   manifestItems,
+  preScannedEntries: preScannedEntriesProp,
   onScan,
   contextSelector,
   contextValue,
@@ -69,12 +71,18 @@ export function ParcelScanForm({
     isProcessing: false,
   });
 
-  const preScannedEntries = useMemo(() => {
+  const preScannedFromManifest = useMemo(() => {
     if (!manifestItems) return [];
     return manifestItems
       .filter((i) => i.status !== "EXPECTED")
       .map(toEntry);
   }, [manifestItems]);
+
+  // Merge manifest-derived and caller-provided pre-scanned entries
+  const preScannedEntries = useMemo(
+    () => [...preScannedFromManifest, ...(preScannedEntriesProp ?? [])],
+    [preScannedFromManifest, preScannedEntriesProp]
+  );
 
   // Dedup: local entries take priority over pre-scanned backend entries
   const localTrackingNumbers = useMemo(
@@ -89,15 +97,26 @@ export function ParcelScanForm({
     return [...state.entries, ...filteredPreScanned];
   }, [state.entries, preScannedEntries, localTrackingNumbers]);
 
-  const scannedCount = allEntries.filter((e) => e.status === "success").length;
+  const expectedTrackingSet = useMemo(() => {
+    if (manifestItems) return new Set(manifestItems.map((i) => i.trackingNumber));
+    if (expectedTrackingNumbers) return new Set(expectedTrackingNumbers);
+    return null;
+  }, [manifestItems, expectedTrackingNumbers]);
+
+  const scannedCount = allEntries.filter((e) => {
+    if (e.status !== "success") return false;
+    if (!expectedTrackingSet) return true;
+    return expectedTrackingSet.has(e.trackingNumber);
+  }).length;
   const totalExpected = manifestItems?.length ?? expectedTrackingNumbers?.length ?? 0;
 
   const scannedTrackingNumbers = useMemo(() => {
-    if (manifestItems) {
-      return new Set(manifestItems.filter((i) => i.status !== "EXPECTED").map((i) => i.trackingNumber));
-    }
-    return new Set<string>();
-  }, [manifestItems]);
+    const fromManifest = manifestItems
+      ? manifestItems.filter((i) => i.status !== "EXPECTED").map((i) => i.trackingNumber)
+      : [];
+    const fromProp = (preScannedEntriesProp ?? []).map((e) => e.trackingNumber);
+    return new Set([...fromManifest, ...fromProp]);
+  }, [manifestItems, preScannedEntriesProp]);
 
   const handleScan = useCallback(
     async (trackingNumber: string) => {

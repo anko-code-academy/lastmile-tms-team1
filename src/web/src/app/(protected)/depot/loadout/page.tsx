@@ -8,7 +8,7 @@ import { scanConfigs } from "@/lib/depot-scan-configs";
 import { useScanParcel } from "@/hooks/use-depot-scan";
 import { useRoute } from "@/hooks/use-routes";
 import { ParcelStatus } from "@/graphql/generated/graphql";
-import type { ScanResult } from "@/types/depot-scan";
+import type { ScannedParcelEntry, ScanResult } from "@/types/depot-scan";
 
 export default function LoadoutPage() {
   const [depotId, setDepotId] = useState<string | null>(null);
@@ -26,6 +26,20 @@ export default function LoadoutPage() {
 
   const expectedTrackingNumbers = useMemo(
     () => routeParcels.map((p) => p.trackingNumber),
+    [routeParcels]
+  );
+
+  const preScannedEntries: ScannedParcelEntry[] = useMemo(
+    () =>
+      routeParcels
+        .filter((p) => p.status === ParcelStatus.Loaded)
+        .map((p) => ({
+          trackingNumber: p.trackingNumber,
+          status: "success",
+          previousStatus: "STAGED",
+          newStatus: "LOADED",
+          scannedAt: new Date(),
+        })),
     [routeParcels]
   );
 
@@ -77,8 +91,10 @@ export default function LoadoutPage() {
 
       {depotId && (
         <ParcelScanForm
+          key={routeId}
           config={config}
           expectedTrackingNumbers={expectedTrackingNumbers}
+          preScannedEntries={preScannedEntries}
           onScan={handleScan}
           contextSelector={contextSelector}
           contextValue={routeId}
