@@ -57,6 +57,18 @@ public class RouteParcelAssignmentTests : IAsyncLifetime
         await db.SaveChangesAsync();
         _zoneId = zone.Id;
 
+        // Create aisle and bin so bin assignment succeeds during Sorted transition
+        var aisle = new Aisle { Name = "Test Aisle", ZoneId = zone.Id, Order = 99 };
+        aisle.SetLabel("Z", "Z");
+        db.Aisles.Add(aisle);
+        await db.SaveChangesAsync();
+
+        // Use a high slot number to avoid label collisions with seeder bins
+        var bin = new Bin { Slot = 9000 + Random.Shared.Next(999), Capacity = 100, IsActive = true, ZoneId = zone.Id, AisleId = aisle.Id };
+        bin.SetLabel(aisle.Label);
+        db.Bins.Add(bin);
+        await db.SaveChangesAsync();
+
         // Create addresses
         var shipperAddress = new Address
         {

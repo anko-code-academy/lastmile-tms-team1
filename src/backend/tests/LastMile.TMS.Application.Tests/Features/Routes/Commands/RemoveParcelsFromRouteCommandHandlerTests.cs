@@ -27,7 +27,7 @@ public class RemoveParcelsFromRouteCommandHandlerTests : IDisposable
 
         _context = new TestDbContext(options, currentUserService);
         _binAssignmentService = new BinAssignmentService(_context);
-        _sut = new RemoveParcelsFromRouteCommandHandler(_context, _binAssignmentService);
+        _sut = new RemoveParcelsFromRouteCommandHandler(_context, _binAssignmentService, currentUserService);
     }
 
     public void Dispose()

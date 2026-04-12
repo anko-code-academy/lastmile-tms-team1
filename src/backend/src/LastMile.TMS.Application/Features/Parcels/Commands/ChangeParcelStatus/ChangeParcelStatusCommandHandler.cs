@@ -29,8 +29,9 @@ public class ChangeParcelStatusCommandHandler(
         var previousStatus = parcel.Status;
         parcel.TransitionTo(request.NewStatus);
 
-        // Bin assignment: assign when entering Sorted, remove when leaving Sorted
-        if (request.NewStatus == ParcelStatus.Sorted)
+        // Bin assignment: assign when entering Sorted (only if parcel has a zone),
+        // remove when leaving Sorted
+        if (request.NewStatus == ParcelStatus.Sorted && parcel.ZoneId is not null)
         {
             var assigned = await binAssignmentService.AssignToBinAsync(parcel, cancellationToken);
             if (!assigned)
@@ -43,7 +44,7 @@ public class ChangeParcelStatusCommandHandler(
                     Timestamp = DateTimeOffset.UtcNow,
                     EventType = EventType.Exception,
                     Description = "No available bin in zone",
-                    Operator = userId
+                    Operator = userName
                 });
                 await dbContext.SaveChangesAsync(cancellationToken);
 

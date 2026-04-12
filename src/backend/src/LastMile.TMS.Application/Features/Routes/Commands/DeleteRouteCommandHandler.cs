@@ -11,7 +11,8 @@ namespace LastMile.TMS.Application.Features.Routes.Commands;
 
 public class DeleteRouteCommandHandler(
     IAppDbContext context,
-    IBinAssignmentService binAssignmentService) : IRequestHandler<DeleteRouteCommand, bool>
+    IBinAssignmentService binAssignmentService,
+    ICurrentUserService currentUserService) : IRequestHandler<DeleteRouteCommand, bool>
 {
     public async Task<bool> Handle(DeleteRouteCommand request, CancellationToken cancellationToken)
     {
@@ -41,12 +42,16 @@ public class DeleteRouteCommandHandler(
                     if (!assigned)
                     {
                         parcel.Status = ParcelStatus.Exception;
+                        var userName = currentUserService.UserName ?? currentUserService.UserId
+                            ?? throw new InvalidOperationException("User not authenticated");
+
                         context.TrackingEvents.Add(new TrackingEvent
                         {
                             ParcelId = parcel.Id,
                             Timestamp = DateTimeOffset.UtcNow,
                             EventType = EventType.Exception,
-                            Description = "No available bin in zone"
+                            Description = "No available bin in zone",
+                            Operator = userName
                         });
                     }
                 }

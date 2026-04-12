@@ -12,7 +12,8 @@ namespace LastMile.TMS.Application.Features.Routes.Commands;
 
 public class RemoveParcelsFromRouteCommandHandler(
     IAppDbContext context,
-    IBinAssignmentService binAssignmentService) : IRequestHandler<RemoveParcelsFromRouteCommand, RouteDto>
+    IBinAssignmentService binAssignmentService,
+    ICurrentUserService currentUserService) : IRequestHandler<RemoveParcelsFromRouteCommand, RouteDto>
 {
     public async Task<RouteDto> Handle(RemoveParcelsFromRouteCommand request, CancellationToken cancellationToken)
     {
@@ -50,12 +51,16 @@ public class RemoveParcelsFromRouteCommandHandler(
                 if (!assigned)
                 {
                     parcel.Status = ParcelStatus.Exception;
+                    var userName = currentUserService.UserName ?? currentUserService.UserId
+                        ?? throw new InvalidOperationException("User not authenticated");
+
                     context.TrackingEvents.Add(new TrackingEvent
                     {
                         ParcelId = parcel.Id,
                         Timestamp = DateTimeOffset.UtcNow,
                         EventType = EventType.Exception,
-                        Description = "No available bin in zone"
+                        Description = "No available bin in zone",
+                        Operator = userName
                     });
                 }
             }
