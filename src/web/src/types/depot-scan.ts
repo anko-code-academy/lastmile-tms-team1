@@ -6,6 +6,11 @@ export interface ScanOperationConfig {
   allowUnexpected: boolean;
 }
 
+export interface ManifestScanItem {
+  trackingNumber: string;
+  status: "EXPECTED" | "RECEIVED" | "UNEXPECTED" | "MISSING";
+}
+
 export type ScanEntryStatus = "success" | "error" | "duplicate" | "unexpected";
 
 export interface ScannedParcelEntry {

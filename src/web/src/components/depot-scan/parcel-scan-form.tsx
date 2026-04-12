@@ -1,14 +1,15 @@
 "use client";
 
-import { useReducer, useCallback } from "react";
-import type { ScanOperationConfig, ScannedParcelEntry, ScanResult } from "@/types/depot-scan";
+import { useReducer, useCallback, useMemo } from "react";
+import type { ScanOperationConfig, ScannedParcelEntry, ScanResult, ManifestScanItem } from "@/types/depot-scan";
 import { ScanInput } from "./scan-input";
 import { ScanSummary } from "./scan-summary";
 import { ScanList } from "./scan-list";
 
 interface ParcelScanFormProps {
   config: ScanOperationConfig;
-  expectedTrackingNumbers: string[];
+  expectedTrackingNumbers?: string[];
+  manifestItems?: ManifestScanItem[];
   onScan: (trackingNumber: string) => Promise<ScanResult>;
   contextSelector?: React.ReactNode;
   contextValue?: unknown;
@@ -44,9 +45,21 @@ function scanReducer(state: ScanState, action: ScanAction): ScanState {
 
 const TRACKING_NUMBER_PATTERN = /^LM-\d{6}-[A-Z0-9]{6}$/;
 
+function toEntry(item: ManifestScanItem): ScannedParcelEntry {
+  const isException = item.status === "UNEXPECTED" || item.status === "MISSING";
+  return {
+    trackingNumber: item.trackingNumber,
+    status: "success",
+    previousStatus: "REGISTERED",
+    newStatus: isException ? "EXCEPTION" : "RECEIVED_AT_DEPOT",
+    scannedAt: new Date(),
+  };
+}
+
 export function ParcelScanForm({
   config,
   expectedTrackingNumbers,
+  manifestItems,
   onScan,
   contextSelector,
   contextValue,
@@ -56,8 +69,35 @@ export function ParcelScanForm({
     isProcessing: false,
   });
 
-  const scannedCount = state.entries.filter((e) => e.status === "success").length;
-  const totalExpected = expectedTrackingNumbers.length;
+  const preScannedEntries = useMemo(() => {
+    if (!manifestItems) return [];
+    return manifestItems
+      .filter((i) => i.status !== "EXPECTED")
+      .map(toEntry);
+  }, [manifestItems]);
+
+  // Dedup: local entries take priority over pre-scanned backend entries
+  const localTrackingNumbers = useMemo(
+    () => new Set(state.entries.map((e) => e.trackingNumber)),
+    [state.entries]
+  );
+
+  const allEntries = useMemo(() => {
+    const filteredPreScanned = preScannedEntries.filter(
+      (e) => !localTrackingNumbers.has(e.trackingNumber)
+    );
+    return [...state.entries, ...filteredPreScanned];
+  }, [state.entries, preScannedEntries, localTrackingNumbers]);
+
+  const scannedCount = allEntries.filter((e) => e.status === "success").length;
+  const totalExpected = manifestItems?.length ?? expectedTrackingNumbers?.length ?? 0;
+
+  const scannedTrackingNumbers = useMemo(() => {
+    if (manifestItems) {
+      return new Set(manifestItems.filter((i) => i.status !== "EXPECTED").map((i) => i.trackingNumber));
+    }
+    return new Set<string>();
+  }, [manifestItems]);
 
   const handleScan = useCallback(
     async (trackingNumber: string) => {
@@ -76,8 +116,8 @@ export function ParcelScanForm({
         return;
       }
 
-      // Check duplicate
-      if (state.entries.some((e) => e.trackingNumber === trackingNumber)) {
+      // Check duplicate against local entries and backend-scanned items
+      if (state.entries.some((e) => e.trackingNumber === trackingNumber) || scannedTrackingNumbers.has(trackingNumber)) {
         dispatch({
           type: "ADD_ENTRY",
           entry: {
@@ -118,7 +158,7 @@ export function ParcelScanForm({
         });
       }
     },
-    [state.isProcessing, state.entries, onScan]
+    [state.isProcessing, state.entries, scannedTrackingNumbers, onScan]
   );
 
   const contextSelected = contextValue !== undefined && contextValue !== null && contextValue !== "";
@@ -149,7 +189,7 @@ export function ParcelScanForm({
             />
           )}
 
-          <ScanList entries={state.entries} />
+          <ScanList entries={allEntries} />
         </>
       )}
     </div>

@@ -7,7 +7,7 @@ import { scanConfigs } from "@/lib/depot-scan-configs";
 import { useScanParcel } from "@/hooks/use-depot-scan";
 import { useManifests, useReceiveParcel, useCompleteManifestReceiving, useCreateManifest } from "@/hooks/use-manifests";
 import { ManifestStatus, ParcelStatus } from "@/graphql/generated/graphql";
-import type { ScanResult } from "@/types/depot-scan";
+import type { ManifestScanItem, ScanResult } from "@/types/depot-scan";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -24,9 +24,11 @@ export default function InboundPage() {
     depotId ? { depotId, status: [ManifestStatus.Open, ManifestStatus.Receiving] } : undefined
   );
 
-  const expectedTrackingNumbers = manifestsQuery.data?.nodes?.flatMap(
-    (m) => m.items?.map((i) => i.trackingNumber).filter((t): t is string => !!t) ?? []
-  ) ?? [];
+  const selectedManifest = manifestsQuery.data?.nodes?.find(m => m.id === manifestId);
+  const manifestItems: ManifestScanItem[] = (selectedManifest?.items ?? []).map((i) => ({
+    trackingNumber: i.trackingNumber,
+    status: i.status as ManifestScanItem["status"],
+  }));
 
   const handleScan = useCallback(
     async (trackingNumber: string): Promise<ScanResult> => {
@@ -135,8 +137,9 @@ export default function InboundPage() {
 
       {depotId && (
         <ParcelScanForm
+          key={manifestId}
           config={config}
-          expectedTrackingNumbers={manifestId ? expectedTrackingNumbers : []}
+          manifestItems={manifestId ? manifestItems : undefined}
           onScan={handleScan}
           contextSelector={contextSelector}
           contextValue={depotId}
