@@ -1,5 +1,6 @@
 using FluentAssertions;
 using LastMile.TMS.Application.Common.Interfaces;
+using LastMile.TMS.Application.Features.Bins.Services;
 using LastMile.TMS.Application.Features.Parcels.Commands.ScanParcel;
 using LastMile.TMS.Domain.Entities;
 using LastMile.TMS.Domain.Enums;
@@ -13,6 +14,7 @@ public class ScanParcelCommandHandlerTests : IDisposable
 {
     private readonly TestDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IBinAssignmentService _binAssignmentService;
     private readonly ScanParcelCommandHandler _sut;
 
     public ScanParcelCommandHandlerTests()
@@ -25,7 +27,8 @@ public class ScanParcelCommandHandlerTests : IDisposable
         _currentUserService.UserId.Returns("test-user-123");
 
         _context = new TestDbContext(options, _currentUserService);
-        _sut = new ScanParcelCommandHandler(_context, _currentUserService);
+        _binAssignmentService = new BinAssignmentService(_context);
+        _sut = new ScanParcelCommandHandler(_context, _currentUserService, _binAssignmentService);
     }
 
     public void Dispose()
@@ -311,6 +314,114 @@ public class ScanParcelCommandHandlerTests : IDisposable
 
         // Assert
         result.RouteName.Should().Be("Route Alpha");
+    }
+
+    [Fact]
+    public async Task Handle_TransitionToSorted_AssignsParcelToBin()
+    {
+        // Arrange
+        var zone = new Zone { Name = "Zone A", IsActive = true, DepotId = Guid.CreateVersion7() };
+        var aisle = new Aisle { Name = "Aisle A1", ZoneId = zone.Id, Order = 1 };
+        aisle.SetLabel("A", "A");
+        var bin = new Bin { Slot = 1, Capacity = 10, IsActive = true, ZoneId = zone.Id, AisleId = aisle.Id };
+        bin.SetLabel(aisle.Label);
+        var parcel = CreateParcel(ParcelStatus.ReceivedAtDepot);
+        parcel.ZoneId = zone.Id;
+
+        _context.Zones.Add(zone);
+        _context.Aisles.Add(aisle);
+        _context.Bins.Add(bin);
+        _context.Parcels.Add(parcel);
+        await _context.SaveChangesAsync();
+        _context.ChangeTracker.Clear();
+
+        var command = new ScanParcelCommand(
+            parcel.TrackingNumber, ParcelStatus.Sorted);
+
+        // Act
+        var result = await _sut.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.NewStatus.Should().Be(ParcelStatus.Sorted);
+
+        var updatedParcel = await _context.Parcels.FindAsync(parcel.Id);
+        updatedParcel!.BinId.Should().Be(bin.Id);
+    }
+
+    [Fact]
+    public async Task Handle_TransitionFromSortedToStaged_RemovesFromBin()
+    {
+        // Arrange
+        var zone = new Zone { Name = "Zone A", IsActive = true, DepotId = Guid.CreateVersion7() };
+        var aisle = new Aisle { Name = "Aisle A1", ZoneId = zone.Id, Order = 1 };
+        aisle.SetLabel("A", "A");
+        var bin = new Bin { Slot = 1, Capacity = 10, IsActive = true, ZoneId = zone.Id, AisleId = aisle.Id };
+        bin.SetLabel(aisle.Label);
+        var parcel = CreateParcel(ParcelStatus.Sorted);
+        parcel.ZoneId = zone.Id;
+        parcel.BinId = bin.Id;
+
+        var route = new Route
+        {
+            Name = "Route 1", Status = RouteStatus.Draft,
+            PlannedStartTime = DateTime.UtcNow.AddDays(1), ZoneId = zone.Id
+        };
+        var stop = new RouteStop
+        {
+            SequenceNumber = 1, Status = RouteStopStatus.Pending,
+            Street1 = "123 Main St", RouteId = route.Id, Route = route
+        };
+        parcel.RouteStopId = stop.Id;
+        parcel.RouteStop = stop;
+
+        _context.Zones.Add(zone);
+        _context.Aisles.Add(aisle);
+        _context.Bins.Add(bin);
+        _context.Routes.Add(route);
+        _context.RouteStops.Add(stop);
+        _context.Parcels.Add(parcel);
+        await _context.SaveChangesAsync();
+        _context.ChangeTracker.Clear();
+
+        var command = new ScanParcelCommand(
+            parcel.TrackingNumber, ParcelStatus.Staged, RouteId: route.Id);
+
+        // Act
+        var result = await _sut.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.NewStatus.Should().Be(ParcelStatus.Staged);
+
+        var updatedParcel = await _context.Parcels.FindAsync(parcel.Id);
+        updatedParcel!.BinId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_TransitionToSorted_NoBinAvailable_TransitionsToException()
+    {
+        // Arrange - parcel has a zone but no bins exist
+        var zone = new Zone { Name = "Zone A", IsActive = true, DepotId = Guid.CreateVersion7() };
+        var parcel = CreateParcel(ParcelStatus.ReceivedAtDepot);
+        parcel.ZoneId = zone.Id;
+
+        _context.Zones.Add(zone);
+        _context.Parcels.Add(parcel);
+        await _context.SaveChangesAsync();
+        _context.ChangeTracker.Clear();
+
+        var command = new ScanParcelCommand(
+            parcel.TrackingNumber, ParcelStatus.Sorted);
+
+        // Act
+        var result = await _sut.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.NewStatus.Should().Be(ParcelStatus.Exception);
+
+        var trackingEvent = await _context.TrackingEvents
+            .FirstOrDefaultAsync(te => te.ParcelId == parcel.Id);
+        trackingEvent.Should().NotBeNull();
+        trackingEvent!.EventType.Should().Be(EventType.Exception);
     }
 
     private static Parcel CreateParcel(ParcelStatus status)

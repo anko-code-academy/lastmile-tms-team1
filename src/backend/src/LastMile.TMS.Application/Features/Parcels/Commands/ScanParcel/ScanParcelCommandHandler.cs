@@ -1,4 +1,5 @@
 using LastMile.TMS.Application.Common.Interfaces;
+using LastMile.TMS.Application.Features.Bins.Services;
 using LastMile.TMS.Domain.Entities;
 using LastMile.TMS.Domain.Enums;
 using MediatR;
@@ -8,7 +9,8 @@ namespace LastMile.TMS.Application.Features.Parcels.Commands.ScanParcel;
 
 public class ScanParcelCommandHandler(
     IAppDbContext dbContext,
-    ICurrentUserService currentUserService) : IRequestHandler<ScanParcelCommand, ScanParcelResult>
+    ICurrentUserService currentUserService,
+    IBinAssignmentService binAssignmentService) : IRequestHandler<ScanParcelCommand, ScanParcelResult>
 {
     public async Task<ScanParcelResult> Handle(ScanParcelCommand request, CancellationToken cancellationToken)
     {
@@ -117,6 +119,40 @@ public class ScanParcelCommandHandler(
         }
 
         parcel.TransitionTo(request.NewStatus);
+
+        // Bin assignment: assign when entering Sorted, remove when leaving Sorted
+        if (request.NewStatus == ParcelStatus.Sorted)
+        {
+            var assigned = await binAssignmentService.AssignToBinAsync(parcel, cancellationToken);
+            if (!assigned)
+            {
+                parcel.TransitionTo(ParcelStatus.Exception);
+
+                dbContext.TrackingEvents.Add(new TrackingEvent
+                {
+                    ParcelId = parcel.Id,
+                    Timestamp = DateTimeOffset.UtcNow,
+                    EventType = EventType.Exception,
+                    Description = "No available bin in zone",
+                    Operator = userId
+                });
+                await dbContext.SaveChangesAsync(cancellationToken);
+
+                return new ScanParcelResult(
+                    parcel.Id,
+                    parcel.TrackingNumber,
+                    previousStatus,
+                    ParcelStatus.Exception,
+                    parcel.Zone?.Name,
+                    parcel.Bin?.Label,
+                    parcel.RouteStop?.Route?.Name
+                );
+            }
+        }
+        else if (previousStatus == ParcelStatus.Sorted)
+        {
+            binAssignmentService.RemoveFromBin(parcel);
+        }
 
         if (request.NewStatus == ParcelStatus.FailedAttempt)
             parcel.DeliveryAttempts++;

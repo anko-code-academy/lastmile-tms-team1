@@ -1,14 +1,18 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using LastMile.TMS.Application.Common.Interfaces;
+using LastMile.TMS.Application.Features.Bins.Services;
 using LastMile.TMS.Application.Features.Routes;
+using LastMile.TMS.Domain.Entities;
 using LastMile.TMS.Domain.Enums;
 
 using ParcelStatus = LastMile.TMS.Domain.Enums.ParcelStatus;
 
 namespace LastMile.TMS.Application.Features.Routes.Commands;
 
-public class RemoveParcelsFromRouteCommandHandler(IAppDbContext context) : IRequestHandler<RemoveParcelsFromRouteCommand, RouteDto>
+public class RemoveParcelsFromRouteCommandHandler(
+    IAppDbContext context,
+    IBinAssignmentService binAssignmentService) : IRequestHandler<RemoveParcelsFromRouteCommand, RouteDto>
 {
     public async Task<RouteDto> Handle(RemoveParcelsFromRouteCommand request, CancellationToken cancellationToken)
     {
@@ -41,6 +45,19 @@ public class RemoveParcelsFromRouteCommandHandler(IAppDbContext context) : IRequ
             if (parcel.Status == ParcelStatus.Staged)
             {
                 parcel.Status = ParcelStatus.Sorted;
+
+                var assigned = await binAssignmentService.AssignToBinAsync(parcel, cancellationToken);
+                if (!assigned)
+                {
+                    parcel.Status = ParcelStatus.Exception;
+                    context.TrackingEvents.Add(new TrackingEvent
+                    {
+                        ParcelId = parcel.Id,
+                        Timestamp = DateTimeOffset.UtcNow,
+                        EventType = EventType.Exception,
+                        Description = "No available bin in zone"
+                    });
+                }
             }
         }
 
