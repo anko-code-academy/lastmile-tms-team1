@@ -1,0 +1,176 @@
+query GetParcelByTrackingNumber($trackingNumber: String!) {
+  parcelByTrackingNumber(trackingNumber: $trackingNumber) {
+    id
+    trackingNumber
+    description
+    serviceType
+    status
+    weight
+    weightUnit
+    length
+    width
+    height
+    dimensionUnit
+    declaredValue
+    currency
+    estimatedDeliveryDate
+    actualDeliveryDate
+    deliveryAttempts
+    parcelType
+    notes
+    createdAt
+    lastModifiedAt
+    shipperAddress {
+      street1
+      street2
+      city
+      state
+      postalCode
+      countryCode
+      isResidential
+      contactName
+      companyName
+      phone
+      email
+    }
+    recipientAddress {
+      street1
+      street2
+      city
+      state
+      postalCode
+      countryCode
+      isResidential
+      contactName
+      companyName
+      phone
+      email
+    }
+    zone {
+      id
+      name
+    }
+    deliveryConfirmation {
+      id
+      receivedBy
+      deliveryLocation
+      signatureImage
+      photo
+      deliveredAt
+    }
+    routeStop {
+      id
+      sequenceNumber
+      status
+      street1
+      arrivalTime
+      departureTime
+      route {
+        id
+        name
+        status
+        plannedStartTime
+        driver {
+          user {
+            firstName
+            lastName
+          }
+        }
+        vehicle {
+          registrationPlate
+        }
+      }
+    }
+    bin {
+      id
+      label
+      aisle {
+        label
+        name
+      }
+      zone {
+        name
+        depot {
+          name
+        }
+      }
+    }
+  }
+}
+
+query GetTrackingEvents($parcelId: UUID!, $first: Int, $after: String, $order: [TrackingEventSortInput!]) {
+  trackingEvents(parcelId: $parcelId, first: $first, after: $after, order: $order) {
+    nodes {
+      id
+      timestamp
+      eventType
+      description
+      locationCity
+      locationState
+      locationCountry
+      operator
+      delayReason
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    totalCount
+  }
+}
+
+query GetParcelAuditLogs($parcelId: UUID!, $first: Int, $after: String, $order: [ParcelAuditLogSortInput!]) {
+  parcelAuditLogs(parcelId: $parcelId, first: $first, after: $after, order: $order) {
+    nodes {
+      id
+      propertyName
+      oldValue
+      newValue
+      changedBy
+      createdAt
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
+mutation CreateParcel($input: CreateParcelCommandInput!) {
+  createParcel(input: $input) {
+    id
+    trackingNumber
+    status
+    serviceType
+    createdAt
+    estimatedDeliveryDate
+  }
+}
+
+mutation UpdateParcel($input: UpdateParcelCommandInput!) {
+  updateParcel(input: $input) {
+    id
+    trackingNumber
+    status
+    description
+    weight
+    lastModifiedAt
+  }
+}
+
+mutation CancelParcel($input: CancelParcelCommandInput!) {
+  cancelParcel(input: $input) {
+    id
+    trackingNumber
+    status
+  }
+}
+
+mutation ChangeParcelStatus($input: ChangeParcelStatusCommandInput!) {
+  changeParcelStatus(input: $input) {
+    id
+    trackingNumber
+    status
+    deliveryAttempts
+  }
+}

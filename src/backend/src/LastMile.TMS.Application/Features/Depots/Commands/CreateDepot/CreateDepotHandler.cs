@@ -1,3 +1,4 @@
+using LastMile.TMS.Application.Common.DTOs;
 using LastMile.TMS.Application.Common.Interfaces;
 using LastMile.TMS.Domain.Entities;
 using MediatR;

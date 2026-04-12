@@ -23,15 +23,15 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useCreateParcel } from "@/hooks/use-parcels";
-import { CreateParcelInput, ServiceType, ParcelType, WeightUnit, DimensionUnit } from "@/lib/graphql/types";
+import { CreateParcelCommandInput, ServiceType, ParcelType, WeightUnit, DimensionUnit } from "@/graphql/generated/graphql";
 
 // Simple approximate delivery calculation (skips weekends only, no holidays)
 function getEstimatedDelivery(serviceType: ServiceType): string {
   const businessDays = {
-    [ServiceType.ECONOMY]: 10,
-    [ServiceType.STANDARD]: 5,
-    [ServiceType.EXPRESS]: 2,
-    [ServiceType.OVERNIGHT]: 1,
+    [ServiceType.Economy]: 10,
+    [ServiceType.Standard]: 5,
+    [ServiceType.Express]: 2,
+    [ServiceType.Overnight]: 1,
   }[serviceType] ?? 5;
 
   let count = 0;
@@ -252,7 +252,7 @@ export function ParcelForm() {
     resolver: zodResolver(parcelFormSchema) as any,
     defaultValues: {
       description: "",
-      serviceType: ServiceType.STANDARD,
+      serviceType: ServiceType.Standard,
       weight: 1,
       weightUnit: WeightUnit.Kg,
       length: 10,
@@ -299,7 +299,7 @@ export function ParcelForm() {
 
   async function onSubmit(values: ParcelFormValues) {
     try {
-      const input: CreateParcelInput = {
+      const input: CreateParcelCommandInput = {
         description: values.description || undefined,
         serviceType: values.serviceType as ServiceType,
         shipperAddress: {
@@ -377,10 +377,10 @@ export function ParcelForm() {
                           value={field.value}
                           onChange={(e) => field.onChange(e.target.value)}
                         >
-                          <option value={ServiceType.ECONOMY}>Economy</option>
-                          <option value={ServiceType.STANDARD}>Standard</option>
-                          <option value={ServiceType.EXPRESS}>Express</option>
-                          <option value={ServiceType.OVERNIGHT}>Overnight</option>
+                          <option value={ServiceType.Economy}>Economy</option>
+                          <option value={ServiceType.Standard}>Standard</option>
+                          <option value={ServiceType.Express}>Express</option>
+                          <option value={ServiceType.Overnight}>Overnight</option>
                         </select>
                       </FormControl>
                       <FormMessage />
@@ -566,10 +566,10 @@ export function ParcelForm() {
                           onChange={(e) => field.onChange(e.target.value || undefined)}
                         >
                           <option value="">Select type...</option>
-                          <option value={ParcelType.PACKAGE}>Package</option>
-                          <option value={ParcelType.ENVELOPE}>Envelope</option>
-                          <option value={ParcelType.PALLET}>Pallet</option>
-                          <option value={ParcelType.BULK}>Bulk</option>
+                          <option value={ParcelType.Package}>Package</option>
+                          <option value={ParcelType.Envelope}>Envelope</option>
+                          <option value={ParcelType.Pallet}>Pallet</option>
+                          <option value={ParcelType.Bulk}>Bulk</option>
                         </select>
                       </FormControl>
                       <FormMessage />

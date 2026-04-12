@@ -1,11 +1,11 @@
 using HotChocolate.Types;
-using UpdateAddressInput = LastMile.TMS.Application.Features.Depots.Commands.UpdateDepot.UpdateAddressInput;
+using LastMile.TMS.Application.Common.DTOs;
 
 namespace LastMile.TMS.Api.GraphQL.Inputs;
 
-public class UpdateAddressInputType : InputObjectType<UpdateAddressInput>
+public class UpdateAddressInputType : InputObjectType<AddressInput>
 {
-    protected override void Configure(IInputObjectTypeDescriptor<UpdateAddressInput> descriptor)
+    protected override void Configure(IInputObjectTypeDescriptor<AddressInput> descriptor)
     {
         descriptor.Name("UpdateAddressInput");
 

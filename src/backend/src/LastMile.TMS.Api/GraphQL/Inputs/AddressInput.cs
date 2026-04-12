@@ -1,5 +1,5 @@
 using HotChocolate.Types;
-using AddressInput = LastMile.TMS.Application.Features.Depots.Commands.CreateDepot.AddressInput;
+using LastMile.TMS.Application.Common.DTOs;
 
 namespace LastMile.TMS.Api.GraphQL.Inputs;
 

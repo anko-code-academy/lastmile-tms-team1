@@ -21,7 +21,8 @@ public class ChangeParcelStatusCommandHandler(
             throw new InvalidOperationException("Use CancelParcelCommand to cancel a parcel.");
         }
 
-        var userId = currentUserService.UserId ?? throw new InvalidOperationException("User not authenticated");
+        var userName = currentUserService.UserName ?? currentUserService.UserId
+            ?? throw new InvalidOperationException("User not authenticated");
 
         parcel.TransitionTo(request.NewStatus);
 
@@ -39,7 +40,7 @@ public class ChangeParcelStatusCommandHandler(
             LocationCity = request.LocationCity,
             LocationState = request.LocationState,
             LocationCountry = request.LocationCountry,
-            Operator = userId,
+            Operator = userName,
             DelayReason = request.ExceptionReason
         };
 

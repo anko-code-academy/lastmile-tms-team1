@@ -25,7 +25,8 @@ public class CancelParcelCommandHandler(
         }
 
         var previousStatus = parcel.Status;
-        var userId = currentUserService.UserId ?? throw new InvalidOperationException("User not authenticated");
+        var userName = currentUserService.UserName ?? currentUserService.UserId
+            ?? throw new InvalidOperationException("User not authenticated");
 
         // Transition to Cancelled
         parcel.TransitionTo(Domain.Enums.ParcelStatus.Cancelled);
@@ -36,7 +37,7 @@ public class CancelParcelCommandHandler(
             "Status",
             previousStatus.ToString(),
             $"Cancelled - {request.Reason}",
-            userId);
+            userName);
         dbContext.ParcelAuditLogs.Add(auditLog);
 
         dbContext.TrackingEvents.Add(new TrackingEvent
@@ -45,7 +46,7 @@ public class CancelParcelCommandHandler(
             Timestamp = DateTimeOffset.UtcNow,
             EventType = EventType.Exception,
             Description = $"Cancelled - {request.Reason}",
-            Operator = userId
+            Operator = userName
         });
 
         await dbContext.SaveChangesAsync(cancellationToken);

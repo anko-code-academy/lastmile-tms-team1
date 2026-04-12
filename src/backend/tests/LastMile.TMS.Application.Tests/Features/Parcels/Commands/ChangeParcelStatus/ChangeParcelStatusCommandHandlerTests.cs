@@ -22,7 +22,7 @@ public class ChangeParcelStatusCommandHandlerTests : IDisposable
             .Options;
 
         _currentUserService = Substitute.For<ICurrentUserService>();
-        _currentUserService.UserId.Returns("test-user-123");
+        _currentUserService.UserName.Returns("test-user-123");
 
         _context = new TestDbContext(options, _currentUserService);
         _sut = new ChangeParcelStatusCommandHandler(_context, _currentUserService);

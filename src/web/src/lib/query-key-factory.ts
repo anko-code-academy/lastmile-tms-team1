@@ -51,6 +51,8 @@ export const parcelKeys = {
   list: (filters?: FetchParcelsFilters) => [...parcelKeys.lists(), filters] as const,
   details: () => [...parcelKeys.all, 'detail'] as const,
   detail: (id: string) => [...parcelKeys.details(), id] as const,
+  trackingEvents: (parcelId: string) => [...parcelKeys.detail(parcelId), 'trackingEvents'] as const,
+  auditLogs: (parcelId: string) => [...parcelKeys.detail(parcelId), 'auditLogs'] as const,
 };
 
 export const driverKeys = {

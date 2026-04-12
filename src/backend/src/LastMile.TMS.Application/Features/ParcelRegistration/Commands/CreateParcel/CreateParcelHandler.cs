@@ -1,3 +1,4 @@
+using LastMile.TMS.Application.Common.DTOs;
 using LastMile.TMS.Application.Common.Interfaces;
 using LastMile.TMS.Domain.Entities;
 using LastMile.TMS.Domain.Enums;
@@ -106,7 +107,7 @@ public class CreateParcelHandler(
             Timestamp = DateTimeOffset.UtcNow,
             EventType = EventType.LabelCreated,
             Description = "Label created",
-            Operator = currentUserService.UserId
+            Operator = currentUserService.UserName ?? currentUserService.UserId
         });
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -120,7 +121,7 @@ public class CreateParcelHandler(
             parcel.EstimatedDeliveryDate!.Value);
     }
 
-    private static string BuildFullAddress(ParcelAddressInput address)
+    private static string BuildFullAddress(AddressInput address)
     {
         var parts = new List<string>();
 
