@@ -49,7 +49,7 @@ public class ReceiveParcelCommandHandlerTests : IDisposable
     }
 
     [Fact]
-    public async Task Handle_NoMatchingItem_CreatesUnexpected()
+    public async Task Handle_NoMatchingItem_TransitionsToException()
     {
         // Arrange
         var (manifest, _) = await SetupManifestAndParcel();
@@ -64,12 +64,13 @@ public class ReceiveParcelCommandHandlerTests : IDisposable
         var result = await _sut.Handle(command, CancellationToken.None);
 
         // Assert
-        result.NewStatus.Should().Be(ParcelStatus.ReceivedAtDepot);
+        result.NewStatus.Should().Be(ParcelStatus.Exception);
         result.ManifestItemStatus.Should().Be(ManifestItemStatus.Unexpected);
 
-        var updatedManifest = await _context.Manifests.Include(m => m.Items)
-            .FirstAsync(m => m.Id == manifest.Id);
-        updatedManifest.Items.Should().Contain(i => i.Status == ManifestItemStatus.Unexpected);
+        var trackingEvent = await _context.TrackingEvents
+            .FirstOrDefaultAsync(te => te.ParcelId == unexpectedParcel.Id);
+        trackingEvent.Should().NotBeNull();
+        trackingEvent!.EventType.Should().Be(EventType.Exception);
     }
 
     [Fact]
@@ -92,7 +93,7 @@ public class ReceiveParcelCommandHandlerTests : IDisposable
     }
 
     [Fact]
-    public async Task Handle_ParcelNotRegistered_Throws()
+    public async Task Handle_ParcelNotRegistered_TransitionsToException()
     {
         // Arrange
         var (manifest, parcel) = await SetupManifestAndParcel();
@@ -103,11 +104,16 @@ public class ReceiveParcelCommandHandlerTests : IDisposable
         var command = new ReceiveParcelCommand(manifest.Id, parcel.TrackingNumber);
 
         // Act
-        var act = () => _sut.Handle(command, CancellationToken.None);
+        var result = await _sut.Handle(command, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*Registered*");
+        result.NewStatus.Should().Be(ParcelStatus.Exception);
+        result.ManifestItemStatus.Should().BeNull();
+
+        var trackingEvent = await _context.TrackingEvents
+            .FirstOrDefaultAsync(te => te.ParcelId == parcel.Id);
+        trackingEvent.Should().NotBeNull();
+        trackingEvent!.EventType.Should().Be(EventType.Exception);
     }
 
     [Fact]

@@ -57,6 +57,49 @@ public class CreateManifestCommandHandlerTests : IDisposable
     }
 
     [Fact]
+    public async Task Handle_ParcelsNotInRegisteredStatus_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var depot = CreateDepot();
+        var parcel = CreateParcel(ParcelStatus.ReceivedAtDepot);
+        _context.Depots.Add(depot);
+        _context.Parcels.Add(parcel);
+        await _context.SaveChangesAsync();
+        _context.ChangeTracker.Clear();
+
+        var command = new CreateManifestCommand(
+            "Truck Arrival #1", depot.Id, [parcel.TrackingNumber]);
+
+        // Act
+        var act = () => _sut.Handle(command, CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*Registered*");
+    }
+
+    [Fact]
+    public async Task Handle_ParcelsInRegisteredStatus_Succeeds()
+    {
+        // Arrange
+        var depot = CreateDepot();
+        var parcel = CreateParcel(ParcelStatus.Registered);
+        _context.Depots.Add(depot);
+        _context.Parcels.Add(parcel);
+        await _context.SaveChangesAsync();
+        _context.ChangeTracker.Clear();
+
+        var command = new CreateManifestCommand(
+            "Truck Arrival #1", depot.Id, [parcel.TrackingNumber]);
+
+        // Act
+        var result = await _sut.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.ExpectedCount.Should().Be(1);
+    }
+
+    [Fact]
     public async Task Handle_DepotNotFound_ThrowsKeyNotFoundException()
     {
         // Arrange
@@ -86,5 +129,35 @@ public class CreateManifestCommandHandlerTests : IDisposable
                 CountryCode = "KZ"
             }
         };
+    }
+
+    private static Parcel CreateParcel(ParcelStatus status)
+    {
+        var parcel = Parcel.Create("Test parcel", ServiceType.Standard);
+        parcel.Status = status;
+        parcel.Weight = 1.0m;
+        parcel.WeightUnit = WeightUnit.Kg;
+        parcel.Length = 10m;
+        parcel.Width = 10m;
+        parcel.Height = 10m;
+        parcel.DimensionUnit = DimensionUnit.Cm;
+        parcel.DeclaredValue = 100m;
+        parcel.ShipperAddress = new Address
+        {
+            Street1 = "123 Shipper St",
+            City = "Almaty",
+            State = "Almaty",
+            PostalCode = "050000",
+            CountryCode = "KZ"
+        };
+        parcel.RecipientAddress = new Address
+        {
+            Street1 = "456 Recipient St",
+            City = "Astana",
+            State = "Astana",
+            PostalCode = "010000",
+            CountryCode = "KZ"
+        };
+        return parcel;
     }
 }

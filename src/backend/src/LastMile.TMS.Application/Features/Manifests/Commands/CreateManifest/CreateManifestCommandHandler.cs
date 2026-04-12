@@ -14,6 +14,19 @@ public class CreateManifestCommandHandler(IAppDbContext dbContext)
         var depot = await dbContext.Depots.FindAsync([request.DepotId], cancellationToken)
             ?? throw new KeyNotFoundException($"Depot with ID {request.DepotId} not found.");
 
+        var parcels = await dbContext.Parcels
+            .Where(p => request.TrackingNumbers.Contains(p.TrackingNumber))
+            .ToListAsync(cancellationToken);
+
+        var notRegistered = parcels
+            .Where(p => p.Status != ParcelStatus.Registered)
+            .Select(p => p.TrackingNumber)
+            .ToList();
+
+        if (notRegistered.Count != 0)
+            throw new InvalidOperationException(
+                $"Parcels must be in Registered status to add to a manifest: {string.Join(", ", notRegistered)}");
+
         var manifest = Manifest.Create(request.Name, request.DepotId);
 
         foreach (var trackingNumber in request.TrackingNumbers)

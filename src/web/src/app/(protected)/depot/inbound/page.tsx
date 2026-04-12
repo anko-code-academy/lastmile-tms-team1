@@ -20,11 +20,11 @@ export default function InboundPage() {
   const receiveParcelMutation = useReceiveParcel();
   const completeMutation = useCompleteManifestReceiving();
   const createManifestMutation = useCreateManifest();
-  const { data: manifestsData } = useManifests(
-    depotId ? { depotId, status: ManifestStatus.Open } : undefined
+  const manifestsQuery = useManifests(
+    depotId ? { depotId, status: [ManifestStatus.Open, ManifestStatus.Receiving] } : undefined
   );
 
-  const expectedTrackingNumbers = manifestsData?.nodes?.flatMap(
+  const expectedTrackingNumbers = manifestsQuery.data?.nodes?.flatMap(
     (m) => m.items?.map((i) => i.trackingNumber).filter((t): t is string => !!t) ?? []
   ) ?? [];
 
@@ -78,6 +78,7 @@ export default function InboundPage() {
       depotId,
       trackingNumbers,
     });
+    await manifestsQuery.refetch();
     setManifestId(result.id);
     toast.success(`Created manifest with ${trackingNumbers.length} items`);
   };
@@ -99,7 +100,7 @@ export default function InboundPage() {
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           >
             <option value="">No manifest (free scan)</option>
-            {manifestsData?.nodes?.map((m) => (
+            {manifestsQuery.data?.nodes?.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.name} ({m.status})
               </option>

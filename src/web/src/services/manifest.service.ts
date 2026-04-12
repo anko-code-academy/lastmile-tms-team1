@@ -18,7 +18,7 @@ import {
 } from "@/graphql/generated/graphql";
 
 export interface FetchManifestsFilters {
-  status?: ManifestStatus;
+  status?: ManifestStatus | ManifestStatus[];
   depotId?: string;
   first?: number;
   after?: string;
@@ -30,7 +30,9 @@ export async function fetchManifests(
 ): Promise<GetManifestsQuery["manifests"]> {
   const where: Record<string, unknown> = {};
   if (filters?.status) {
-    where.status = { eq: filters.status };
+    where.status = Array.isArray(filters.status)
+      ? { in: filters.status }
+      : { eq: filters.status };
   }
   if (filters?.depotId) {
     where.depotId = { eq: filters.depotId };

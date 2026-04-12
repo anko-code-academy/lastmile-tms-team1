@@ -27,20 +27,43 @@ public class ReceiveParcelCommandHandler(
             .FirstOrDefaultAsync(p => p.TrackingNumber == request.TrackingNumber, cancellationToken)
             ?? throw new KeyNotFoundException($"Parcel with tracking number '{request.TrackingNumber}' not found.");
 
-        if (parcel.Status != ParcelStatus.Registered)
-            throw new InvalidOperationException($"Parcel must be in Registered status, but is {parcel.Status}");
-
         var userId = currentUserService.UserId ?? throw new InvalidOperationException("User not authenticated");
+
+        // Non-Registered parcels go to Exception
+        if (parcel.Status != ParcelStatus.Registered)
+        {
+            var previousStatus = parcel.Status;
+            parcel.TransitionTo(ParcelStatus.Exception);
+
+            dbContext.TrackingEvents.Add(new TrackingEvent
+            {
+                ParcelId = parcel.Id,
+                Timestamp = DateTimeOffset.UtcNow,
+                EventType = EventType.Exception,
+                Description = $"Invalid scan: parcel is in {previousStatus} status, expected Registered",
+                Operator = userId
+            });
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            return new ReceiveParcelResult(
+                parcel.Id,
+                parcel.TrackingNumber,
+                ParcelStatus.Exception,
+                null
+            );
+        }
 
         var matchingItem = manifest.Items
             .FirstOrDefault(i => i.TrackingNumber == request.TrackingNumber && i.Status == ManifestItemStatus.Expected);
 
         ManifestItemStatus itemStatus;
+        bool isUnexpected;
 
         if (matchingItem is not null)
         {
             matchingItem.MarkReceived(parcel.Id);
             itemStatus = ManifestItemStatus.Received;
+            isUnexpected = false;
         }
         else
         {
@@ -49,18 +72,20 @@ public class ReceiveParcelCommandHandler(
             manifest.Items.Add(unexpectedItem);
             dbContext.ManifestItems.Add(unexpectedItem);
             itemStatus = ManifestItemStatus.Unexpected;
+            isUnexpected = true;
         }
 
-        parcel.TransitionTo(ParcelStatus.ReceivedAtDepot);
+        var targetStatus = isUnexpected ? ParcelStatus.Exception : ParcelStatus.ReceivedAtDepot;
+        parcel.TransitionTo(targetStatus);
 
         var trackingEvent = new TrackingEvent
         {
             ParcelId = parcel.Id,
             Timestamp = DateTimeOffset.UtcNow,
-            EventType = EventType.ArrivedAtFacility,
-            Description = itemStatus == ManifestItemStatus.Received
-                ? "Received at depot (manifest match)"
-                : "Received at depot (unexpected)",
+            EventType = isUnexpected ? EventType.Exception : EventType.ArrivedAtFacility,
+            Description = isUnexpected
+                ? "Parcel not on manifest"
+                : "Received at depot (manifest match)",
             Operator = userId
         };
 

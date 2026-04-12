@@ -12,5 +12,5 @@ public record ReceiveParcelResult(
     Guid ParcelId,
     string TrackingNumber,
     ParcelStatus NewStatus,
-    ManifestItemStatus ManifestItemStatus
+    ManifestItemStatus? ManifestItemStatus
 );

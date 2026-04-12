@@ -7,7 +7,8 @@ public record ScanParcelCommand(
     string TrackingNumber,
     ParcelStatus NewStatus,
     Guid? RouteId = null,
-    string? Description = null
+    string? Description = null,
+    Guid? ManifestId = null
 ) : IRequest<ScanParcelResult>;
 
 public record ScanParcelResult(

@@ -106,7 +106,7 @@ public class ScanParcelCommandHandlerTests : IDisposable
     }
 
     [Fact]
-    public async Task Handle_InvalidTransition_ThrowsInvalidOperationException()
+    public async Task Handle_InvalidTransition_TransitionsToException()
     {
         // Arrange - Registered cannot go directly to Loaded
         var parcel = CreateParcel(ParcelStatus.Registered);
@@ -118,11 +118,16 @@ public class ScanParcelCommandHandlerTests : IDisposable
             parcel.TrackingNumber, ParcelStatus.Loaded);
 
         // Act
-        var act = () => _sut.Handle(command, CancellationToken.None);
+        var result = await _sut.Handle(command, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*Cannot transition*");
+        result.NewStatus.Should().Be(ParcelStatus.Exception);
+        result.PreviousStatus.Should().Be(ParcelStatus.Registered);
+
+        var trackingEvent = await _context.TrackingEvents
+            .FirstOrDefaultAsync(te => te.ParcelId == parcel.Id);
+        trackingEvent.Should().NotBeNull();
+        trackingEvent!.EventType.Should().Be(EventType.Exception);
     }
 
     [Fact]
@@ -178,7 +183,7 @@ public class ScanParcelCommandHandlerTests : IDisposable
     }
 
     [Fact]
-    public async Task Handle_WithRouteId_WrongRoute_ThrowsInvalidOperationException()
+    public async Task Handle_WithRouteId_WrongRoute_TransitionsToException()
     {
         // Arrange
         var route1 = new Route
@@ -208,11 +213,72 @@ public class ScanParcelCommandHandlerTests : IDisposable
             parcel.TrackingNumber, ParcelStatus.Staged, RouteId: route2.Id);
 
         // Act
-        var act = () => _sut.Handle(command, CancellationToken.None);
+        var result = await _sut.Handle(command, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*does not belong*");
+        result.NewStatus.Should().Be(ParcelStatus.Exception);
+        result.PreviousStatus.Should().Be(ParcelStatus.Sorted);
+
+        var trackingEvent = await _context.TrackingEvents
+            .FirstOrDefaultAsync(te => te.ParcelId == parcel.Id);
+        trackingEvent.Should().NotBeNull();
+        trackingEvent!.EventType.Should().Be(EventType.Exception);
+    }
+
+    [Fact]
+    public async Task Handle_ParcelNotOnManifest_TransitionsToException()
+    {
+        // Arrange
+        var parcel = CreateParcel(ParcelStatus.Registered);
+        var manifest = Manifest.Create("Test Manifest", Guid.CreateVersion7());
+        // Manifest has a different tracking number, not our parcel
+        manifest.Items.Add(ManifestItem.Create(manifest.Id, "LM-260411-OTHER1"));
+
+        _context.Parcels.Add(parcel);
+        _context.Manifests.Add(manifest);
+        await _context.SaveChangesAsync();
+        _context.ChangeTracker.Clear();
+
+        var command = new ScanParcelCommand(
+            parcel.TrackingNumber, ParcelStatus.ReceivedAtDepot,
+            ManifestId: manifest.Id);
+
+        // Act
+        var result = await _sut.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.NewStatus.Should().Be(ParcelStatus.Exception);
+        result.PreviousStatus.Should().Be(ParcelStatus.Registered);
+
+        var trackingEvent = await _context.TrackingEvents
+            .FirstOrDefaultAsync(te => te.ParcelId == parcel.Id);
+        trackingEvent.Should().NotBeNull();
+        trackingEvent!.EventType.Should().Be(EventType.Exception);
+    }
+
+    [Fact]
+    public async Task Handle_ParcelOnManifest_TransitionsToReceivedAtDepot()
+    {
+        // Arrange
+        var parcel = CreateParcel(ParcelStatus.Registered);
+        var manifest = Manifest.Create("Test Manifest", Guid.CreateVersion7());
+        manifest.Items.Add(ManifestItem.Create(manifest.Id, parcel.TrackingNumber));
+
+        _context.Parcels.Add(parcel);
+        _context.Manifests.Add(manifest);
+        await _context.SaveChangesAsync();
+        _context.ChangeTracker.Clear();
+
+        var command = new ScanParcelCommand(
+            parcel.TrackingNumber, ParcelStatus.ReceivedAtDepot,
+            ManifestId: manifest.Id);
+
+        // Act
+        var result = await _sut.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.NewStatus.Should().Be(ParcelStatus.ReceivedAtDepot);
+        result.PreviousStatus.Should().Be(ParcelStatus.Registered);
     }
 
     [Fact]

@@ -15,7 +15,8 @@ const statusConfig = {
 } as const;
 
 export function ScanListItem({ entry }: ScanListItemProps) {
-  const config = statusConfig[entry.status];
+  const isException = entry.status === "success" && entry.newStatus === "EXCEPTION";
+  const config = isException ? statusConfig.error : statusConfig[entry.status];
   const Icon = config.icon;
 
   return (
@@ -34,7 +35,12 @@ export function ScanListItem({ entry }: ScanListItemProps) {
         )}
       </div>
       <div className="text-right shrink-0">
-        {entry.status === "success" && (
+        {isException && (
+          <span className="text-xs text-red-600">
+            {entry.previousStatus} → {entry.newStatus}
+          </span>
+        )}
+        {entry.status === "success" && !isException && (
           <span className="text-xs text-green-600">
             {entry.previousStatus} → {entry.newStatus}
           </span>

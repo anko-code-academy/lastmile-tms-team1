@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducer, useCallback, useMemo } from "react";
+import { useReducer, useCallback } from "react";
 import type { ScanOperationConfig, ScannedParcelEntry, ScanResult } from "@/types/depot-scan";
 import { ScanInput } from "./scan-input";
 import { ScanSummary } from "./scan-summary";
@@ -51,8 +51,6 @@ export function ParcelScanForm({
   contextSelector,
   contextValue,
 }: ParcelScanFormProps) {
-  const expectedSet = useMemo(() => new Set(expectedTrackingNumbers), [expectedTrackingNumbers]);
-
   const [state, dispatch] = useReducer(scanReducer, {
     entries: [],
     isProcessing: false,
@@ -91,23 +89,6 @@ export function ParcelScanForm({
         return;
       }
 
-      // Check unexpected — only when an expected list is provided
-      if (
-        expectedTrackingNumbers.length > 0 &&
-        !config.allowUnexpected &&
-        !expectedSet.has(trackingNumber)
-      ) {
-        dispatch({
-          type: "ADD_ENTRY",
-          entry: {
-            trackingNumber,
-            status: "unexpected",
-            scannedAt: new Date(),
-          },
-        });
-        return;
-      }
-
       dispatch({ type: "START_PROCESSING" });
 
       try {
@@ -137,7 +118,7 @@ export function ParcelScanForm({
         });
       }
     },
-    [state.isProcessing, state.entries, expectedSet, config.allowUnexpected, expectedTrackingNumbers, onScan]
+    [state.isProcessing, state.entries, onScan]
   );
 
   const contextSelected = contextValue !== undefined && contextValue !== null && contextValue !== "";
