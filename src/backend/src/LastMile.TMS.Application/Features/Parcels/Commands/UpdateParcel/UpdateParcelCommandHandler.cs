@@ -1,9 +1,9 @@
+using LastMile.TMS.Application.Common.DTOs;
 using LastMile.TMS.Application.Common.Interfaces;
 using LastMile.TMS.Domain.Entities;
 using LastMile.TMS.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using AddressInput = LastMile.TMS.Application.Features.Depots.Commands.CreateDepot.AddressInput;
 
 namespace LastMile.TMS.Application.Features.Parcels.Commands.UpdateParcel;
 

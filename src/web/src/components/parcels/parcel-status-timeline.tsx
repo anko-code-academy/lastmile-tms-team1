@@ -1,6 +1,8 @@
 "use client";
 
-import { EventType } from "@/graphql/generated/graphql";
+import { EventType, type GetTrackingEventsQuery } from "@/graphql/generated/graphql";
+
+type TrackingEventNode = NonNullable<NonNullable<GetTrackingEventsQuery['trackingEvents']>['nodes']>[number];
 import {
   Package,
   Truck,
@@ -43,17 +45,6 @@ const eventColorMap: Record<string, string> = {
   [EventType.AddressCorrection]: "text-amber-500 bg-amber-100",
   [EventType.CustomsClearance]: "text-blue-500 bg-blue-100",
 };
-
-interface TrackingEventNode {
-  id: string | number;
-  timestamp: string | number;
-  eventType: EventType;
-  description?: string | null;
-  locationCity?: string | null;
-  locationState?: string | null;
-  locationCountry?: string | null;
-  operator?: string | null;
-}
 
 interface ParcelStatusTimelineProps {
   events: TrackingEventNode[];

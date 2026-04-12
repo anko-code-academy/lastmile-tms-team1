@@ -1,4 +1,4 @@
-using AddressInput = LastMile.TMS.Application.Features.Depots.Commands.CreateDepot.AddressInput;
+using LastMile.TMS.Application.Common.DTOs;
 using LastMile.TMS.Domain.Enums;
 using MediatR;
 

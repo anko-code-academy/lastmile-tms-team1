@@ -1,11 +1,11 @@
 using HotChocolate.Types;
-using LastMile.TMS.Application.Features.ParcelRegistration.Commands.CreateParcel;
+using LastMile.TMS.Application.Common.DTOs;
 
 namespace LastMile.TMS.Api.GraphQL.Inputs;
 
-public class ParcelAddressInputType : InputObjectType<ParcelAddressInput>
+public class ParcelAddressInputType : InputObjectType<AddressInput>
 {
-    protected override void Configure(IInputObjectTypeDescriptor<ParcelAddressInput> descriptor)
+    protected override void Configure(IInputObjectTypeDescriptor<AddressInput> descriptor)
     {
         descriptor.Name("ParcelAddressInput");
 

@@ -1,4 +1,5 @@
 using FluentAssertions;
+using LastMile.TMS.Application.Common.DTOs;
 using LastMile.TMS.Application.Common.Interfaces;
 using LastMile.TMS.Application.Features.Parcels.Commands.UpdateParcel;
 using LastMile.TMS.Domain.Entities;
@@ -6,7 +7,6 @@ using LastMile.TMS.Domain.Enums;
 using LastMile.TMS.Persistence;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
-using AddressInput = LastMile.TMS.Application.Features.Depots.Commands.CreateDepot.AddressInput;
 
 namespace LastMile.TMS.Application.Tests.Features.Parcels.Commands.UpdateParcel;
 
