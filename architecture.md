@@ -2,7 +2,7 @@
 
 > GraphQL | Clean Architecture | .NET 10
 >
-> April 10, 2026
+> April 13, 2026
 
 ---
 
@@ -201,6 +201,8 @@ Application/<Feature>/
     Interfaces/ITokenRevocationService.cs
 ```
 
+**Note on feature organization:** `ParcelRegistration` is a separate feature folder that owns the `CreateParcel` command (distinct from the `Parcels` feature which owns `UpdateParcel`, `CancelParcel`, `ChangeParcelStatus`, and `ScanParcel`). `Manifests` owns `CreateManifest`, `ReceiveParcel`, and `CompleteManifestReceiving`.
+
 **Standard command shapes:**
 
 ```csharp
@@ -240,14 +242,16 @@ Domain/
     Vehicle.cs, VehicleJourney.cs
     Route.cs, RouteStop.cs
     Parcel.cs, ParcelContentItem.cs, ParcelWatcher.cs
-    DeliveryConfirmation.cs, TrackingEvent.cs
+    DeliveryConfirmation.cs, TrackingEvent.cs, ParcelAuditLog.cs
     Bin.cs, Aisle.cs
+    Manifest.cs, ManifestItem.cs
   Enums/
     ParcelStatus, RouteStatus, RouteStopStatus, VehicleStatus, VehicleType
     ServiceType, ParcelType
     WeightUnit, DimensionUnit
     UserStatus, EventType, ExceptionReason
     PermissionModule, PermissionScope
+    ManifestStatus, ManifestItemStatus
   Extensions/
     GeoExtensions.cs            -- Haversine distance calculation
   Services/
@@ -262,8 +266,9 @@ BaseEntity
         ├── Depot, Zone, Vehicle, Route, RouteStop, Parcel, Driver
         ├── ShiftSchedule, DayOff, VehicleJourney
         ├── Address, DeliveryConfirmation, TrackingEvent
-        ├── ParcelContentItem, ParcelWatcher
+        ├── ParcelContentItem, ParcelWatcher, ParcelAuditLog
         ├── Bin, Aisle
+        ├── Manifest, ManifestItem
 
 IdentityUser<Guid> + IBaseAuditableEntity
   └── User
@@ -282,6 +287,8 @@ IdentityRole<Guid> + IBaseAuditableEntity
 - `Vehicle` -- state machine (Available -> InUse/Maintenance/Retired), `AssignToRoute(parcelCount)`, `ReleaseFromRoute()`, `Update()` factory
 - `User` -- `Activate()`/`Deactivate()`/`Suspend()`, `Create()` factory with email validation, `UpdateName/Phone/Email`, `IsSystemAdmin` protection
 - `Zone` -- `SetBoundaryFromGeoJson()` parses GeoJSON Polygon via NetTopologySuite
+- `Manifest` -- state machine (`Open` -> `Receiving` -> `Completed`), `Create()` factory, `StartReceiving()`, `Complete()`
+- `ManifestItem` -- `Create()` factory, `MarkReceived(parcelId)`, `MarkUnexpected(parcelId)`, `MarkMissing()`
 - `Role` -- static factory methods for all five standard roles
 
 #### Persistence Layer
@@ -291,7 +298,7 @@ Persistence/
   AppDbContext.cs            -- IdentityDbContext<User, Role, Guid>, DbSets, audit stamping on SaveChanges, soft-delete query filter
   DependencyInjection.cs     -- DbContext, Identity, OpenIddict registration
   Configurations/            -- One IEntityTypeConfiguration<T> per entity (auto-discovered)
-  Migrations/                -- 24+ migration files
+  Migrations/                -- 60+ migration files
 ```
 
 **DbContext features:**
@@ -359,12 +366,13 @@ Infrastructure/
 | Layer | File | Purpose |
 |---|---|---|
 | **API** | `ParcelQueries.cs` | `GetParcels` (paginated, full-text search on recipient + address), `GetParcel` (by ID), `GetParcelByTrackingNumber`, `GetTrackingEvents` (paginated, by parcel ID) |
-| **API** | `ParcelMutations.cs` | `CreateParcel`, `UpdateParcel`, `CancelParcel`, `ChangeParcelStatus` |
+| **API** | `ParcelMutations.cs` | `CreateParcel`, `UpdateParcel`, `CancelParcel`, `ChangeParcelStatus`, `ScanParcel` |
 | **API** | `Inputs/ParcelInputs.cs` | `CreateParcelInput`, `ParcelAddressInput` |
-| **APP** | `Commands/CreateParcel/*` | Command + Handler (geocodes both addresses, auto-assigns zone via geocoding, calculates delivery date, creates `LabelCreated` tracking event) + Validator |
+| **APP** | `ParcelRegistration/Commands/CreateParcel/*` | Command + Handler (geocodes both addresses, auto-assigns zone via geocoding, calculates delivery date, creates `LabelCreated` tracking event) + Validator |
 | **APP** | `Commands/UpdateParcel/*` | Command + Handler (validates editable status, creates `ParcelAuditLog` entries for changed fields) + Validator |
 | **APP** | `Commands/CancelParcel/*` | Command + Handler (validates cancellable status, requires reason, creates `ParcelAuditLog` + `Exception` tracking event) + Validator |
 | **APP** | `Commands/ChangeParcelStatus/*` | Command + Handler (validates transition, creates `TrackingEvent` with mapped `EventType`, increments `DeliveryAttempts` on `FailedAttempt`) + Validator |
+| **APP** | `Commands/ScanParcel/*` | Command + Handler (barcode-driven status transition, validates route/manifest context, auto-assigns bin on Sorted, creates tracking event) + Validator |
 | **DOM** | `Entities/Parcel.cs` | TrackingNumber (auto-generated `LM-yyMMdd-XXXXXX`), Status (state machine), ServiceType, ShipperAddress, RecipientAddress, Weight, Dimensions, ZoneId, BinId (FK to Bin, nullable), RouteStopId (FK to RouteStop, nullable) |
 | **DOM** | `Entities/ParcelContentItem.cs` | Description, Quantity, Value |
 | **DOM** | `Entities/TrackingEvent.cs` | EventType, Description, Location, Timestamp, Operator, DelayReason |
@@ -586,6 +594,41 @@ Maintenance    Retired
 
 **Hierarchy:** Zone -> Aisle -> Bin. Bins are addressable via the compound label path.
 
+#### Manifests
+
+| Layer | File | Purpose |
+|---|---|---|
+| **API** | `ManifestQuery.cs` | `GetManifests` (paginated list), `GetManifest` (by ID) via AppDbContext |
+| **API** | `ManifestMutation.cs` | `CreateManifest`, `ReceiveParcel`, `CompleteManifestReceiving` |
+| **APP** | `Commands/CreateManifest/*` | Command + Handler (validates depot, validates parcels in Registered status, creates manifest with tracking number items) + Validator |
+| **APP** | `Commands/ReceiveParcel/*` | Command + Handler (processes parcel against manifest, updates manifest item status) + Validator |
+| **APP** | `Commands/CompleteManifestReceiving/*` | Command + Handler (marks manifest as Completed, finalizes receiving) + Validator |
+| **APP** | `Commands/ManifestResult.cs` | ManifestResult, ReceiveParcelResult DTOs |
+| **DOM** | `Entities/Manifest.cs` | Name, Status (state machine: Open -> Receiving -> Completed), DepotId, StartedAt, CompletedAt, Items collection |
+| **DOM** | `Entities/ManifestItem.cs` | ManifestId, TrackingNumber, ParcelId (nullable), Status (Expected/Received/Unexpected/Missing) |
+| **PERS** | `ManifestConfiguration.cs` | EF Core FluentAPI, status stored as string |
+| **PERS** | `ManifestItemConfiguration.cs` | EF Core FluentAPI, unique index on (ManifestId, TrackingNumber) |
+
+**Manifest status state machine:**
+
+```
+Open -> Receiving -> Completed
+```
+
+**ManifestItem status flow:**
+
+```
+Expected -> Received
+         -> Unexpected
+         -> Missing
+```
+
+**Business rules:**
+- All parcels in a manifest must be in `Registered` status at creation time
+- Manifest can only transition from `Open` to `Receiving` to `Completed`
+- Unique constraint on (ManifestId, TrackingNumber) per manifest item
+- Parcels received against a manifest link back to the manifest item via `ParcelId`
+
 ### 2.7 Dependency Injection
 
 ```csharp
@@ -721,10 +764,11 @@ src/components/<feature>/*.tsx             -- React components
 |---|---|---|
 | Depots | GetDepots, GetDepot | CreateDepot, UpdateDepot, DeleteDepot |
 | Drivers | GetDrivers, GetDriver | CreateDriver, UpdateDriver, DeleteDriver |
-| Parcels | GetParcels, GetParcel, GetParcelByTrackingNumber, GetTrackingEvents | CreateParcel, UpdateParcel, CancelParcel, ChangeParcelStatus |
+| Parcels | GetParcels, GetParcel, GetParcelByTrackingNumber, GetTrackingEvents, GetParcelAuditLogs | CreateParcel, UpdateParcel, CancelParcel, ChangeParcelStatus, ScanParcel |
 | Routes | GetRoutes, GetRoute, GetRoutesForMap, GetAvailableDrivers | CreateRoute, UpdateRoute, DeleteRoute, ChangeRouteStatus, AssignDriverToRoute, OptimizeRouteStopOrder, DispatchRoute, AddParcelsToRoute, RemoveParcelsFromRoute, AutoAssignParcelsByZone, ReorderRouteStops |
 | Bins | GetBins, GetBin, GetBinUtilizations | CreateBin, UpdateBin, DeleteBin |
 | Aisles | GetAisles, GetAisle | CreateAisle, UpdateAisle, DeleteAisle |
+| Manifests | GetManifests, GetManifest | CreateManifest, ReceiveParcel, CompleteManifestReceiving |
 | Users | GetUsers, GetUser, GetUserManagementLookups | CreateUser, UpdateUser, ActivateUser, DeactivateUser, ResetPassword, CompletePasswordReset |
 | Vehicles | GetVehicles, GetVehicle, GetVehicleHistory | CreateVehicle, UpdateVehicle, DeleteVehicle, ChangeVehicleStatus |
 | Zones | GetZones, GetZone | CreateZone, UpdateZone, DeleteZone |
@@ -744,6 +788,14 @@ app/
       page.tsx                       -- Bin list
       new/page.tsx                   -- Create bin
       [id]/page.tsx                  -- Bin detail
+    depot/
+      page.tsx                       -- Depot operations hub (scan entry points)
+      layout.tsx                     -- Depot operations layout
+      inbound/page.tsx               -- Inbound receiving (manifest-based or free scan)
+      sorting/page.tsx               -- Sort & zone assignment (ReceivedAtDepot -> Sorted)
+      staging/page.tsx               -- Staging for route load-out (Sorted -> Staged)
+      loadout/page.tsx               -- Route load-out (Staged -> Loaded)
+      returns/page.tsx               -- Returns receiving (FailedAttempt -> ReturnedToDepot)
     depots/
       page.tsx                       -- Depot list
       new/page.tsx                   -- Create depot
@@ -752,6 +804,9 @@ app/
       page.tsx                       -- Driver list
       new/page.tsx                   -- Create driver
       [id]/page.tsx                  -- Driver detail
+    manifests/
+      page.tsx                       -- Manifest list
+      new/page.tsx                   -- Create manifest
     parcels/
       page.tsx                       -- Parcel list
       new/page.tsx                   -- Create parcel
@@ -940,13 +995,13 @@ EF Core defaults to the DbSet property name (pluralized), which is correct, but 
 
 ---
 
-### 6.5 Missing `parcels.graphql` document
+### 6.5 Missing `aisles.graphql` and `bins.graphql` documents
 
 **Location**: `src/web/src/graphql/documents/`
 
-Every other domain has a `.graphql` document file for code generation. Parcels does not. The parcel frontend uses dynamic query building instead, bypassing the GraphQL code-generation pipeline used by all other domains.
+Most domains have `.graphql` document files for code generation. Aisles and Bins do not. Their services still use hand-written types and raw template-string queries.
 
-**Fix**: Create `src/web/src/graphql/documents/parcels.graphql` with the parcel operations and regenerate types.
+**Fix**: Create `src/web/src/graphql/documents/aisles.graphql` and `bins.graphql` with their operations and regenerate types.
 
 ---
 
@@ -1000,12 +1055,11 @@ Depots, Zones, and Drivers define explicit `EntityObjectType<T>` subclasses (e.g
 
 **Location**: `src/web/src/graphql/generated/` (generated files), `src/web/src/graphql/documents/` (`.graphql` files)
 
-The project has a full GraphQL code-generation pipeline (`@graphql-codegen/cli` + `client-preset`) configured to produce TypeScript types from `.graphql` documents. Routes now imports from generated types -- services use `TypedDocumentNode`-based queries and generated input types. Other domains still use hand-written types:
+The project has a full GraphQL code-generation pipeline (`@graphql-codegen/cli` + `client-preset`) configured to produce TypeScript types from `.graphql` documents. Routes and Parcels (detail/mutation operations) now import from generated types -- services use `TypedDocumentNode`-based queries and generated input types. The parcels list still uses the dynamic query builder (`buildParcels-query.ts`) for the column-picker feature. Other domains still use hand-written types:
 
 - `src/web/src/lib/graphql/types.ts` -- Depots, Zones, Drivers, Bins, Aisles (DTOs, enums, inputs)
 - `src/web/src/types/vehicle.ts` -- Vehicles
 - `src/web/src/types/user.ts` -- Users
-- `src/web/src/types/parcel.ts` -- Parcels
 
 These services still use raw template-string queries (not the `gql` tag or `TypedDocumentNode`) and call `apiFetch` directly rather than a generated GraphQL client.
 
@@ -1031,3 +1085,40 @@ This works with codegen but is a poor fit for column pickers:
 - **No real type gain**: Every field becomes optional in the generated type, identical to the current hand-written `ParcelSummaryDto`
 
 The dynamic builder approach (`build-parcels-query.ts`) is the preferred solution when dealing with runtime column selection. Codegen is better suited for operations with fixed selection sets (detail views, create/update mutations, simple lists). A hybrid approach is recommended: codegen for static operations, dynamic builders for column-pickable lists.
+
+---
+
+### 6.10 Inconsistent detail/edit page routing
+
+**Location**: `src/web/src/app/(protected)/`
+
+Domains use three different patterns for detail and edit pages:
+
+| Domain | Detail page | Edit mechanism |
+|---|---|---|
+| Routes | `[id]/page.tsx` (read-only + actions) | `[id]/edit/page.tsx` (separate page) |
+| Vehicles | `[id]/page.tsx` (read-only + actions) | `[id]/edit/page.tsx` (separate page) |
+| Depots | `[id]/page.tsx` (is the edit form) | — (no detail view) |
+| Drivers | `[id]/page.tsx` (is the edit form) | — (no detail view) |
+| Zones | `[id]/page.tsx` (is the edit form) | — (no detail view) |
+| Parcels | `[trackingNumber]/page.tsx` (read-only) | Dialog/modal from detail page |
+
+Routes and Vehicles have dedicated read-only detail views with a separate edit route. Depots, Drivers, and Zones skip the detail view entirely — navigating to `[id]` opens the edit form directly. Parcels has a read-only detail page with editing via a modal dialog (`EditParcelDialog`).
+
+**Fix**: Decide on one pattern and apply it consistently. The separate detail/edit approach (Routes/Vehicles) provides better UX — users can view information without accidentally modifying it, and edit intent is explicit. Depots, Drivers, and Zones should gain read-only detail pages with an edit button that navigates to a separate `[id]/edit` route.
+
+---
+
+### 6.11 N+1 queries and inefficient data loading in three resolvers
+
+**Location**: `BinQuery.cs`, `RouteQuery.cs`, `VehicleQuery.cs`
+
+Three query resolvers bypass the standard HotChocolate projection pattern (`IQueryable` + `[UseProjection]`) and materialize data in memory, causing multiple round trips or over-fetching:
+
+**`BinQuery.GetBinUtilizations`** — materializes bins via `.ToListAsync()` with `.Include()` chains, then accesses `Zone.Name`, `Zone.Depot.Name`, `Aisle.Label` in an in-memory `.Select()`. Runs a second query for parcel counts. Bypasses HotChocolate projections entirely. Should be a server-side projection or a dedicated MediatR query that returns a flat DTO.
+
+**`RouteQuery.GetAvailableDrivers`** — uses `.Include(d => d.User)` + `.Select()` with DTO projection. Works correctly but violates the project convention of returning `IQueryable` and letting HotChocolate drive SQL shaping via `[UseProjection]`. Since this resolver returns a shaped DTO (not an entity), it cannot use projections.
+
+**`VehicleQuery.GetVehicleHistory`** — materializes journeys with `.ToListAsync()`, runs a second query for vehicle details, then constructs DTOs in memory. Multiple round trips for what could be a single query.
+
+**Fix**: For `GetBinUtilizations`, consider a MediatR query handler that performs a single server-side projection. For `GetAvailableDrivers` and `GetVehicleHistory`, consolidate into single queries using EF Core `.Select()` projections to avoid multiple round trips.
