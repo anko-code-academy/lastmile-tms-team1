@@ -144,7 +144,6 @@ public class CreateParcelHandler(
     private async Task<Zone?> FindZoneContainingPointAsync(Point point, CancellationToken cancellationToken)
     {
         return await dbContext.Zones
-            .AsNoTracking()
             .Where(z => z.IsActive && z.BoundaryGeometry != null && z.BoundaryGeometry.Contains(point))
             .FirstOrDefaultAsync(cancellationToken);
     }
