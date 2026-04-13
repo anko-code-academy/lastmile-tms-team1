@@ -1,14 +1,19 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using LastMile.TMS.Application.Common.Interfaces;
+using LastMile.TMS.Application.Features.Bins.Services;
 using LastMile.TMS.Application.Features.Routes;
+using LastMile.TMS.Domain.Entities;
 using LastMile.TMS.Domain.Enums;
 
 using ParcelStatus = LastMile.TMS.Domain.Enums.ParcelStatus;
 
 namespace LastMile.TMS.Application.Features.Routes.Commands;
 
-public class RemoveParcelsFromRouteCommandHandler(IAppDbContext context) : IRequestHandler<RemoveParcelsFromRouteCommand, RouteDto>
+public class RemoveParcelsFromRouteCommandHandler(
+    IAppDbContext context,
+    IBinAssignmentService binAssignmentService,
+    ICurrentUserService currentUserService) : IRequestHandler<RemoveParcelsFromRouteCommand, RouteDto>
 {
     public async Task<RouteDto> Handle(RemoveParcelsFromRouteCommand request, CancellationToken cancellationToken)
     {
@@ -38,9 +43,26 @@ public class RemoveParcelsFromRouteCommandHandler(IAppDbContext context) : IRequ
         foreach (var parcel in parcels)
         {
             parcel.RouteStopId = null;
-            if (parcel.Status == ParcelStatus.Staged)
+            if (parcel.Status is ParcelStatus.Staged or ParcelStatus.Loaded)
             {
                 parcel.Status = ParcelStatus.Sorted;
+
+                var assigned = await binAssignmentService.AssignToBinAsync(parcel, cancellationToken);
+                if (!assigned)
+                {
+                    parcel.Status = ParcelStatus.Exception;
+                    var userName = currentUserService.UserName ?? currentUserService.UserId
+                        ?? throw new InvalidOperationException("User not authenticated");
+
+                    context.TrackingEvents.Add(new TrackingEvent
+                    {
+                        ParcelId = parcel.Id,
+                        Timestamp = DateTimeOffset.UtcNow,
+                        EventType = EventType.Exception,
+                        Description = "No available bin in zone",
+                        Operator = userName
+                    });
+                }
             }
         }
 

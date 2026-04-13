@@ -37,6 +37,7 @@ export interface ParcelSummaryDto {
   recipientAddress?: AddressDto;
   shipperAddress?: AddressDto;
   zone?: { id: string; name: string };
+  depot?: { id: string; name: string };
 }
 
 export enum ParcelStatus {

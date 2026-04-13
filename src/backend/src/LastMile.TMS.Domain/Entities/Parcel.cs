@@ -38,6 +38,10 @@ public class Parcel : BaseAuditableEntity
     public ParcelType? ParcelType { get; set; }
     public string? Notes { get; set; }
 
+    // Depot (set at registration)
+    public Guid? DepotId { get; set; }
+    public Depot? Depot { get; set; }
+
     // Zone (auto-assigned via geocoding)
     public Guid? ZoneId { get; set; }
     public Zone? Zone { get; set; }

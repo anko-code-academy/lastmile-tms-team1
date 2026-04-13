@@ -25,12 +25,14 @@ export type ColumnKey =
   | "recipientCountryCode"
   | "shipperContactName"
   | "shipperCity"
-  | "zone";
+  | "zone"
+  | "depot"
+  | "link";
 
 export interface ColumnDef {
   key: ColumnKey;
   label: string;
-  group: "parcel" | "dimensions" | "financials" | "dates" | "recipient" | "shipper" | "zone";
+  group: "parcel" | "dimensions" | "financials" | "dates" | "recipient" | "shipper" | "zone" | "depot" | "actions";
   sortable: boolean;
   alwaysOn?: boolean;
   graphqlFields: string[];
@@ -234,6 +236,22 @@ export const COLUMN_REGISTRY: ColumnDef[] = [
     sortable: false,
     graphqlFields: ["zone {\n        id\n        name\n      }"],
   },
+  // Depot
+  {
+    key: "depot",
+    label: "Depot",
+    group: "depot",
+    sortable: false,
+    graphqlFields: ["depot {\n        id\n        name\n      }"],
+  },
+  // Actions
+  {
+    key: "link",
+    label: "Link",
+    group: "actions",
+    sortable: false,
+    graphqlFields: [],
+  },
 ];
 
 export const DEFAULT_COLUMNS: ColumnKey[] = [
@@ -251,4 +269,6 @@ export const DEFAULT_COLUMNS: ColumnKey[] = [
   "recipientPostalCode",
   "recipientCountryCode",
   "zone",
+  "depot",
+  "link",
 ];

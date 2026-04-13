@@ -2,7 +2,6 @@
 
 import { useState, useMemo, type ReactNode } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useParcels } from "@/hooks/use-parcels";
 import { useZones } from "@/hooks/use-zones";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -198,6 +197,17 @@ function renderCell(key: ColumnKey, parcel: ParcelSummaryDto): ReactNode {
       return parcel.shipperAddress?.city ?? "\u2014";
     case "zone":
       return parcel.zone?.name ?? "\u2014";
+    case "depot":
+      return parcel.depot?.name ?? "\u2014";
+    case "link":
+      return (
+        <Link
+          href={`/parcels/${parcel.trackingNumber}`}
+          className="text-primary hover:underline text-sm"
+        >
+          Link to parcel
+        </Link>
+      );
     default:
       return "\u2014";
   }
@@ -280,7 +290,6 @@ function DateRangePicker({
 }
 
 export function ParcelList() {
-  const router = useRouter();
   const { appliedColumns, applyColumns } = useColumnParams();
 
   const [recipientSearch, setRecipientSearch] = useState("");
@@ -655,13 +664,7 @@ export function ParcelList() {
               </TableHeader>
               <TableBody>
                 {parcels.map((parcel) => (
-                  <TableRow
-                    key={parcel.id}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() =>
-                      router.push(`/parcels/${parcel.trackingNumber}`)
-                    }
-                  >
+                  <TableRow key={parcel.id}>
                     {visibleColumns.map((col) => (
                       <TableCell key={col.key}>
                         {renderCell(col.key, parcel)}

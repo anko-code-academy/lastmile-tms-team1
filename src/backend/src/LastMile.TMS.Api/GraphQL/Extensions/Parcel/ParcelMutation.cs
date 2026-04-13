@@ -3,6 +3,7 @@ using HotChocolate.Authorization;
 using LastMile.TMS.Application.Features.ParcelRegistration.Commands.CreateParcel;
 using LastMile.TMS.Application.Features.Parcels.Commands.CancelParcel;
 using LastMile.TMS.Application.Features.Parcels.Commands.ChangeParcelStatus;
+using LastMile.TMS.Application.Features.Parcels.Commands.ScanParcel;
 using LastMile.TMS.Application.Features.Parcels.Commands.UpdateParcel;
 using LastMile.TMS.Domain.Entities;
 using MediatR;
@@ -24,6 +25,12 @@ public class ParcelMutation
         Role.RoleNames.WarehouseOperator, Role.RoleNames.Dispatcher })]
     public async Task<ChangeParcelStatusResult> ChangeParcelStatus(
         ChangeParcelStatusCommand input, [Service] IMediator mediator)
+        => await mediator.Send(input);
+
+    [Authorize(Roles = new[] { Role.RoleNames.Admin, Role.RoleNames.OperationsManager,
+        Role.RoleNames.WarehouseOperator })]
+    public async Task<ScanParcelResult> ScanParcel(
+        ScanParcelCommand input, [Service] IMediator mediator)
         => await mediator.Send(input);
 
     [Authorize(Roles = new[] { Role.RoleNames.WarehouseOperator, Role.RoleNames.Admin })]

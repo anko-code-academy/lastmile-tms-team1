@@ -141,6 +141,10 @@ export default function RouteDetailPage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
+                <p className="text-sm font-medium text-muted-foreground">Route ID</p>
+                <p className="font-mono text-sm">{route.id}</p>
+              </div>
+              <div>
                 <p className="text-sm font-medium text-muted-foreground">Status</p>
                 <Badge variant={getStatusBadgeVariant(route.status)}>
                   {route.status.replace("_", " ")}

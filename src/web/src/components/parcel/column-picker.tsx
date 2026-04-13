@@ -29,8 +29,10 @@ const GROUP_LABELS: Record<string, string> = {
   recipient: "Recipient Address",
   shipper: "Shipper Address",
   zone: "Zone",
+  depot: "Depot",
+  actions: "Actions",
 };
-const GROUP_ORDER = ["parcel", "dimensions", "financials", "dates", "recipient", "shipper", "zone"];
+const GROUP_ORDER = ["parcel", "dimensions", "financials", "dates", "recipient", "shipper", "zone", "depot", "actions"];
 
 export function ColumnPicker({
   appliedColumns,

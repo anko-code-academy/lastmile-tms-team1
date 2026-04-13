@@ -11,6 +11,8 @@ public interface IAppDbContext
     DbSet<Depot> Depots { get; }
     DbSet<DayOff> DaysOff { get; }
     DbSet<Driver> Drivers { get; }
+    DbSet<Manifest> Manifests { get; }
+    DbSet<ManifestItem> ManifestItems { get; }
     DbSet<Parcel> Parcels { get; }
     DbSet<Role> Roles { get; }
     DbSet<Route> Routes { get; }

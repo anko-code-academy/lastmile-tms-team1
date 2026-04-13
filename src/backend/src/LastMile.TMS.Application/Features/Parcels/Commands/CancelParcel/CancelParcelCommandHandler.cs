@@ -1,4 +1,5 @@
 using LastMile.TMS.Application.Common.Interfaces;
+using LastMile.TMS.Application.Features.Bins.Services;
 using LastMile.TMS.Domain.Entities;
 using LastMile.TMS.Domain.Enums;
 using MediatR;
@@ -8,7 +9,8 @@ namespace LastMile.TMS.Application.Features.Parcels.Commands.CancelParcel;
 
 public class CancelParcelCommandHandler(
     IAppDbContext dbContext,
-    ICurrentUserService currentUserService) : IRequestHandler<CancelParcelCommand, CancelParcelResult>
+    ICurrentUserService currentUserService,
+    IBinAssignmentService binAssignmentService) : IRequestHandler<CancelParcelCommand, CancelParcelResult>
 {
     public async Task<CancelParcelResult> Handle(CancelParcelCommand request, CancellationToken cancellationToken)
     {
@@ -30,6 +32,12 @@ public class CancelParcelCommandHandler(
 
         // Transition to Cancelled
         parcel.TransitionTo(Domain.Enums.ParcelStatus.Cancelled);
+
+        // Remove from bin if currently in Sorted status
+        if (previousStatus == Domain.Enums.ParcelStatus.Sorted)
+        {
+            binAssignmentService.RemoveFromBin(parcel);
+        }
 
         // Create audit log for cancellation with reason
         var auditLog = ParcelAuditLog.Create(

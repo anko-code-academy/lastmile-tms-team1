@@ -1,13 +1,18 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using LastMile.TMS.Application.Common.Interfaces;
+using LastMile.TMS.Application.Features.Bins.Services;
+using LastMile.TMS.Domain.Entities;
 using LastMile.TMS.Domain.Enums;
 
 using ParcelStatus = LastMile.TMS.Domain.Enums.ParcelStatus;
 
 namespace LastMile.TMS.Application.Features.Routes.Commands;
 
-public class DeleteRouteCommandHandler(IAppDbContext context) : IRequestHandler<DeleteRouteCommand, bool>
+public class DeleteRouteCommandHandler(
+    IAppDbContext context,
+    IBinAssignmentService binAssignmentService,
+    ICurrentUserService currentUserService) : IRequestHandler<DeleteRouteCommand, bool>
 {
     public async Task<bool> Handle(DeleteRouteCommand request, CancellationToken cancellationToken)
     {
@@ -32,6 +37,23 @@ public class DeleteRouteCommandHandler(IAppDbContext context) : IRequestHandler<
                 if (parcel.Status == ParcelStatus.Staged)
                 {
                     parcel.Status = ParcelStatus.Sorted;
+
+                    var assigned = await binAssignmentService.AssignToBinAsync(parcel, cancellationToken);
+                    if (!assigned)
+                    {
+                        parcel.Status = ParcelStatus.Exception;
+                        var userName = currentUserService.UserName ?? currentUserService.UserId
+                            ?? throw new InvalidOperationException("User not authenticated");
+
+                        context.TrackingEvents.Add(new TrackingEvent
+                        {
+                            ParcelId = parcel.Id,
+                            Timestamp = DateTimeOffset.UtcNow,
+                            EventType = EventType.Exception,
+                            Description = "No available bin in zone",
+                            Operator = userName
+                        });
+                    }
                 }
             }
         }
